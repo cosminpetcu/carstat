@@ -7,7 +7,7 @@ from app.crud.car_listing_crud import (
     create_car_listing,
     get_car_by_id
 )
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from datetime import datetime
 
 router = APIRouter()
@@ -19,7 +19,7 @@ def get_db():
     finally:
         db.close()
 
-@router.get("/cars", response_model=List[CarListingOut])
+@router.get("/cars", response_model=Dict[str, Any])
 def read_all_cars(
     brand: Optional[List[str]] = Query(None),
     model: Optional[List[str]] = Query(None),
@@ -73,8 +73,8 @@ def read_all_cars(
         itp_valid_until_before=itp_valid_until_before,
         engine_capacity_min=engine_capacity_min,
         engine_capacity_max=engine_capacity_max,
-        seller_type = seller_type,
-        is_new = is_new,
+        seller_type=seller_type,
+        is_new=is_new,
         sort_by=sort_by,
         order=order,
         page=page,

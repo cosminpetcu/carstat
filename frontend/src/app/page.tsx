@@ -1,5 +1,18 @@
+"use client";
+
 import Image from "next/image";
 import SearchBox from "@/components/SearchBox";
+import { useEffect, useState } from "react";
+
+type Car = {
+  id: number;
+  title: string;
+  year: number;
+  fuel_type: string;
+  transmission: string;
+  price: number;
+  images: string[] | string;
+};
 
 export default function Home() {
   return (
@@ -42,25 +55,17 @@ export default function Home() {
 
       {/* Listings */}
       <section className="bg-gray-100 py-12 px-6">
-        <h2 className="text-2xl font-semibold mb-6">Explore All Vehicles</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
-          {["ford-transit", "glc-2023", "audi-a6", "toyota-altis", "ford-explorer"].map((slug, idx) => (
-            <div key={idx} className="bg-white p-4 rounded-xl shadow flex flex-col items-center">
-              <Image
-                src={`/cars/${slug}.webp`}
-                alt="car"
-                width={300}
-                height={200}
-                className="rounded-lg object-cover w-full h-[180px]"
-              />
-              <div className="mt-2 text-center">
-                <h3 className="font-semibold">Car Model {idx + 1}</h3>
-                <p className="text-sm text-black">2023 • Petrol • Automatic</p>
-                <p className="text-blue-600 font-semibold mt-1">$35,000</p>
-              </div>
-            </div>
-          ))}
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-semibold">Explore All Vehicles</h2>
+          <a
+            href="/listings"
+            className="bg-blue-600 text-white px-4 py-2 rounded-md text-sm hover:bg-blue-700 transition"
+          >
+            View All Listings
+          </a>
         </div>
+
+        <HomeListings />
       </section>
 
       {/* Why Choose Us */}
@@ -128,5 +133,60 @@ export default function Home() {
         <p className="text-center text-sm mt-8">© 2025 carstat.com. All rights reserved.</p>
       </footer>
     </main>
+  );
+}
+
+function HomeListings() {
+  const [cars, setCars] = useState<Car[]>([]);
+
+  useEffect(() => {
+    fetch("http://localhost:8000/cars?limit=5&page=1")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.items) {
+          setCars(data.items); // ✅ accesăm doar lista de anunțuri
+        } else {
+          console.error("Invalid response:", data);
+        }
+      })
+      .catch((err) => console.error("Error fetching cars:", err));
+  }, []);
+
+  const parseImage = (images: string[] | string) => {
+    try {
+      const parsed = typeof images === "string" ? JSON.parse(images) : images;
+      return parsed?.[0] || "/default-car.webp";
+    } catch {
+      return "/default-car.webp";
+    }
+  };
+
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
+      {cars.map((car) => (
+        <a
+          key={car.id}
+          href={`/listings/${car.id}`}
+          className="bg-white p-4 rounded-xl shadow flex flex-col items-center hover:shadow-md transition"
+        >
+          <Image
+            src={parseImage(car.images)}
+            alt={car.title}
+            width={300}
+            height={200}
+            className="rounded-lg object-cover w-full h-[180px]"
+          />
+          <div className="mt-2 text-center">
+            <h3 className="font-semibold">{car.title}</h3>
+            <p className="text-sm text-black">
+              {car.year} • {car.fuel_type} • {car.transmission}
+            </p>
+            <p className="text-blue-600 font-semibold mt-1">
+              €{car.price.toLocaleString()}
+            </p>
+          </div>
+        </a>
+      ))}
+    </div>
   );
 }

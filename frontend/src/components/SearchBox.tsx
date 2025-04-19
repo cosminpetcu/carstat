@@ -161,7 +161,7 @@ const SearchBox = () => {
 
       <div className="flex justify-between">
         <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded-md font-medium">
-          🔍 Show Results
+          Show Results
         </button>
         <button type="button" className="text-sm underline text-blue-600">Detailed Search</button>
       </div>

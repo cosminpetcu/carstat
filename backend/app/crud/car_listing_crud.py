@@ -1,11 +1,9 @@
 from sqlalchemy.orm import Session
 from app.models.models import CarListing
-from app.schemas.car_listing_schema import CarListingCreate
+from app.schemas.car_listing_schema import CarListingCreate, CarListingOut
 from datetime import datetime
 from typing import List, Optional
 from app.models.models import Favorite
-from app.schemas.car_listing_schema import CarListingOut
-
 
 def get_all_car_listings(
     db: Session,
@@ -93,17 +91,20 @@ def get_all_car_listings(
     if is_new:
         query = query.filter(CarListing.is_new == is_new)
 
-
     if sort_by in ["price", "year", "mileage", "created_at"]:
         sort_column = getattr(CarListing, sort_by)
         sort_column = sort_column.desc() if order == "desc" else sort_column.asc()
         query = query.order_by(sort_column)
 
-    offset = (page - 1) * limit
-    listings = query.offset(offset).limit(limit).all()
+    total_count = query.count()
+    listings = query.offset((page - 1) * limit).limit(limit).all()
 
     if not user_id:
-        return listings
+        results = [CarListingOut.from_orm(car) for car in listings]
+        return {
+            "items": results,
+            "total": total_count
+        }
 
     favorite_ids = {
         fav.car_id for fav in db.query(Favorite).filter(Favorite.user_id == user_id).all()
@@ -115,8 +116,10 @@ def get_all_car_listings(
         car_dict["is_favorite"] = car.id in favorite_ids
         results.append(CarListingOut(**car_dict))
 
-    return results
-
+    return {
+        "items": results,
+        "total": total_count
+    }
 
 def create_car_listing(db: Session, car_data: CarListingCreate):
     new_car = CarListing(
@@ -140,8 +143,8 @@ def create_car_listing(db: Session, car_data: CarListingCreate):
         location=car_data.location,
         description=car_data.description,
         engine_capacity=car_data.engine_capacity,
-        seller_type = car_data.seller_type,
-        is_new = car_data.is_new,
+        seller_type=car_data.seller_type,
+        is_new=car_data.is_new,
         image_url=car_data.image_url,
         source_url=car_data.source_url,
         created_at=datetime.utcnow()

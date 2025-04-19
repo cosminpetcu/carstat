@@ -32,7 +32,7 @@ class CarListingOut(BaseModel):
     is_favorite: Optional[bool] = False
     
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 class CarListingCreate(BaseModel):
     title: str
