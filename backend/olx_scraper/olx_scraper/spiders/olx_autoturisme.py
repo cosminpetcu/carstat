@@ -68,8 +68,6 @@ class OlxAutoturismeSpider(scrapy.Spider):
                 description = description_meta.replace(match.group(0), "").strip()
             else:
                 description = description_meta.strip()
-
-        # image_url = response.css("meta[property='og:image']::attr(content)").get()
         
         json_ld_raw = response.css('script[type="application/ld+json"]::text').get()
         brand = None
@@ -81,13 +79,16 @@ class OlxAutoturismeSpider(scrapy.Spider):
                 print("⚠️ JSON-LD parsing failed:", e)
 
         details = {}
-        detail_rows = response.css("div.css-1msmb8o p.css-z0m36u::text").getall()
+        detail_rows = response.css("div.css-41yf00 p.css-1los5bp::text").getall()
         for row in detail_rows:
             if ":" in row:
                 key, value = row.split(":", 1)
                 details[key.strip().lower()] = value.strip()
+                
+        source_url = response.url
+        image_url = response.css("img::attr(src)").getall()
+        image_url = [url for url in image_url if "olxcdn.com" in url]
 
-        # brand = title.split()[0] if title else None
         model = details.get("model")
         year = int(details.get("an de fabricatie", "0")) or None
         mileage = int(details.get("rulaj", "0").replace("km", "").replace(" ", "")) or None
@@ -123,6 +124,8 @@ class OlxAutoturismeSpider(scrapy.Spider):
             is_new = True,
             doors=doors,
             vehicle_condition=vehicle_condition,
+            images=json.dumps(image_url),
+            source_url=source_url,
             created_at = created_at
         )
 

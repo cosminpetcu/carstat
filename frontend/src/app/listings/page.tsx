@@ -1,6 +1,82 @@
+"use client";
+
 import Image from "next/image";
+import { useSearchParams, useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+
+type Car = {
+  id: number;
+  title: string;
+  brand: string;
+  model: string;
+  price: number;
+  year: number;
+  fuel_type: string;
+  mileage: number;
+  transmission: string;
+  images: string[] | string;
+  source_url?: string;
+};
 
 export default function ListingsPage() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  const [cars, setCars] = useState<Car[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [currentIndices, setCurrentIndices] = useState<{ [key: number]: number }>({});
+
+  const limit = 8;
+
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    const currentPage = parseInt(params.get("page") || "1");
+    setPage(currentPage);
+
+    params.set("limit", limit.toString());
+    params.set("page", currentPage.toString());
+
+    const url = `http://localhost:8000/cars?${params.toString()}`;
+
+    fetch(url)
+      .then((res) => res.json())
+      .then((data) => {
+        setCars(data);
+        const initialIndices: { [key: number]: number } = {};
+        data.forEach((car: Car) => {
+          initialIndices[car.id] = 0;
+        });
+        setCurrentIndices(initialIndices);
+        setLoading(false);
+      })
+      .catch((err) => {
+        console.error("Failed to fetch cars", err);
+        setLoading(false);
+      });
+  }, [searchParams]);
+
+  const goToPage = (newPage: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("page", newPage.toString());
+    router.push(`/listings?${params.toString()}`);
+  };
+
+  const nextImage = (carId: number, total: number) => {
+    setCurrentIndices((prev) => ({
+      ...prev,
+      [carId]: Math.min((prev[carId] || 0) + 1, total - 1),
+    }));
+  };
+
+  const prevImage = (carId: number) => {
+    setCurrentIndices((prev) => ({
+      ...prev,
+      [carId]: Math.max((prev[carId] || 0) - 1, 0),
+    }));
+  };
+
   return (
     <main className="min-h-screen bg-white text-black">
       {/* Header */}
@@ -20,7 +96,9 @@ export default function ListingsPage() {
         <div className="flex justify-between items-center mb-6">
           <div>
             <h1 className="text-2xl font-semibold">Listing v1</h1>
-            <p className="text-sm text-gray-600">Showing 1–12 of 12 results</p>
+            <p className="text-sm text-gray-600">
+              {loading ? "Loading..." : `Showing ${cars.length} result${cars.length !== 1 ? "s" : ""}`}
+            </p>
           </div>
           <div>
             <select className="border border-gray-300 rounded-md px-4 py-2 text-sm">
@@ -33,29 +111,97 @@ export default function ListingsPage() {
 
         {/* Listings Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {[...Array(12)].map((_, idx) => (
-            <div key={idx} className="bg-white p-4 rounded-xl shadow-md">
-              <Image
-                src={`/cars/ford-explorer.webp`}
-                alt="Car"
-                width={400}
-                height={300}
-                className="rounded-lg object-cover w-full h-[180px]"
-              />
-              <div className="mt-2">
-                <h3 className="font-semibold text-lg">Car Model {idx + 1}</h3>
-                <p className="text-sm text-gray-600">2023 • Petrol • Automatic</p>
-                <p className="text-blue-600 font-semibold mt-1">$35,000</p>
-                <button className="text-sm text-blue-500 underline mt-1">View Details</button>
+          {cars.map((car) => {
+            let images: string[] = [];
+            try {
+              const parsed = typeof car.images === "string" ? JSON.parse(car.images) : car.images;
+              if (Array.isArray(parsed)) images = parsed;
+            } catch (e) {
+              console.error("Failed to parse images", e);
+            }
+
+            const currentIndex = currentIndices[car.id] || 0;
+            const imageUrl = images[currentIndex] || "/default-car.webp";
+
+            return (
+              <div key={car.id} className="bg-white p-4 rounded-xl shadow-md">
+                <div className="relative w-full">
+                  <Image
+                    src={imageUrl}
+                    alt="car"
+                    width={300}
+                    height={200}
+                    className="rounded-lg object-cover w-full h-[180px]"
+                  />
+
+                  {/* Indicator pozitie */}
+                  {images.length > 1 && (
+                    <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full">
+                      {currentIndex + 1} / {images.length}
+                    </div>
+                  )}
+
+                  {/* Butoane navigare */}
+                  {images.length > 1 && (
+                    <>
+                      <button
+                        onClick={() => prevImage(car.id)}
+                        disabled={currentIndex === 0}
+                        className="absolute left-1 top-1/2 transform -translate-y-1/2 bg-black/50 text-white px-2 py-1 rounded"
+                      >
+                        ⬅
+                      </button>
+                      <button
+                        onClick={() => nextImage(car.id, images.length)}
+                        disabled={currentIndex === images.length - 1}
+                        className="absolute right-1 top-1/2 transform -translate-y-1/2 bg-black/50 text-white px-2 py-1 rounded"
+                      >
+                        ➡
+                      </button>
+                    </>
+                  )}
+                </div>
+                <div className="mt-2">
+                  <h3 className="font-semibold text-lg">{car.title}</h3>
+                  <p className="text-sm text-gray-600">{car.year} • {car.fuel_type} • {car.transmission}</p>
+                  <p className="text-blue-600 font-semibold mt-1">€{car.price.toLocaleString()}</p>
+
+                  <a
+                    href={`/listings/${car.id}`}
+                    className="block w-full bg-blue-600 text-white text-center py-2 rounded-md text-sm mt-2 hover:bg-blue-700 transition"
+                  >
+                    View Details
+                  </a>
+
+                  {car.source_url && (
+                    <a
+                      href={car.source_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block w-full bg-black text-white text-center py-2 rounded-md text-sm mt-2 hover:bg-gray-800 transition"
+                    >
+                      🔗 View original ad
+                    </a>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
 
         {/* Pagination */}
-        <div className="flex justify-center mt-10">
-          <button className="px-4 py-2 rounded-full border">1</button>
-          <button className="px-4 py-2 rounded-full border ml-2 bg-gray-200">2</button>
+        <div className="flex justify-center mt-10 gap-2">
+          {[1, 2, 3, 4, 5].map((p) => (
+            <button
+              key={p}
+              onClick={() => goToPage(p)}
+              className={`px-4 py-2 rounded-full border ${
+                p === page ? "bg-gray-200" : ""
+              }`}
+            >
+              {p}
+            </button>
+          ))}
         </div>
       </section>
 

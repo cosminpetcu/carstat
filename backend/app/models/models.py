@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, DateTime
+from sqlalchemy import Column, Integer, String, Float, DateTime, Text
 from app.database import Base
 from datetime import datetime
 from sqlalchemy import ForeignKey
@@ -39,6 +39,8 @@ class CarListing(Base):
     seller_type = Column(String)
     engine_capacity = Column(Integer)
     is_new = Column(Boolean, default=True)
+    images = Column(Text)
+    source_url = Column(String)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 class Favorite(Base):

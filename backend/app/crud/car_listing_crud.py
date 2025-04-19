@@ -142,6 +142,8 @@ def create_car_listing(db: Session, car_data: CarListingCreate):
         engine_capacity=car_data.engine_capacity,
         seller_type = car_data.seller_type,
         is_new = car_data.is_new,
+        image_url=car_data.image_url,
+        source_url=car_data.source_url,
         created_at=datetime.utcnow()
     )
     db.add(new_car)
