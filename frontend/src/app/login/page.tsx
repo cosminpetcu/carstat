@@ -1,13 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
+import { useSearchParams } from "next/navigation";
 
 export default function LoginPage() {
   const router = useRouter();
-
+  const searchParams = useSearchParams();
   const [tab, setTab] = useState<"signin" | "register">("signin");
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
@@ -15,6 +16,14 @@ export default function LoginPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [name, setName] = useState("");
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    const token = searchParams.get("token");
+    if (token) {
+      localStorage.setItem("token", token);
+      router.push("/");
+    }
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -190,11 +199,14 @@ export default function LoginPage() {
           {/* Social Buttons */}
           <div className="flex flex-col sm:flex-row gap-3 justify-between">
             <button className="flex items-center justify-center border border-blue-600 text-blue-600 rounded-md py-2 text-sm w-full gap-2">
-              <span className="text-lg">📘</span>
               Login with Facebook
             </button>
-            <button className="flex items-center justify-center border border-red-500 text-red-500 rounded-md py-2 text-sm w-full gap-2">
-              <span className="text-lg">🔴</span>
+            <button
+              onClick={() => {
+                window.location.href = "http://localhost:8000/auth/google/login";
+              }}
+              className="flex items-center justify-center border border-red-500 text-red-500 rounded-md py-2 text-sm w-full gap-2"
+            >
               Login with Google
             </button>
           </div>

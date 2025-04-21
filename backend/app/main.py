@@ -3,16 +3,20 @@ from app.database import Base, engine
 from app.models import models
 from app.routers import car_listing_router
 from app.routers import favorite_router
-from fastapi.middleware.cors import CORSMiddleware
 from app.auth.routes import router as auth_router
+from app.auth.routes_google import router as google_auth_router
 
+from fastapi.middleware.cors import CORSMiddleware
+from starlette.middleware.sessions import SessionMiddleware
+from dotenv import load_dotenv
+import os
 
+load_dotenv()
 
 app = FastAPI()
 
-app.include_router(car_listing_router.router)
-app.include_router(favorite_router.router)
-app.include_router(auth_router)
+app.add_middleware(SessionMiddleware, secret_key=os.getenv("SESSION_SECRET", "fallback-secret"))
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],
@@ -20,6 +24,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(car_listing_router.router)
+app.include_router(favorite_router.router)
+app.include_router(auth_router)
+app.include_router(google_auth_router)
 
 Base.metadata.create_all(bind=engine)
 
