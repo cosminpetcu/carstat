@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import Navbar from "@/components/Navbar";
 
 type Car = {
   id: number;
@@ -107,17 +108,7 @@ export default function ListingsPage() {
 
   return (
     <main className="min-h-screen bg-white text-black">
-      {/* Header */}
-      <header className="w-full flex items-center justify-between px-10 py-6 z-30 bg-gray-900 text-white border-b">
-        <div className="text-xl font-bold">CARSTAT</div>
-        <nav className="space-x-6 text-sm">
-          <a href="/" className="hover:underline">Home</a>
-          <a href="/listings" className="hover:underline">Listings</a>
-          <a href="#" className="hover:underline">About</a>
-          <a href="#" className="hover:underline">Contact</a>
-          <button className="ml-4 px-4 py-1 border border-white rounded-full text-sm hover:bg-black hover:text-white">Sign in</button>
-        </nav>
-      </header>
+      <Navbar />
 
       {/* Listings */}
       <section className="py-12 px-6 max-w-7xl mx-auto">

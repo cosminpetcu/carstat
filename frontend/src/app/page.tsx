@@ -3,6 +3,7 @@
 import Image from "next/image";
 import SearchBox from "@/components/SearchBox";
 import { useEffect, useState } from "react";
+import Navbar from "@/components/Navbar";
 
 type Car = {
   id: number;
@@ -17,17 +18,7 @@ type Car = {
 export default function Home() {
   return (
     <main className="min-h-screen bg-white text-black">
-      {/* Navbar */}
-      <header className="absolute top-0 w-full flex items-center justify-between px-10 py-6 z-30 text-white">
-        <div className="text-xl font-bold">CARSTAT</div>
-        <nav className="space-x-6 text-sm">
-          <a href="#" className="hover:underline">Home</a>
-          <a href="/listings" className="hover:underline">Listings</a>
-          <a href="#" className="hover:underline">About</a>
-          <a href="#" className="hover:underline">Contact</a>
-          <button className="ml-4 px-4 py-1 border border-white rounded-full text-sm hover:bg-white hover:text-black">Sign in</button>
-        </nav>
-      </header>
+      <Navbar />
 
       {/* Hero section */}
       <div className="relative h-[110vh] bg-cover bg-center" style={{ backgroundImage: "url('/car-hero.jpg')" }}>

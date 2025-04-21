@@ -3,15 +3,16 @@ from app.database import Base, engine
 from app.models import models
 from app.routers import car_listing_router
 from app.routers import favorite_router
-from app.routers import user_router
 from fastapi.middleware.cors import CORSMiddleware
+from app.auth.routes import router as auth_router
+
 
 
 app = FastAPI()
 
 app.include_router(car_listing_router.router)
 app.include_router(favorite_router.router)
-app.include_router(user_router.router)
+app.include_router(auth_router)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],

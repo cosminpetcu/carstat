@@ -2,26 +2,62 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import Navbar from "@/components/Navbar";
 
 export default function LoginPage() {
+  const router = useRouter();
+
   const [tab, setTab] = useState<"signin" | "register">("signin");
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [name, setName] = useState("");
+  const [error, setError] = useState("");
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+
+    if (tab === "register" && password !== confirmPassword) {
+      setError("Passwords do not match");
+      return;
+    }
+
+    const url = tab === "signin" ? "/auth/login" : "/auth/register";
+
+    const payload = {
+      email: email.trim(),
+      password: password,
+      full_name: name.trim(),
+    };
+
+    try {
+      const res = await fetch(`http://localhost:8000${url}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        setError(data.detail || "Login/Register failed");
+        return;
+      }
+
+      const data = await res.json();
+      localStorage.setItem("token", data.access_token);
+      router.push("/");
+    } catch (err) {
+      console.error(err);
+      setError("Something went wrong");
+    }
+  };
 
   return (
     <main className="min-h-screen flex flex-col bg-white text-black">
-      {/* Header */}
-      <header className="w-full flex items-center justify-between px-10 py-6 z-30 bg-gray-900 text-white">
-        <div className="text-xl font-bold">CARSTAT</div>
-        <nav className="space-x-6 text-sm">
-          <Link href="/" className="hover:underline">Home</Link>
-          <Link href="/listings" className="hover:underline">Listings</Link>
-          <Link href="#" className="hover:underline">About</Link>
-          <Link href="#" className="hover:underline">Contact</Link>
-          <Link href="/login">
-            <button className="ml-4 px-4 py-1 border border-white rounded-full text-sm hover:bg-white hover:text-black">Sign in</button>
-          </Link>
-        </nav>
-      </header>
+      <Navbar />
 
       {/* Auth Box */}
       <div className="flex flex-1 items-center justify-center px-4 py-12">
@@ -42,19 +78,28 @@ export default function LoginPage() {
             </button>
           </div>
 
+          {/* Error message */}
+          {error && <div className="text-red-600 text-sm text-center">{error}</div>}
+
           {/* SIGN IN FORM */}
           {tab === "signin" && (
-            <form className="space-y-4">
+            <form className="space-y-4" onSubmit={handleSubmit}>
               <input
-                type="text"
-                placeholder="Username Or Email"
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm"
+                required
               />
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
                   placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm"
+                  required
                 />
                 <button
                   type="button"
@@ -84,22 +129,30 @@ export default function LoginPage() {
 
           {/* REGISTER FORM */}
           {tab === "register" && (
-            <form className="space-y-4">
+            <form className="space-y-4" onSubmit={handleSubmit}>
               <input
                 type="text"
-                placeholder="Full Name"
+                placeholder="Full Name (optional)"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm"
               />
               <input
                 type="email"
                 placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm"
+                required
               />
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
                   placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm"
+                  required
                 />
                 <button
                   type="button"
@@ -112,7 +165,10 @@ export default function LoginPage() {
               <input
                 type="password"
                 placeholder="Confirm Password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-md text-sm"
+                required
               />
 
               <button

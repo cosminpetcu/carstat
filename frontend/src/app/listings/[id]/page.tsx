@@ -3,6 +3,7 @@
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import Navbar from "@/components/Navbar";
 
 type Car = {
   id: number;
@@ -74,16 +75,7 @@ export default function CarDetailPage() {
 
   return (
     <main className="bg-white text-black">
-      <header className="w-full flex items-center justify-between px-10 py-6 bg-gray-900 absolute top-0 z-30 text-white">
-        <div className="text-xl font-bold">CARSTAT</div>
-        <nav className="space-x-6 text-sm">
-          <a href="/" className="hover:underline">Home</a>
-          <a href="/listings" className="hover:underline">Listings</a>
-          <a href="#" className="hover:underline">About</a>
-          <a href="#" className="hover:underline">Contact</a>
-          <button className="ml-4 px-4 py-1 border border-white rounded-full text-sm hover:bg-white hover:text-black">Sign in</button>
-        </nav>
-      </header>
+      <Navbar />
 
       <section className="pt-36 px-6 max-w-7xl mx-auto">
         <div className="flex flex-col md:flex-row justify-between gap-10">
