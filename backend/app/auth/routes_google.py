@@ -6,6 +6,7 @@ from app.models.models import User
 from app.auth.utils import create_access_token
 from dotenv import load_dotenv
 import os
+from urllib.parse import urlencode
 
 router = APIRouter(prefix="/auth/google", tags=["auth"])
 
@@ -58,5 +59,13 @@ async def auth_callback(request: Request, db: SessionLocal = Depends(get_db)):
         db.refresh(user)
 
     access_token = create_access_token(data={"sub": str(user.id)})
-    redirect = RedirectResponse(url=f"http://localhost:3000/login?token={access_token}")
+    
+    query = urlencode({
+    "token": access_token,
+    "user_id": user.id,
+    "email": user.email,
+    "full_name": user.full_name or ""
+    })
+
+    redirect = RedirectResponse(url=f"http://localhost:3000/login?{query}")
     return redirect

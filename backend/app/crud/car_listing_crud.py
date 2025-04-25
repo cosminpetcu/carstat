@@ -112,9 +112,10 @@ def get_all_car_listings(
 
     results = []
     for car in listings:
-        car_dict = car.__dict__.copy()
-        car_dict["is_favorite"] = car.id in favorite_ids
-        results.append(CarListingOut(**car_dict))
+        car_out = CarListingOut.from_orm(car)
+        car_out.is_favorite = car.id in favorite_ids
+        results.append(car_out)
+
 
     return {
         "items": results,

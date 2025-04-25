@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
+import Footer from "@/components/Footer";
 
 type Car = {
   id: number;
@@ -16,6 +17,7 @@ type Car = {
   mileage: number;
   transmission: string;
   images: string[] | string;
+  is_favorite?: boolean;
 };
 
 export default function ListingsPage() {
@@ -28,42 +30,105 @@ export default function ListingsPage() {
   const [limit, setLimit] = useState(16);
   const [total, setTotal] = useState(0);
   const [imageIndex, setImageIndex] = useState<{ [carId: number]: number }>({});
+  const [updatingFavorites, setUpdatingFavorites] = useState<number[]>([]);
 
   useEffect(() => {
     const params = new URLSearchParams(searchParams.toString());
-
+    const token = localStorage.getItem("token");
+    const userRaw = localStorage.getItem("user");
+    const user = userRaw ? JSON.parse(userRaw) : null;
+  
     const currentPage = parseInt(params.get("page") || "1");
     const currentLimit = parseInt(params.get("limit") || "16");
-
+  
     setPage(currentPage);
     setLimit(currentLimit);
-
+  
     params.set("page", currentPage.toString());
     params.set("limit", currentLimit.toString());
-
+  
+    if (user?.id) {
+      params.set("user_id", user.id.toString());
+    }
+  
     const url = `http://localhost:8000/cars?${params.toString()}`;
-
-    fetch(url)
-      .then((res) => {
-        if (!res.ok) throw new Error("Response not ok");
-        return res.json();
-      })
+  
+    fetch(url, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+      .then((res) => res.json())
       .then((data) => {
         setCars(data.items);
         setTotal(data.total);
-
+  
         const initIndex: { [carId: number]: number } = {};
         data.items.forEach((car: Car) => {
           initIndex[car.id] = 0;
         });
         setImageIndex(initIndex);
-
+  
         setLoading(false);
       })
-      .catch((err) => {
+      .catch(() => {
         setLoading(false);
       });
   }, [searchParams]);
+  
+
+  const toggleFavorite = async (car: Car) => {
+    const token = localStorage.getItem("token");
+    const userRaw = localStorage.getItem("user");
+
+    if (!token || !userRaw) {
+      router.push("/login");
+      return;
+    }
+
+    let user;
+    try {
+      user = JSON.parse(userRaw);
+      if (!user.id) throw new Error("Invalid user object");
+    } catch (err) {
+      console.error("User object invalid:", err);
+      router.push("/login");
+      return;
+    }
+
+    setUpdatingFavorites((prev) => [...prev, car.id]);
+
+    try {
+      if (car.is_favorite) {
+        await fetch(`http://localhost:8000/favorites/${car.id}`, {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      } else {
+        await fetch("http://localhost:8000/favorites", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            user_id: user.id,
+            car_id: car.id,
+          }),
+        });
+      }
+
+      setCars((prev) =>
+        prev.map((c) =>
+          c.id === car.id ? { ...c, is_favorite: !car.is_favorite } : c
+        )
+      );
+    } catch (err) {
+      console.error("Favorite toggle failed", err);
+    } finally {
+      setUpdatingFavorites((prev) => prev.filter((id) => id !== car.id));
+    }
+  };
 
   const goToPage = (newPage: number) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -89,7 +154,6 @@ export default function ListingsPage() {
   };
 
   const totalPages = Math.ceil(total / limit);
-
   const getDisplayedPages = () => {
     const pages = [];
     if (totalPages <= 5) {
@@ -110,7 +174,6 @@ export default function ListingsPage() {
     <main className="min-h-screen bg-white text-black">
       <Navbar />
 
-      {/* Listings */}
       <section className="py-12 px-6 max-w-7xl mx-auto">
         <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
           <div>
@@ -147,8 +210,23 @@ export default function ListingsPage() {
               <a
                 key={car.id}
                 href={`/listings/${car.id}`}
-                className="bg-white p-4 rounded-xl shadow-md hover:shadow-lg transition flex flex-col group"
+                className="bg-white p-4 rounded-xl shadow-md hover:shadow-lg transition flex flex-col group relative"
               >
+                {/* Favorite Button */}
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    toggleFavorite(car);
+                  }}
+                  className={`absolute top-2 left-2 text-2xl z-10 transition transform ${
+                    car.is_favorite ? "text-red-500 scale-110" : "text-gray-400"
+                  } ${updatingFavorites.includes(car.id) ? "opacity-50" : "opacity-100"}`}
+                  disabled={updatingFavorites.includes(car.id)}
+                >
+                  {car.is_favorite ? "❤️" : "🤍"}
+                </button>
+
                 <div className="relative w-full">
                   <Image
                     src={imageUrl}
@@ -157,8 +235,6 @@ export default function ListingsPage() {
                     height={300}
                     className="rounded-lg object-cover w-full h-[180px]"
                   />
-
-                  {/* Săgeți + counter vizibile doar la hover */}
                   {imgs.length > 1 && (
                     <>
                       <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full opacity-0 group-hover:opacity-100 transition">
@@ -203,7 +279,9 @@ export default function ListingsPage() {
                     {car.year} • {car.fuel_type} • {car.transmission}
                   </p>
                   <p className="text-blue-600 font-semibold mt-1">
-                    {car.price !== null ? `€${car.price.toLocaleString()}` : "Price not available"}
+                    {car.price !== null
+                      ? `€${car.price.toLocaleString()}`
+                      : "Price not available"}
                   </p>
                 </div>
               </a>
@@ -211,7 +289,7 @@ export default function ListingsPage() {
           })}
         </div>
 
-        {/* Dynamic Pagination */}
+        {/* Pagination */}
         <div className="flex justify-center mt-10 gap-2 flex-wrap">
           {getDisplayedPages().map((p, idx) =>
             typeof p === "number" ? (
@@ -229,49 +307,7 @@ export default function ListingsPage() {
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12 px-6">
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-          <div>
-            <h3 className="font-bold mb-2">Company</h3>
-            <ul className="space-y-1 text-sm">
-              <li>About Us</li>
-              <li>Services</li>
-              <li>FAQs</li>
-              <li>Contact</li>
-            </ul>
-          </div>
-          <div>
-            <h3 className="font-bold mb-2">Quick Links</h3>
-            <ul className="space-y-1 text-sm">
-              <li>Help Center</li>
-              <li>How it works</li>
-              <li>Sign Up</li>
-            </ul>
-          </div>
-          <div>
-            <h3 className="font-bold mb-2">Our Brands</h3>
-            <ul className="space-y-1 text-sm">
-              <li>Audi</li>
-              <li>BMW</li>
-              <li>Ford</li>
-              <li>Volkswagen</li>
-            </ul>
-          </div>
-          <div>
-            <h3 className="font-bold mb-2">Get Updates</h3>
-            <input
-              type="email"
-              placeholder="Your email"
-              className="w-full px-3 py-2 text-black rounded-md mb-2"
-            />
-            <button className="w-full bg-blue-600 text-white px-3 py-2 rounded-md">
-              Sign Up
-            </button>
-          </div>
-        </div>
-        <p className="text-center text-sm mt-8">© 2025 carstat.com. All rights reserved.</p>
-      </footer>
+      <Footer />
     </main>
   );
 }

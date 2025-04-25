@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException, Depends, status
 from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app.models.models import User
-from app.auth.schemas import LoginRequest, RegisterRequest, TokenResponse
+from app.auth.schemas import LoginRequest, RegisterRequest, TokenResponse, UserOut
 from app.auth.utils import (
     verify_password,
     hash_password,
@@ -41,7 +41,12 @@ def login_user(login: LoginRequest, db: Session = Depends(get_db)):
         )
 
     access_token = create_access_token(data={"sub": str(user.id)})
-    return {"access_token": access_token}
+    return {
+    "access_token": access_token,
+    "token_type": "bearer",
+    "user": UserOut.model_validate(user)
+    }
+
 
 @router.post("/register", response_model=TokenResponse)
 def register_user(register: RegisterRequest, db: Session = Depends(get_db)):
@@ -60,4 +65,10 @@ def register_user(register: RegisterRequest, db: Session = Depends(get_db)):
     db.refresh(new_user)
 
     access_token = create_access_token(data={"sub": str(new_user.id)})
-    return {"access_token": access_token}
+    return {
+    "access_token": access_token,
+    "token_type": "bearer",
+    "user": UserOut.model_validate(new_user)
+    }
+
+

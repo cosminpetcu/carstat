@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 
 export default function Navbar() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [user, setUser] = useState<{ id: number; email: string; full_name: string } | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const pathname = usePathname();
   const isHome = pathname === "/";
@@ -13,8 +14,18 @@ export default function Navbar() {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
+    const storedUser = localStorage.getItem("user");
+  
     setIsLoggedIn(!!token);
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch {
+        setUser(null);
+      }
+    }
   }, []);
+  
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -29,6 +40,7 @@ export default function Navbar() {
       <nav className="space-x-6 text-sm flex items-center relative">
         <Link href="/" className="hover:underline">Home</Link>
         <Link href="/listings" className="hover:underline">Listings</Link>
+        <Link href="/favorites" className="hover:underline">Favorites</Link>
         <Link href="#" className="hover:underline">About</Link>
         <Link href="#" className="hover:underline">Contact</Link>
 
@@ -44,7 +56,7 @@ export default function Navbar() {
               onClick={() => setDropdownOpen(!dropdownOpen)}
               className="ml-4 px-4 py-1 border border-white rounded-full text-sm hover:bg-white hover:text-black"
             >
-              Profile ▾
+              {user?.full_name || "Profile"} ▾
             </button>
 
             {dropdownOpen && (
