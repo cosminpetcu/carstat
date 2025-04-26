@@ -20,13 +20,6 @@ export default function Footer() {
             </ul>
           </div>
           <div>
-            <h3 className="font-bold mb-2">Our Brands</h3>
-            <ul className="space-y-1 text-sm">
-              <li>Audi</li>
-              <li>BMW</li>
-              <li>Ford</li>
-              <li>Volkswagen</li>
-            </ul>
           </div>
           <div>
             <h3 className="font-bold mb-2">Get Updates</h3>

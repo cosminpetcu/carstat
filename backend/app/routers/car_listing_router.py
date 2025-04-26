@@ -87,6 +87,64 @@ def read_all_cars(
 def add_car_listing(car_data: CarListingCreate, db: Session = Depends(get_db)):
     return create_car_listing(db, car_data)
 
+@router.get("/cars/count")
+def count_cars(
+    db: Session = Depends(get_db),
+    brand: Optional[List[str]] = Query(None),
+    model: Optional[List[str]] = Query(None),
+    min_price: Optional[float] = None,
+    max_price: Optional[float] = None,
+    fuel_type: Optional[List[str]] = Query(None),
+    year_min: Optional[int] = None,
+    year_max: Optional[int] = None,
+    mileage_min: Optional[int] = None,
+    mileage_max: Optional[int] = None,
+    doors: Optional[int] = None,
+    transmission: Optional[List[str]] = Query(None),
+    drive_type: Optional[List[str]] = Query(None),
+    color: Optional[List[str]] = Query(None),
+    vehicle_condition: Optional[List[str]] = Query(None),
+    engine_power_min: Optional[int] = None,
+    engine_power_max: Optional[int] = None,
+    previous_owners: Optional[int] = None,
+    engine_capacity_min: Optional[int] = None,
+    engine_capacity_max: Optional[int] = None,
+    seller_type: Optional[List[str]] = Query(None),
+    is_new: Optional[bool] = Query(True),
+    search: Optional[str] = None,
+    user_id: Optional[int] = None
+):
+    result = get_all_car_listings(
+        db=db,
+        brand=brand,
+        model=model,
+        min_price=min_price,
+        max_price=max_price,
+        fuel_type=fuel_type,
+        year_min=year_min,
+        year_max=year_max,
+        mileage_min=mileage_min,
+        mileage_max=mileage_max,
+        doors=doors,
+        transmission=transmission,
+        drive_type=drive_type,
+        color=color,
+        vehicle_condition=vehicle_condition,
+        engine_power_min=engine_power_min,
+        engine_power_max=engine_power_max,
+        previous_owners=previous_owners,
+        engine_capacity_min=engine_capacity_min,
+        engine_capacity_max=engine_capacity_max,
+        seller_type=seller_type,
+        is_new=is_new,
+        search=search,
+        user_id=user_id,
+        page=1,
+        limit=1,
+    )
+    return {"total": result["total"]}
+
+
 @router.get("/cars/{car_id}", response_model=CarListingOut)
 def read_car_by_id(car_id: int, db: Session = Depends(get_db)):
     car = get_car_by_id(db, car_id)

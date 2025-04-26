@@ -1,21 +1,8 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-
-const brands = ["Audi", "BMW", "Ford", "Mercedes-Benz", "Opel", "Peugeot", "Renault", "Skoda", "Volkswagen"];
-
-const modelsByBrand: Record<string, string[]> = {
-  Audi: ["A3", "A4", "A6"],
-  BMW: ["1 Series", "3 Series", "5 Series"],
-  Ford: ["Fiesta", "Focus", "Kuga"],
-  "Mercedes-Benz": ["A-Class", "C-Class", "E-Class"],
-  Opel: ["Astra", "Corsa", "Insignia"],
-  Peugeot: ["208", "308", "3008"],
-  Renault: ["Clio", "Megane", "Captur"],
-  Skoda: ["Fabia", "Octavia", "Superb"],
-  Volkswagen: ["Golf", "Passat", "Tiguan"],
-};
+import brandsModels from "@/app/data/brands_models";
 
 const fuelTypes = ["Petrol", "Diesel", "Electric", "Hybrid", "LPG"];
 const maxPrices = [1000, 2000, 5000, 10000, 15000, 20000, 30000, 50000, 75000, 100000];
@@ -32,6 +19,28 @@ const SearchBox = () => {
   const [yearFrom, setYearFrom] = useState("");
   const [maxMileage, setMaxMileage] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
+  const [totalCars, setTotalCars] = useState<number | null>(null);
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+
+    if (selectedBrand) params.append("brand", selectedBrand);
+    if (selectedModel) params.append("model", selectedModel);
+    if (selectedFuel) params.append("fuel_type", selectedFuel);
+    if (yearFrom) params.append("year_min", yearFrom);
+    if (maxMileage) params.append("mileage_max", maxMileage);
+    if (maxPrice) params.append("max_price", maxPrice);
+    params.append("is_new", selectedType === "new" ? "true" : "false");
+
+    fetch(`http://localhost:8000/cars/count?${params.toString()}`)
+      .then((res) => res.json())
+      .then((data) => {
+        setTotalCars(data.total || 0);
+      })
+      .catch(() => {
+        setTotalCars(null);
+      });
+  }, [selectedType, selectedBrand, selectedModel, selectedFuel, yearFrom, maxMileage, maxPrice]);
 
   const handleBrandChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSelectedBrand(e.target.value);
@@ -60,9 +69,7 @@ const SearchBox = () => {
           type="button"
           onClick={() => setSelectedType("new")}
           className={`px-4 py-2 rounded-md text-sm font-medium border ${
-            selectedType === "new"
-              ? "bg-black text-white"
-              : "bg-white text-black border-gray-300"
+            selectedType === "new" ? "bg-black text-white" : "bg-white text-black border-gray-300"
           }`}
         >
           New
@@ -71,9 +78,7 @@ const SearchBox = () => {
           type="button"
           onClick={() => setSelectedType("used")}
           className={`px-4 py-2 rounded-md text-sm font-medium border ${
-            selectedType === "used"
-              ? "bg-black text-white"
-              : "bg-white text-black border-gray-300"
+            selectedType === "used" ? "bg-black text-white" : "bg-white text-black border-gray-300"
           }`}
         >
           Used
@@ -86,7 +91,7 @@ const SearchBox = () => {
         className="w-full border border-gray-300 rounded-md px-4 py-2"
       >
         <option value="">Select brand</option>
-        {brands.map((brand) => (
+        {Object.keys(brandsModels).map((brand) => (
           <option key={brand} value={brand}>
             {brand}
           </option>
@@ -100,7 +105,7 @@ const SearchBox = () => {
         className="w-full border border-gray-300 rounded-md px-4 py-2"
       >
         <option value="">Select model</option>
-        {(modelsByBrand[selectedBrand] || []).map((model) => (
+        {(brandsModels[selectedBrand] || []).map((model) => (
           <option key={model} value={model}>
             {model}
           </option>
@@ -159,9 +164,9 @@ const SearchBox = () => {
         ))}
       </select>
 
-      <div className="flex justify-between">
-        <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded-md font-medium">
-          Show Results
+      <div className="flex flex-col gap-2">
+        <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded-md font-medium w-full text-center">
+          {totalCars !== null ? `${totalCars} Cars` : "Show Results"}
         </button>
         <button type="button" className="text-sm underline text-blue-600">Detailed Search</button>
       </div>
