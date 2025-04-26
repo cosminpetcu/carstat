@@ -5,6 +5,7 @@ import SearchBox from "@/components/SearchBox";
 import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import BrandsSection from "@/components/BrandsSection";
 
 type Car = {
   id: number;
@@ -32,18 +33,7 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Brands */}
-      <section className="py-12 px-6">
-        <h2 className="text-2xl font-semibold text-center mb-6">Explore Our Premium Brands</h2>
-        <div className="flex justify-center gap-6 flex-wrap">
-          {["audi", "bmw", "ford", "mercedes", "peugeot", "volkswagen"].map((brand) => (
-            <div key={brand} className="flex flex-col items-center w-[100px] h-[120px] bg-white rounded-xl shadow p-4">
-              <Image src={`/${brand}.png`} alt={brand} width={50} height={50} />
-              <span className="mt-2 capitalize text-black text-sm">{brand}</span>
-            </div>
-          ))}
-        </div>
-      </section>
+      <BrandsSection />
 
       {/* Listings */}
       <section className="bg-gray-100 py-12 px-6">
