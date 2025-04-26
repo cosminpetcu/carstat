@@ -168,7 +168,13 @@ const SearchBox = () => {
         <button type="submit" className="bg-blue-600 text-white px-4 py-2 rounded-md font-medium w-full text-center">
           {totalCars !== null ? `${totalCars} Cars` : "Show Results"}
         </button>
-        <button type="button" className="text-sm underline text-blue-600">Detailed Search</button>
+        <button
+          type="button"
+          onClick={() => router.push("/detailed-search")}
+          className="w-full bg-gray-100 hover:bg-gray-200 text-black px-4 py-2 rounded-md text-sm font-medium border border-gray-300"
+        >
+          Detailed Search
+      </button>
       </div>
     </form>
   );
