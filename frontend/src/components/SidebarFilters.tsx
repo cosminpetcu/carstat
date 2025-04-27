@@ -3,6 +3,8 @@
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import brandsModels from "@/app/data/brands_models";
+import { usePathname } from "next/navigation";
+
 
 const fuelTypes = ["Petrol", "Diesel", "Electric", "Hybrid", "LPG"];
 const sellerTypes = ["Private", "Dealer"];
@@ -17,9 +19,57 @@ const mileageOptions = ["0", "10000", "50000", "100000", "150000", "200000", "30
 const powerOptions = ["50", "100", "150", "200", "250", "300", "400", "500", "750", "1000"];
 const capacityOptions = ["1000", "1500", "2000", "2500", "3000", "4000"];
 
-export default function SidebarFilters() {
+
+export default function SidebarFilters({ setToastMessage, setToastType }: { setToastMessage: (msg: string) => void, setToastType: (type: "success" | "error" | "") => void }) {
   const searchParams = useSearchParams();
   const router = useRouter();
+
+  const handleSaveSearch = async () => {
+    const token = localStorage.getItem("token");
+    const userRaw = localStorage.getItem("user");
+  
+    if (!token || !userRaw) {
+      router.push("/login");
+      return;
+    }
+  
+    let user;
+    try {
+      user = JSON.parse(userRaw);
+      if (!user.id) throw new Error("Invalid user object");
+    } catch (err) {
+      console.error("User object invalid:", err);
+      router.push("/login");
+      return;
+    }
+  
+    const query = searchParams.toString();
+  
+    try {
+      const response = await fetch("http://localhost:8000/saved-searches", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          user_id: user.id,
+          query: query,
+        }),
+      });
+  
+      if (!response.ok) {
+        throw new Error("Failed to save search");
+      }
+      setToastMessage("Search saved successfully!");
+      setToastType("success");
+    } catch (error) {
+      console.error("Error saving search:", error);
+      setToastMessage("Failed to save search.");
+      setToastType("error");
+    }
+  };
+  
 
   const [filters, setFilters] = useState({
     brand: "",
@@ -184,6 +234,14 @@ export default function SidebarFilters() {
               <option key={val} value={val}>{val} cm3</option>
             ))}
           </select>
+        </div>
+        <div className="pt-4">
+          <button
+            onClick={handleSaveSearch}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md"
+          >
+            Save Search
+          </button>
         </div>
       </div>
     </aside>

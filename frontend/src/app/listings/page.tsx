@@ -32,6 +32,19 @@ export default function ListingsPage() {
   const [total, setTotal] = useState(0);
   const [imageIndex, setImageIndex] = useState<{ [carId: number]: number }>({});
   const [updatingFavorites, setUpdatingFavorites] = useState<number[]>([]);
+  const [toastMessage, setToastMessage] = useState("");
+  const [toastType, setToastType] = useState<"success" | "error" | "">(""); 
+
+  useEffect(() => {
+    if (toastMessage) {
+      const timeout = setTimeout(() => {
+        setToastMessage("");
+        setToastType("");
+      }, 3000);
+  
+      return () => clearTimeout(timeout);
+    }
+  }, [toastMessage]);  
 
   useEffect(() => {
     const params = new URLSearchParams(searchParams.toString());
@@ -177,7 +190,7 @@ export default function ListingsPage() {
       <section className="py-12 px-6 max-w-7xl mx-auto flex flex-col lg:flex-row gap-8">
         {/* Sidebar */}
         <div className="w-full lg:w-1/4 mb-8 lg:mb-0">
-          <SidebarFilters />
+        <SidebarFilters setToastMessage={setToastMessage} setToastType={setToastType} />
         </div>
 
         {/* Listings */}
@@ -317,6 +330,13 @@ export default function ListingsPage() {
       </section>
 
       <Footer />
+      {toastMessage && (
+      <div className={`fixed bottom-6 right-6 px-6 py-3 rounded-lg shadow-lg transition-all z-50 ${
+        toastType === "success" ? "bg-green-500 text-white" : "bg-red-500 text-white"
+      }`}>
+        {toastMessage}
+      </div>
+      )}
     </main>
   );
 }

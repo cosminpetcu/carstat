@@ -13,6 +13,7 @@ class User(Base):
     full_name = Column(String)
     email = Column(String, unique=True, index=True)
     password = Column(String)
+    saved_searches = relationship("SavedSearch", back_populates="user")
 
 class CarListing(Base):
     __tablename__ = "car_listings"
@@ -53,3 +54,12 @@ class Favorite(Base):
     car_id = Column(Integer, ForeignKey("car_listings.id"))
     
     car = relationship("CarListing")
+
+class SavedSearch(Base):
+    __tablename__ = "saved_searches"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    query = Column(String, nullable=False)
+
+    user = relationship("User", back_populates="saved_searches")

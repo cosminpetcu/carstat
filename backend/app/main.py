@@ -5,10 +5,10 @@ from app.routers import car_listing_router
 from app.routers import favorite_router
 from app.auth.routes import router as auth_router
 from app.auth.routes_google import router as google_auth_router
-
 from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from dotenv import load_dotenv
+from app.routers import saved_search_router
 import os
 
 load_dotenv()
@@ -27,6 +27,7 @@ app.add_middleware(
 
 app.include_router(car_listing_router.router)
 app.include_router(favorite_router.router)
+app.include_router(saved_search_router.router)
 app.include_router(auth_router)
 app.include_router(google_auth_router)
 
