@@ -110,14 +110,14 @@ export default function SidebarFilters() {
           <select value={filters.min_price} onChange={(e) => updateFilter("min_price", e.target.value)} className="rounded-md p-2 text-black">
             <option value="">Min Price</option>
             {priceOptions.map((val) => (
-              <option key={val} value={val}>{val}</option>
+              <option key={val} value={val}>{val} €</option>
             ))}
           </select>
 
           <select value={filters.max_price} onChange={(e) => updateFilter("max_price", e.target.value)} className="rounded-md p-2 text-black">
             <option value="">Max Price</option>
             {priceOptions.map((val) => (
-              <option key={val} value={val}>{val}</option>
+              <option key={val} value={val}>{val} €</option>
             ))}
           </select>
         </div>
@@ -142,14 +142,14 @@ export default function SidebarFilters() {
           <select value={filters.mileage_min} onChange={(e) => updateFilter("mileage_min", e.target.value)} className="rounded-md p-2 text-black">
             <option value="">Min Mileage</option>
             {mileageOptions.map((val) => (
-              <option key={val} value={val}>{val}</option>
+              <option key={val} value={val}>{val} km</option>
             ))}
           </select>
 
           <select value={filters.mileage_max} onChange={(e) => updateFilter("mileage_max", e.target.value)} className="rounded-md p-2 text-black">
             <option value="">Max Mileage</option>
             {mileageOptions.map((val) => (
-              <option key={val} value={val}>{val}</option>
+              <option key={val} value={val}>{val} km</option>
             ))}
           </select>
         </div>
@@ -158,14 +158,14 @@ export default function SidebarFilters() {
           <select value={filters.engine_power_min} onChange={(e) => updateFilter("engine_power_min", e.target.value)} className="rounded-md p-2 text-black">
             <option value="">Min Power</option>
             {powerOptions.map((val) => (
-              <option key={val} value={val}>{val}</option>
+              <option key={val} value={val}>{val} hp</option>
             ))}
           </select>
 
           <select value={filters.engine_power_max} onChange={(e) => updateFilter("engine_power_max", e.target.value)} className="rounded-md p-2 text-black">
             <option value="">Max Power</option>
             {powerOptions.map((val) => (
-              <option key={val} value={val}>{val}</option>
+              <option key={val} value={val}>{val} hp</option>
             ))}
           </select>
         </div>
@@ -174,14 +174,14 @@ export default function SidebarFilters() {
           <select value={filters.engine_capacity_min} onChange={(e) => updateFilter("engine_capacity_min", e.target.value)} className="rounded-md p-2 text-black">
             <option value="">Min Capacity</option>
             {capacityOptions.map((val) => (
-              <option key={val} value={val}>{val}</option>
+              <option key={val} value={val}>{val} cm3</option>
             ))}
           </select>
 
           <select value={filters.engine_capacity_max} onChange={(e) => updateFilter("engine_capacity_max", e.target.value)} className="rounded-md p-2 text-black">
             <option value="">Max Capacity</option>
             {capacityOptions.map((val) => (
-              <option key={val} value={val}>{val}</option>
+              <option key={val} value={val}>{val} cm3</option>
             ))}
           </select>
         </div>

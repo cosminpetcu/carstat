@@ -149,13 +149,13 @@ export default function DetailedSearchPage() {
           <select value={priceMin} onChange={(e) => setPriceMin(e.target.value)} className="border px-4 py-2 rounded-md text-sm">
             <option value="">Price Min (€)</option>
             {priceOptions.map((price) => (
-              <option key={price} value={price}>{price}</option>
+              <option key={price} value={price}>{price} €</option>
             ))}
           </select>
           <select value={priceMax} onChange={(e) => setPriceMax(e.target.value)} className="border px-4 py-2 rounded-md text-sm">
             <option value="">Price Max (€)</option>
             {priceOptions.map((price) => (
-              <option key={price} value={price}>{price}</option>
+              <option key={price} value={price}>{price} €</option>
             ))}
           </select>
 
@@ -163,13 +163,13 @@ export default function DetailedSearchPage() {
           <select value={mileageMin} onChange={(e) => setMileageMin(e.target.value)} className="border px-4 py-2 rounded-md text-sm">
             <option value="">Mileage Min (km)</option>
             {mileageOptions.map((km) => (
-              <option key={km} value={km}>{km}</option>
+              <option key={km} value={km}>{km} km</option>
             ))}
           </select>
           <select value={mileageMax} onChange={(e) => setMileageMax(e.target.value)} className="border px-4 py-2 rounded-md text-sm">
             <option value="">Mileage Max (km)</option>
             {mileageOptions.map((km) => (
-              <option key={km} value={km}>{km}</option>
+              <option key={km} value={km}>{km} km</option>
             ))}
           </select>
 
@@ -177,27 +177,27 @@ export default function DetailedSearchPage() {
           <select value={enginePowerMin} onChange={(e) => setEnginePowerMin(e.target.value)} className="border px-4 py-2 rounded-md text-sm">
             <option value="">Power Min (hp)</option>
             {powerOptions.map((p) => (
-              <option key={p} value={p}>{p}</option>
+              <option key={p} value={p}>{p} hp</option>
             ))}
           </select>
           <select value={enginePowerMax} onChange={(e) => setEnginePowerMax(e.target.value)} className="border px-4 py-2 rounded-md text-sm">
             <option value="">Power Max (hp)</option>
             {powerOptions.map((p) => (
-              <option key={p} value={p}>{p}</option>
+              <option key={p} value={p}>{p} hp</option>
             ))}
           </select>
 
           {/* Engine Capacity Min / Max */}
           <select value={engineCapacityMin} onChange={(e) => setEngineCapacityMin(e.target.value)} className="border px-4 py-2 rounded-md text-sm">
-            <option value="">Capacity Min (cc)</option>
+            <option value="">Engine Capacity Min (cm3)</option>
             {capacityOptions.map((c) => (
-              <option key={c} value={c}>{c}</option>
+              <option key={c} value={c}>{c} cm3</option>
             ))}
           </select>
           <select value={engineCapacityMax} onChange={(e) => setEngineCapacityMax(e.target.value)} className="border px-4 py-2 rounded-md text-sm">
-            <option value="">Capacity Max (cc)</option>
+            <option value="">Engine Capacity Max (cm3)</option>
             {capacityOptions.map((c) => (
-              <option key={c} value={c}>{c}</option>
+              <option key={c} value={c}>{c} cm3</option>
             ))}
           </select>
 
