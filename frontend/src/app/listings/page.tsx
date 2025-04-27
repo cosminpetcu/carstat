@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import SidebarFilters from "@/components/SidebarFilters";
 
 type Car = {
   id: number;
@@ -37,22 +38,22 @@ export default function ListingsPage() {
     const token = localStorage.getItem("token");
     const userRaw = localStorage.getItem("user");
     const user = userRaw ? JSON.parse(userRaw) : null;
-  
+
     const currentPage = parseInt(params.get("page") || "1");
     const currentLimit = parseInt(params.get("limit") || "16");
-  
+
     setPage(currentPage);
     setLimit(currentLimit);
-  
+
     params.set("page", currentPage.toString());
     params.set("limit", currentLimit.toString());
-  
+
     if (user?.id) {
       params.set("user_id", user.id.toString());
     }
-  
+
     const url = `http://localhost:8000/cars?${params.toString()}`;
-  
+
     fetch(url, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     })
@@ -60,20 +61,19 @@ export default function ListingsPage() {
       .then((data) => {
         setCars(data.items);
         setTotal(data.total);
-  
+
         const initIndex: { [carId: number]: number } = {};
         data.items.forEach((car: Car) => {
           initIndex[car.id] = 0;
         });
         setImageIndex(initIndex);
-  
+
         setLoading(false);
       })
       .catch(() => {
         setLoading(false);
       });
   }, [searchParams]);
-  
 
   const toggleFavorite = async (car: Car) => {
     const token = localStorage.getItem("token");
@@ -174,136 +174,145 @@ export default function ListingsPage() {
     <main className="min-h-screen bg-white text-black">
       <Navbar />
 
-      <section className="py-12 px-6 max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
-          <div>
-            <h1 className="text-2xl font-semibold">Car Listings</h1>
-            <p className="text-sm text-gray-600">
-              {loading ? "Loading..." : `Showing ${cars.length} of ${total} cars`}
-            </p>
-          </div>
-          <div className="flex gap-4 items-center">
-            <label htmlFor="limit" className="text-sm text-gray-700 font-medium">
-              Cars per page
-            </label>
-            <select
-              id="limit"
-              value={limit}
-              onChange={(e) => updateLimit(parseInt(e.target.value))}
-              className="border border-gray-300 rounded-md px-4 py-2 text-sm"
-            >
-              {[8, 16, 32, 64].map((val) => (
-                <option key={val} value={val}>{val}</option>
-              ))}
-            </select>
-          </div>
+      <section className="py-12 px-6 max-w-7xl mx-auto flex flex-col lg:flex-row gap-8">
+        {/* Sidebar */}
+        <div className="w-full lg:w-1/4 mb-8 lg:mb-0">
+          <SidebarFilters />
         </div>
 
-        {/* Listings Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {cars.map((car) => {
-            const imgs = parseImages(car.images);
-            const current = imageIndex[car.id] || 0;
-            const imageUrl = imgs[current] || "/default-car.webp";
-
-            return (
-              <a
-                key={car.id}
-                href={`/listings/${car.id}`}
-                className="bg-white p-4 rounded-xl shadow-md hover:shadow-lg transition flex flex-col group relative"
+        {/* Listings */}
+        <div className="w-full lg:w-3/4">
+          <div className="flex justify-between items-center mb-6 flex-wrap gap-4">
+            <div>
+              <h1 className="text-2xl font-semibold">Car Listings</h1>
+              <p className="text-sm text-gray-600">
+                {loading ? "Loading..." : `Showing ${cars.length} of ${total} cars`}
+              </p>
+            </div>
+            <div className="flex gap-4 items-center">
+              <label htmlFor="limit" className="text-sm text-gray-700 font-medium">
+                Cars per page
+              </label>
+              <select
+                id="limit"
+                value={limit}
+                onChange={(e) => updateLimit(parseInt(e.target.value))}
+                className="border border-gray-300 rounded-md px-4 py-2 text-sm"
               >
-                {/* Favorite Button */}
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    toggleFavorite(car);
-                  }}
-                  className={`absolute top-2 left-2 text-2xl z-10 transition transform ${
-                    car.is_favorite ? "text-red-500 scale-110" : "text-gray-400"
-                  } ${updatingFavorites.includes(car.id) ? "opacity-50" : "opacity-100"}`}
-                  disabled={updatingFavorites.includes(car.id)}
+                {[9, 15, 30, 60].map((val) => (
+                  <option key={val} value={val}>{val}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* Listings Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {cars.map((car) => {
+              const imgs = parseImages(car.images);
+              const current = imageIndex[car.id] || 0;
+              const imageUrl = imgs[current] || "/default-car.webp";
+
+              return (
+                <a
+                  key={car.id}
+                  href={`/listings/${car.id}`}
+                  className="bg-white p-4 rounded-xl shadow-md hover:shadow-lg transition flex flex-col group relative"
                 >
-                  {car.is_favorite ? "❤️" : "🤍"}
+                  {/* Favorite Button */}
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      toggleFavorite(car);
+                    }}
+                    className={`absolute top-2 left-2 text-2xl z-10 transition transform ${
+                      car.is_favorite ? "text-red-500 scale-110" : "text-gray-400"
+                    } ${updatingFavorites.includes(car.id) ? "opacity-50" : "opacity-100"}`}
+                    disabled={updatingFavorites.includes(car.id)}
+                  >
+                    {car.is_favorite ? "❤️" : "🤍"}
+                  </button>
+
+                  <div className="relative w-full">
+                    <Image
+                      src={imageUrl}
+                      alt={car.title}
+                      width={400}
+                      height={300}
+                      className="rounded-lg object-cover w-full h-[180px]"
+                    />
+                    {imgs.length > 1 && (
+                      <>
+                        <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full opacity-0 group-hover:opacity-100 transition">
+                          {current + 1} / {imgs.length}
+                        </div>
+
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setImageIndex((prev) => ({
+                              ...prev,
+                              [car.id]: Math.max((prev[car.id] || 0) - 1, 0),
+                            }));
+                          }}
+                          disabled={current === 0}
+                          className="absolute left-1 top-1/2 transform -translate-y-1/2 bg-black/50 text-white px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition"
+                        >
+                          ⬅
+                        </button>
+
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            setImageIndex((prev) => ({
+                              ...prev,
+                              [car.id]: Math.min((prev[car.id] || 0) + 1, imgs.length - 1),
+                            }));
+                          }}
+                          disabled={current === imgs.length - 1}
+                          className="absolute right-1 top-1/2 transform -translate-y-1/2 bg-black/50 text-white px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition"
+                        >
+                          ➡
+                        </button>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="mt-2">
+                    <h3 className="font-semibold text-lg">{car.title}</h3>
+                    <p className="text-sm text-gray-600">
+                      {car.year} • {car.fuel_type} • {car.transmission}
+                    </p>
+                    <p className="text-blue-600 font-semibold mt-1">
+                      {car.price !== null
+                        ? `€${car.price.toLocaleString()}`
+                        : "Price not available"}
+                    </p>
+                  </div>
+                </a>
+              );
+            })}
+          </div>
+
+          {/* Pagination */}
+          <div className="flex justify-center mt-10 gap-2 flex-wrap">
+            {getDisplayedPages().map((p, idx) =>
+              typeof p === "number" ? (
+                <button
+                  key={idx}
+                  onClick={() => goToPage(p)}
+                  className={`px-4 py-2 rounded-full border ${p === page ? "bg-gray-200" : ""}`}
+                >
+                  {p}
                 </button>
-
-                <div className="relative w-full">
-                  <Image
-                    src={imageUrl}
-                    alt={car.title}
-                    width={400}
-                    height={300}
-                    className="rounded-lg object-cover w-full h-[180px]"
-                  />
-                  {imgs.length > 1 && (
-                    <>
-                      <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full opacity-0 group-hover:opacity-100 transition">
-                        {current + 1} / {imgs.length}
-                      </div>
-
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setImageIndex((prev) => ({
-                            ...prev,
-                            [car.id]: Math.max((prev[car.id] || 0) - 1, 0),
-                          }));
-                        }}
-                        disabled={current === 0}
-                        className="absolute left-1 top-1/2 transform -translate-y-1/2 bg-black/50 text-white px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition"
-                      >
-                        ⬅
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          setImageIndex((prev) => ({
-                            ...prev,
-                            [car.id]: Math.min((prev[car.id] || 0) + 1, imgs.length - 1),
-                          }));
-                        }}
-                        disabled={current === imgs.length - 1}
-                        className="absolute right-1 top-1/2 transform -translate-y-1/2 bg-black/50 text-white px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition"
-                      >
-                        ➡
-                      </button>
-                    </>
-                  )}
-                </div>
-
-                <div className="mt-2">
-                  <h3 className="font-semibold text-lg">{car.title}</h3>
-                  <p className="text-sm text-gray-600">
-                    {car.year} • {car.fuel_type} • {car.transmission}
-                  </p>
-                  <p className="text-blue-600 font-semibold mt-1">
-                    {car.price !== null
-                      ? `€${car.price.toLocaleString()}`
-                      : "Price not available"}
-                  </p>
-                </div>
-              </a>
-            );
-          })}
-        </div>
-
-        {/* Pagination */}
-        <div className="flex justify-center mt-10 gap-2 flex-wrap">
-          {getDisplayedPages().map((p, idx) =>
-            typeof p === "number" ? (
-              <button
-                key={idx}
-                onClick={() => goToPage(p)}
-                className={`px-4 py-2 rounded-full border ${p === page ? "bg-gray-200" : ""}`}
-              >
-                {p}
-              </button>
-            ) : (
-              <span key={idx} className="px-2 py-2 text-gray-500 select-none">...</span>
-            )
-          )}
+              ) : (
+                <span key={idx} className="px-2 py-2 text-gray-500 select-none">...</span>
+              )
+            )}
+          </div>
         </div>
       </section>
 
