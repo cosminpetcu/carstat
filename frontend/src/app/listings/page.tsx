@@ -61,7 +61,7 @@ export default function ListingsPage() {
     params.set("page", currentPage.toString());
     params.set("limit", currentLimit.toString());
 
-    if (user?.id) {
+    if (user?.id && token) {
       params.set("user_id", user.id.toString());
     }
 

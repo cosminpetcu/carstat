@@ -146,8 +146,13 @@ def count_cars(
 
 
 @router.get("/cars/{car_id}", response_model=CarListingOut)
-def read_car_by_id(car_id: int, db: Session = Depends(get_db)):
-    car = get_car_by_id(db, car_id)
+def read_car_by_id(
+    car_id: int,
+    user_id: Optional[int] = Query(None),
+    db: Session = Depends(get_db)
+):
+    car = get_car_by_id(db, car_id, user_id)
     if car is None:
         return {"error": "Car not found"}
     return car
+

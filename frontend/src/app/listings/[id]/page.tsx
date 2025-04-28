@@ -33,12 +33,24 @@ export default function CarDetailPage() {
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    fetch(`http://localhost:8000/cars/${id}`, {
+    const userRaw = localStorage.getItem("user");
+    const user = userRaw ? JSON.parse(userRaw) : null;
+  
+    let url = `http://localhost:8000/cars/${id}`;
+    if (user?.id && token) {
+      url += `?user_id=${user.id}`;
+    }
+  
+    fetch(url, {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     })
       .then((res) => res.json())
       .then((data) => {
+        if (!token) {
+          data.is_favorite = false;
+        }
         setCar(data);
+  
         if (typeof data.images === "string") {
           try {
             const parsed = JSON.parse(data.images);
@@ -56,6 +68,7 @@ export default function CarDetailPage() {
         setLoading(false);
       });
   }, [id]);
+  
 
   const nextImage = () => {
     if (images.length > 0 && currentIndex < images.length - 1) {

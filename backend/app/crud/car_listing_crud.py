@@ -155,5 +155,18 @@ def create_car_listing(db: Session, car_data: CarListingCreate):
     db.refresh(new_car)
     return new_car
 
-def get_car_by_id(db: Session, car_id: int):
-    return db.query(CarListing).filter(CarListing.id == car_id).first()
+def get_car_by_id(db: Session, car_id: int, user_id: Optional[int] = None):
+    car = db.query(CarListing).filter(CarListing.id == car_id).first()
+    if not car:
+        return None
+
+    car_out = CarListingOut.from_orm(car)
+
+    if user_id:
+        favorite = db.query(Favorite).filter(Favorite.user_id == user_id, Favorite.car_id == car_id).first()
+        car_out.is_favorite = bool(favorite)
+    else:
+        car_out.is_favorite = False
+
+    return car_out
+
