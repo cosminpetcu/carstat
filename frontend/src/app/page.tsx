@@ -15,6 +15,8 @@ type Car = {
   transmission: string;
   price: number;
   images: string[] | string;
+  estimated_price?: number;
+  deal_rating?: string;
 };
 
 export default function Home() {
@@ -76,15 +78,36 @@ export default function Home() {
   );
 }
 
+const getRatingBar = (rating: string | undefined) => {
+  switch (rating?.toUpperCase()) {
+    case "S":
+      return { label: "Exceptional Price", color: "bg-green-700", textColor: "text-white" };
+    case "A":
+      return { label: "Very Good Price", color: "bg-lime-600", textColor: "text-white" };
+    case "B":
+      return { label: "Good Price", color: "bg-emerald-500", textColor: "text-white" };
+    case "C":
+      return { label: "Fair Price", color: "bg-yellow-400", textColor: "text-black" };
+    case "D":
+      return { label: "Expensive", color: "bg-orange-500", textColor: "text-white" };
+    case "E":
+      return { label: "Very Expensive", color: "bg-rose-500", textColor: "text-white" };
+    case "F":
+      return { label: "Overpriced", color: "bg-red-700", textColor: "text-white" };
+    default:
+      return null;
+  }
+};
+
 function HomeListings() {
   const [cars, setCars] = useState<Car[]>([]);
 
   useEffect(() => {
-    fetch("http://localhost:8000/cars?limit=5&page=1")
+    fetch("http://localhost:8000/cars?limit=5&page=1&deal_rating=S")
       .then((res) => res.json())
       .then((data) => {
         if (data.items) {
-          setCars(data.items); // ✅ accesăm doar lista de anunțuri
+          setCars(data.items);
         } else {
           console.error("Invalid response:", data);
         }
@@ -124,6 +147,22 @@ function HomeListings() {
             <p className="text-blue-600 font-semibold mt-1">
               €{car.price.toLocaleString()}
             </p>
+            {car.estimated_price && (
+              <p className="text-sm text-gray-500">
+                Estimated Price: €{car.estimated_price.toLocaleString()}
+              </p>
+            )}
+
+            {car.deal_rating && (() => {
+              const rating = getRatingBar(car.deal_rating);
+              if (!rating) return null;
+
+            return (
+              <div className={`w-full mt-2 rounded text-xs py-1 text-center font-semibold ${rating.color} ${rating.textColor}`}>
+                {rating.label}
+              </div>
+              );
+          })()}
           </div>
         </a>
       ))}

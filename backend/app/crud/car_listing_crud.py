@@ -28,6 +28,8 @@ def get_all_car_listings(
     engine_capacity_min: int = None,
     engine_capacity_max: int = None,
     seller_type: Optional[List[str]] = None,
+    deal_rating: str = None,
+    estimated_price: float = None,
     is_new: bool = True,
     sort_by: str = None,
     order: str = "asc",
@@ -90,6 +92,8 @@ def get_all_car_listings(
         query = query.filter(CarListing.seller_type.in_(seller_type))
     if is_new:
         query = query.filter(CarListing.is_new == is_new)
+    if deal_rating:
+        query = query.filter(CarListing.deal_rating == deal_rating)
 
     if sort_by in ["price", "year", "mileage", "created_at"]:
         sort_column = getattr(CarListing, sort_by)

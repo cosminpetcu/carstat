@@ -19,6 +19,8 @@ type Car = {
   transmission: string;
   images: string[] | string;
   is_favorite?: boolean;
+  deal_rating?: string;
+  estimated_price?: number;
 };
 
 export default function ListingsPage() {
@@ -28,7 +30,7 @@ export default function ListingsPage() {
   const [cars, setCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
-  const [limit, setLimit] = useState(16);
+  const [limit, setLimit] = useState(9);
   const [total, setTotal] = useState(0);
   const [imageIndex, setImageIndex] = useState<{ [carId: number]: number }>({});
   const [updatingFavorites, setUpdatingFavorites] = useState<number[]>([]);
@@ -53,7 +55,7 @@ export default function ListingsPage() {
     const user = userRaw ? JSON.parse(userRaw) : null;
 
     const currentPage = parseInt(params.get("page") || "1");
-    const currentLimit = parseInt(params.get("limit") || "16");
+    const currentLimit = parseInt(params.get("limit") || "9");
 
     setPage(currentPage);
     setLimit(currentLimit);
@@ -165,6 +167,29 @@ export default function ListingsPage() {
       return [];
     }
   };
+
+  const getRatingBar = (rating: string | undefined) => {
+    switch (rating?.toUpperCase()) {
+      case "S":
+        return { label: "Exceptional Price", color: "bg-green-700", textColor: "text-white" };
+      case "A":
+        return { label: "Very Good Price", color: "bg-lime-600", textColor: "text-white" };
+      case "B":
+        return { label: "Good Price", color: "bg-emerald-500", textColor: "text-white" };
+      case "C":
+        return { label: "Fair Price", color: "bg-yellow-400", textColor: "text-black" };
+      case "D":
+        return { label: "Expensive", color: "bg-orange-500", textColor: "text-white" };
+      case "E":
+        return { label: "Very Expensive", color: "bg-rose-500", textColor: "text-white" };
+      case "F":
+        return { label: "Overpriced", color: "bg-red-700", textColor: "text-white" };
+      default:
+        return null;
+    }
+  };
+  
+  
 
   const totalPages = Math.ceil(total / limit);
   const getDisplayedPages = () => {
@@ -304,6 +329,23 @@ export default function ListingsPage() {
                         ? `€${car.price.toLocaleString()}`
                         : "Price not available"}
                     </p>
+                    {car.estimated_price && (
+                      <p className="text-sm text-gray-500">
+                        Estimated Price: €{car.estimated_price.toLocaleString()}
+                      </p>
+                    )}
+
+                    {car.deal_rating && (() => {
+                      const rating = getRatingBar(car.deal_rating);
+                      if (!rating) return null;
+
+                      return (
+                        <div className={`w-full mt-2 rounded text-xs py-1 text-center font-semibold ${rating.color} ${rating.textColor}`}>
+                          {rating.label}
+                        </div>
+                      );
+                    })()}
+
                   </div>
                 </a>
               );

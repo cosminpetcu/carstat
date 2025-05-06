@@ -13,11 +13,22 @@ def extract_location(core_title: str, full_title: str) -> str | None:
         location_part = before_dot.replace(core_title, "").strip()
         return location_part if location_part else None
 
+
 class OlxAutoturismeSpider(scrapy.Spider):
     name = "olx_autoturisme"
     allowed_domains = ["olx.ro"]
     start_urls = ["https://www.olx.ro/auto-masini-moto-ambarcatiuni/autoturisme/"]
     
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.valid_cars = 0
+        self.skipped_cars = 0
+    
+    def closed(self, reason):
+        print(f"Scraping finished!")
+        print(f"Valid cars added: {self.valid_cars}")
+        print(f"Skipped cars (incomplete or duplicate): {self.skipped_cars}")
+
     def start_requests(self):
         from app.database import SessionLocal
         session = SessionLocal()
@@ -46,15 +57,10 @@ class OlxAutoturismeSpider(scrapy.Spider):
     def parse_ad(self, response):
         def clean(text):
             return text.strip() if text else None
-        title = None
-        location = None
 
         title = clean(response.css("h4.css-1dcem4b::text").get())
-          
         full_title = clean(response.css("title::text").get())
-
         location = extract_location(title, full_title)
-
 
         description_meta = response.css("meta[name='description']::attr(content)").get()
         description = None
@@ -68,7 +74,7 @@ class OlxAutoturismeSpider(scrapy.Spider):
                 description = description_meta.replace(match.group(0), "").strip()
             else:
                 description = description_meta.strip()
-        
+
         json_ld_raw = response.css('script[type="application/ld+json"]::text').get()
         brand = None
         if json_ld_raw:
@@ -76,7 +82,7 @@ class OlxAutoturismeSpider(scrapy.Spider):
                 data = json.loads(json_ld_raw)
                 brand = data.get("brand")
             except Exception as e:
-                print("⚠️ JSON-LD parsing failed:", e)
+                print("JSON-LD parsing failed:", e)
 
         details = {}
         detail_rows = response.css("div.css-41yf00 p.css-1los5bp::text").getall()
@@ -84,16 +90,14 @@ class OlxAutoturismeSpider(scrapy.Spider):
             if ":" in row:
                 key, value = row.split(":", 1)
                 details[key.strip().lower()] = value.strip()
-                
-        source_url = response.url
-        image_url = response.css("img::attr(src)").getall()
-        image_url = [url for url in image_url if "olxcdn.com" in url]
 
         model = details.get("model")
-        year = int(details.get("an de fabricatie", "0")) or None
+        year = int(details.get("an de fabricatie", "0").replace(" ", "")) or None
         mileage = int(details.get("rulaj", "0").replace("km", "").replace(" ", "")) or None
         fuel_type = details.get("combustibil")
         engine_capacity = int(details.get("capacitate motor", "0").replace("cm³", "").replace(" ", "")) or None
+        if(fuel_type == 'electric'):
+            engine_capacity = 0
         engine_power = int(details.get("putere", "0").replace("CP", "").replace(" ", "")) or None
         transmission = details.get("cutie de viteze")
         drive_type = details.get("caroserie")
@@ -102,7 +106,16 @@ class OlxAutoturismeSpider(scrapy.Spider):
         vehicle_condition = details.get("stare")
         created_at = datetime.now()
 
+        mandatory_fields = [title, price, brand, model, year, mileage, fuel_type, engine_capacity, transmission]
+        if any(field is None for field in mandatory_fields):
+            self.skipped_cars += 1
+            print("Incomplete data, skipping car...")
+            return
 
+
+        source_url = response.url
+        image_url = response.css("img::attr(src)").getall()
+        image_url = [url for url in image_url if "olxcdn.com" in url]
 
         car = CarListing(
             title=title,
@@ -120,34 +133,30 @@ class OlxAutoturismeSpider(scrapy.Spider):
             drive_type=drive_type,
             color=color,
             emission_standard=None,
-            seller_type = None,
-            is_new = True,
+            seller_type=None,
+            is_new=True,
             doors=doors,
             vehicle_condition=vehicle_condition,
             images=json.dumps(image_url),
             source_url=source_url,
-            created_at = created_at
+            created_at=created_at
         )
 
         session = SessionLocal()
-        
         try:
             existing = session.query(CarListing).filter_by(
-                title=title,
-                price=price,
-                brand=brand,
-                model=model,
-                location=location,
-                description=description
+                source_url=source_url
             ).first()
 
             if existing is None:
                 session.add(car)
                 session.commit()
+                self.valid_cars += 1
             else:
-                print("⚠️ Duplicate found, skipping...")
+                self.skipped_cars += 1
+                print("Duplicate found, skipping...")
         except Exception as e:
-            print("⚠️ DB Error:", e)
+            print("DB Error:", e)
             session.rollback()
         finally:
             session.close()

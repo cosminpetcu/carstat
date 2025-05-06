@@ -25,6 +25,8 @@ class CarListingOut(BaseModel):
     description: Optional[str]
     engine_capacity: Optional[int]
     seller_type: Optional[str]
+    deal_rating: Optional[str]
+    estimated_price: Optional[float]
     is_new: Optional[bool]
     images: Optional[str] = None
     source_url: Optional[str]

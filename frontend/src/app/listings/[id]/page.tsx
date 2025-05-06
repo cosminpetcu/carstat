@@ -21,6 +21,8 @@ type Car = {
   images: string[] | string;
   source_url?: string;
   is_favorite?: boolean;
+  deal_rating?: string;
+  estimated_price?: number;
 };
 
 export default function CarDetailPage() {
@@ -81,6 +83,27 @@ export default function CarDetailPage() {
       setCurrentIndex(currentIndex - 1);
     }
   };
+
+  const getRatingBar = (rating: string | undefined) => {
+    switch (rating?.toUpperCase()) {
+      case "S":
+        return { label: "Exceptional Price", color: "bg-green-700", textColor: "text-white" };
+      case "A":
+        return { label: "Very Good Price", color: "bg-lime-600", textColor: "text-white" };
+      case "B":
+        return { label: "Good Price", color: "bg-emerald-500", textColor: "text-white" };
+      case "C":
+        return { label: "Fair Price", color: "bg-yellow-400", textColor: "text-black" };
+      case "D":
+        return { label: "Expensive", color: "bg-orange-500", textColor: "text-white" };
+      case "E":
+        return { label: "Very Expensive", color: "bg-rose-500", textColor: "text-white" };
+      case "F":
+        return { label: "Overpriced", color: "bg-red-700", textColor: "text-white" };
+      default:
+        return null;
+    }
+  };  
 
   const toggleFavorite = async () => {
     const token = localStorage.getItem("token");
@@ -185,9 +208,27 @@ export default function CarDetailPage() {
             </div>
           </div>
           <div className="md:w-1/3 bg-gray-50 p-6 rounded-xl shadow-sm">
-            <p className="text-2xl font-bold text-blue-600 mb-4">
-              {typeof car.price === "number" ? `€${car.price.toLocaleString()}` : "Price not available"}
-            </p>
+          {car.deal_rating && (() => {
+            const rating = getRatingBar(car.deal_rating);
+            if (!rating) return null;
+
+            return (
+              <div className={`w-full rounded text-sm font-semibold py-1 px-2 mb-2 text-center ${rating.color} ${rating.textColor}`}>
+                {rating.label}
+              </div>
+            );
+          })()}
+
+          <p className="text-2xl font-bold text-blue-600 mb-2">
+            {typeof car.price === "number" ? `€${car.price.toLocaleString()}` : "Price not available"}
+          </p>
+
+          <p className="text-sm text-gray-600 mb-4">
+            {typeof car.estimated_price === "number"
+              ? `Estimated market price: €${car.estimated_price.toFixed(2)}`
+              : "Estimated price not available"}
+          </p>
+
             {car.source_url && (
               <a href={car.source_url} target="_blank" rel="noopener noreferrer"
                 className="block text-center w-full bg-black text-white py-2 rounded-md text-sm">

@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 const BrandsSection = () => {
   const router = useRouter();
 
-  const brands = ["audi", "bmw", "ford", "mercedes", "peugeot", "volkswagen"];
+  const brands = ["audi", "bmw", "ford", "mercedes-Benz", "peugeot", "volkswagen"];
 
   const handleBrandClick = (brand: string) => {
     const formattedBrand = brand.charAt(0).toUpperCase() + brand.slice(1);
