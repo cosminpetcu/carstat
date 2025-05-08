@@ -235,6 +235,16 @@ export default function CarDetailPage() {
                 🔗 View original ad
               </a>
             )}
+
+            {car.brand && car.model && (
+              <a
+                href={`/dashboard?brand=${encodeURIComponent(car.brand)}&model=${encodeURIComponent(car.model)}`}
+                className="block text-center mt-3 w-full bg-blue-600 text-white py-2 rounded-md text-sm hover:bg-blue-700 transition"
+              >
+                See model statistics
+              </a>
+            )}
+
           </div>
         </div>
       </section>

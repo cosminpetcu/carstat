@@ -41,6 +41,7 @@ export default function Navbar() {
         <Link href="/" className="hover:underline">Home</Link>
         <Link href="/listings" className="hover:underline">Listings</Link>
         <Link href="/favorites" className="hover:underline">Favorites</Link>
+        <Link href="/dashboard" className="hover:underline">Dashboard</Link>
         <Link href="#" className="hover:underline">About</Link>
         <Link href="#" className="hover:underline">Contact</Link>
 

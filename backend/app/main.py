@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from starlette.middleware.sessions import SessionMiddleware
 from dotenv import load_dotenv
 from app.routers import saved_search_router
-# from app.routers import analytics_router
+from app.routers import analytics_router
 import os
 
 load_dotenv()
@@ -31,7 +31,7 @@ app.include_router(favorite_router.router)
 app.include_router(saved_search_router.router)
 app.include_router(auth_router)
 app.include_router(google_auth_router)
-# app.include_router(analytics_router.router)
+app.include_router(analytics_router.router)
 
 Base.metadata.create_all(bind=engine)
 

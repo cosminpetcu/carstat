@@ -163,4 +163,3 @@ def read_car_by_id(
     if car is None:
         return {"error": "Car not found"}
     return car
-
