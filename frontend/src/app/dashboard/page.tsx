@@ -134,6 +134,7 @@ export default function Dashboard() {
                       color: "#111",
                       boxWidth: 12,
                       font: { size: 13 },
+                    },
                   },
                   tooltip: {
                     callbacks: {

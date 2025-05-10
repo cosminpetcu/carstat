@@ -63,6 +63,9 @@ class CarListing(Base):
     price_history = Column(Text, nullable=True)
     sold = Column(Boolean, default=False)
     estimated_price = Column(Float, nullable=True)
+    damaged = Column(Boolean, nullable=True)
+    right_hand_drive = Column(Boolean, nullable=True)
+    views = Column(Integer, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 class Favorite(Base):

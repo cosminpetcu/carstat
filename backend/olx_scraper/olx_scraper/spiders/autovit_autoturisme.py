@@ -284,6 +284,24 @@ class AutovitAutoturismeSpider(scrapy.Spider):
         first_owner = extract_boolean("original_owner")
         no_accident = extract_boolean("no_accident")
         service_book = extract_boolean("service_record")
+        
+        right_hand_drive = extract_boolean("rhd")
+
+        damaged = extract_boolean("damaged")
+
+        seller_type = None
+        
+        for seller_li in response.css("li"):
+            svg_name = seller_li.css("svg::attr(name)").get()
+            if svg_name in ["dealer", "private-seller"]:
+                text = seller_li.css("p::text").get()
+                if text:
+                    if "dealer" in svg_name:
+                        seller_type = "dealer"
+                    elif "private" in svg_name:
+                        seller_type = "private"
+                break
+
 
         possible_locations = response.css("p.ef0vquw1.ooa-1frho3b::text").getall()
         location = next((loc.strip() for loc in possible_locations if "," in loc or "Sector" in loc or "judet" in loc.lower()), None)
@@ -370,7 +388,7 @@ class AutovitAutoturismeSpider(scrapy.Spider):
                 source_url=source_url,
                 description=json.dumps(description) if description else None,
                 location=location,
-                seller_type=None,
+                seller_type=seller_type,
                 deal_rating=None,
                 version=version,
                 color_type=color_type,
@@ -389,7 +407,9 @@ class AutovitAutoturismeSpider(scrapy.Spider):
                 itp_valid_until=itp_valid_until,
                 created_at=created_at,
                 price_history=None,
-                sold=False
+                sold=False,
+                damaged=damaged,
+                right_hand_drive=right_hand_drive,
             )
 
             session.add(car)

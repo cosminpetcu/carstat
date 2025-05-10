@@ -3,16 +3,23 @@ from urllib.parse import urljoin
 from app.models.models import CarListing
 from app.database import SessionLocal
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
+import re
 
-def extract_location(core_title: str, full_title: str) -> str | None:
-        if "•" not in full_title:
-            return None
-
-        before_dot = full_title.split("•")[0].strip()
-        location_part = before_dot.replace(core_title, "").strip()
-        return location_part if location_part else None
-
+month_map = {
+    "ianuarie": "01",
+    "februarie": "02",
+    "martie": "03",
+    "aprilie": "04",
+    "mai": "05",
+    "iunie": "06",
+    "iulie": "07",
+    "august": "08",
+    "septembrie": "09",
+    "octombrie": "10",
+    "noiembrie": "11",
+    "decembrie": "12",
+}
 
 class OlxAutoturismeSpider(scrapy.Spider):
     name = "olx_autoturisme"
@@ -57,6 +64,15 @@ class OlxAutoturismeSpider(scrapy.Spider):
     def parse_ad(self, response):
         def clean(text):
             return text.strip() if text else None
+        
+        def extract_location(core_title: str, full_title: str) -> str | None:
+            if "•" not in full_title:
+                return None
+
+            before_dot = full_title.split("•")[0].strip()
+            location_part = before_dot.replace(core_title, "").strip()
+            return location_part if location_part else None
+
 
         title = clean(response.css("h4.css-1dcem4b::text").get())
         full_title = clean(response.css("title::text").get())
@@ -105,6 +121,47 @@ class OlxAutoturismeSpider(scrapy.Spider):
         doors = int(details["numar de usi"]) if "numar de usi" in details and details["numar de usi"].isdigit() else None
         vehicle_condition = details.get("stare")
         created_at = datetime.now()
+        
+        seller_type_raw = response.css("div[data-testid='ad-parameters-container'] span::text").get()
+        seller_type = None
+
+        if seller_type_raw:
+            seller_type_raw = seller_type_raw.strip().lower()
+            if "persoana" in seller_type_raw:
+                seller_type = "private"
+            elif "firma" in seller_type_raw:
+                seller_type = "dealer"
+
+        right_hand_drive = False
+        right_hand_drive = any("partea dreapta" in el.lower() for el in response.css("p::text").getall())
+
+        raw_date = response.css("span[data-testid='ad-posted-at']::text").get()
+        ad_created_at = None
+
+        if raw_date:
+            raw_date = raw_date.strip().lower()
+
+            try:
+                if "azi" in raw_date:
+                    ad_created_at = datetime.now()
+                elif "ieri" in raw_date:
+                    ad_created_at = datetime.now() - timedelta(days=1)
+                else:
+                    parts = raw_date.split(" ")
+                    if len(parts) == 3:
+                        ziua, luna_str, anul = parts
+                        luna = month_map.get(luna_str.lower())
+                        if luna:
+                            ad_created_at = datetime.strptime(f"{ziua}.{luna}.{anul}", "%d.%m.%Y")
+            except Exception as e:
+                print("⚠️ Date parse error:", e)
+
+        vin = None
+        for p in response.css('p::text').getall():
+            if "serie sasiu" in p.lower():
+                vin = p.split(":")[-1].strip()
+                break
+
 
         mandatory_fields = [title, price, brand, model, year, mileage, fuel_type, engine_capacity, transmission]
         if any(field is None for field in mandatory_fields):
@@ -133,13 +190,16 @@ class OlxAutoturismeSpider(scrapy.Spider):
             drive_type=drive_type,
             color=color,
             emission_standard=None,
-            seller_type=None,
+            seller_type=seller_type,
             is_new=True,
             doors=doors,
             vehicle_condition=vehicle_condition,
             images=json.dumps(image_url),
             source_url=source_url,
-            created_at=created_at
+            created_at=created_at,
+            right_hand_drive=right_hand_drive,
+            ad_created_at=ad_created_at,
+            vin=vin
         )
 
         session = SessionLocal()
