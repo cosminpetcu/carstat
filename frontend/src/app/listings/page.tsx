@@ -18,6 +18,8 @@ type Car = {
   mileage: number;
   transmission: string;
   images: string[] | string;
+  engine_capacity?: number;
+  sold?: boolean;
   is_favorite?: boolean;
   deal_rating?: string;
   estimated_price?: number;
@@ -280,6 +282,11 @@ export default function ListingsPage() {
                       height={300}
                       className="rounded-lg object-cover w-full h-[180px]"
                     />
+                    {car.sold && (
+                      <div className="absolute bottom-2 left-2 bg-red-600 text-white text-xs px-2 py-1 rounded shadow">
+                        Sold
+                      </div>
+                    )}
                     {imgs.length > 1 && (
                       <>
                         <div className="absolute top-2 right-2 bg-black/70 text-white text-xs px-2 py-1 rounded-full opacity-0 group-hover:opacity-100 transition">
@@ -323,6 +330,9 @@ export default function ListingsPage() {
                     <h3 className="font-semibold text-lg">{car.title}</h3>
                     <p className="text-sm text-gray-600">
                       {car.year} • {car.fuel_type} • {car.transmission}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      {car.mileage?.toLocaleString()} km • {car.engine_capacity ?? "N/A"} cm³
                     </p>
                     <p className="text-blue-600 font-semibold mt-1">
                       {car.price !== null

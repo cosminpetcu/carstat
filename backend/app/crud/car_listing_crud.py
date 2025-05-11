@@ -30,7 +30,18 @@ def get_all_car_listings(
     seller_type: Optional[List[str]] = None,
     deal_rating: str = None,
     estimated_price: float = None,
-    is_new: bool = True,
+    version: Optional[str] = None,
+    generation: Optional[str] = None,
+    emissions: Optional[str] = None,
+    origin_country: Optional[str] = None,
+    first_owner: Optional[bool] = None,
+    no_accident: Optional[bool] = None,
+    service_book: Optional[bool] = None,
+    registered: Optional[bool] = None,
+    sold: Optional[bool] = None,
+    damaged: Optional[bool] = None,
+    right_hand_drive: Optional[bool] = None,
+    is_new: Optional[bool] = None,
     sort_by: str = None,
     order: str = "asc",
     page: int = 1,
@@ -48,6 +59,7 @@ def get_all_car_listings(
             CarListing.brand.ilike(search_lower) |
             CarListing.description.ilike(search_lower)
         )
+
     if brand:
         query = query.filter(CarListing.brand.in_(brand))
     if model:
@@ -90,10 +102,34 @@ def get_all_car_listings(
         query = query.filter(CarListing.engine_capacity <= engine_capacity_max)
     if seller_type:
         query = query.filter(CarListing.seller_type.in_(seller_type))
-    if is_new:
-        query = query.filter(CarListing.is_new == is_new)
     if deal_rating:
         query = query.filter(CarListing.deal_rating == deal_rating)
+    if estimated_price:
+        query = query.filter(CarListing.estimated_price <= estimated_price)
+    if version:
+        query = query.filter(CarListing.version == version)
+    if generation:
+        query = query.filter(CarListing.generation == generation)
+    if emissions:
+        query = query.filter(CarListing.emissions == emissions)
+    if origin_country:
+        query = query.filter(CarListing.origin_country == origin_country)
+    if first_owner is not None:
+        query = query.filter(CarListing.first_owner == first_owner)
+    if no_accident is not None:
+        query = query.filter(CarListing.no_accident == no_accident)
+    if service_book is not None:
+        query = query.filter(CarListing.service_book == service_book)
+    if registered is not None:
+        query = query.filter(CarListing.registered == registered)
+    if sold is not None:
+        query = query.filter(CarListing.sold == sold)
+    if damaged is not None:
+        query = query.filter(CarListing.damaged == damaged)
+    if right_hand_drive is not None:
+        query = query.filter(CarListing.right_hand_drive == right_hand_drive)
+    if is_new is not None:
+        query = query.filter(CarListing.is_new == is_new)
 
     if sort_by in ["price", "year", "mileage", "created_at"]:
         sort_column = getattr(CarListing, sort_by)
@@ -119,7 +155,6 @@ def get_all_car_listings(
         car_out = CarListingOut.from_orm(car)
         car_out.is_favorite = car.id in favorite_ids
         results.append(car_out)
-
 
     return {
         "items": results,
