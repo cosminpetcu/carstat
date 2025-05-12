@@ -219,11 +219,11 @@ class AutovitAutoturismeSpider(scrapy.Spider):
         for seller_li in response.css("li"):
             svg_name = seller_li.css("svg::attr(name)").get()
             if svg_name in ["dealer", "private-seller","authorized-dealer"]:
-                text = seller_li.css("p::text").get()
+                text = seller_li.css("p::text").get().lower()
                 if text:
-                    if "Dealer" in svg_name or "Dealer Autorizat" in svg_name:
+                    if "dealer" in svg_name or "autorizat" in svg_name:
                         seller_type = "Dealer"
-                    elif "Persoana fizica" in svg_name:
+                    elif "persoana" in svg_name or "fizica" in svg_name or "privat" in svg_name or "private" in svg_name:
                         seller_type = "Private"
                 break
 
