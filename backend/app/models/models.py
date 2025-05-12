@@ -66,6 +66,8 @@ class CarListing(Base):
     damaged = Column(Boolean, nullable=True)
     right_hand_drive = Column(Boolean, nullable=True)
     views = Column(Integer, nullable=True)
+    battery_capacity = Column(Float, nullable=True)
+    range_km = Column(Integer, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 class Favorite(Base):
@@ -86,3 +88,20 @@ class SavedSearch(Base):
     query = Column(String, nullable=False)
 
     user = relationship("User", back_populates="saved_searches")
+    
+class IncompleteDataStats(Base):
+    __tablename__ = "incomplete_data_stats"
+
+    id = Column(Integer, primary_key=True, index=True)
+    source = Column(String, nullable=False)
+    total_incomplete = Column(Integer, default=0)
+    no_title = Column(Integer, default=0)
+    no_price = Column(Integer, default=0)
+    no_brand = Column(Integer, default=0)
+    no_model = Column(Integer, default=0)
+    no_year = Column(Integer, default=0)
+    no_mileage = Column(Integer, default=0)
+    no_fuel_type = Column(Integer, default=0)
+    no_transmission = Column(Integer, default=0)
+    no_engine_capacity = Column(Integer, default=0)
+    last_update = Column(DateTime, default=datetime.utcnow)

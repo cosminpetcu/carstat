@@ -1,13 +1,11 @@
 import scrapy
-from app.models.models import CarListing
+from app.models.models import CarListing, IncompleteDataStats
 from app.database import SessionLocal
 from datetime import datetime
 import json
 import re
 import time
-import os
 from urllib.parse import urljoin
-from scrapy.exceptions import CloseSpider
 
 month_map = {
     "ianuarie": "01",
@@ -24,119 +22,47 @@ month_map = {
     "decembrie": "12",
 }
 
-
 class AutovitAutoturismeSpider(scrapy.Spider):
     name = "autovit_autoturisme"
     allowed_domains = ["autovit.ro"]
+    start_urls = ["https://www.autovit.ro/autoturisme"]
+    
     handle_httpstatus_list = [301, 302]
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.valid_cars = 0
         self.skipped_cars = 0
-        self.max_pages = 1300
-        self.current_page = 29
-        self.consecutive_empty_pages = 0
-        self.max_consecutive_empty = 50
-        self.got_forbidden = False
-        
-        log_dir = os.path.dirname(os.path.join(os.path.dirname(__file__), "../../scraper.log"))
-        if not os.path.exists(log_dir):
-            os.makedirs(log_dir, exist_ok=True)
-
-    def start_requests(self):
-        try:
-            with open("last_page.txt", "r") as f:
-                start_page = int(f.read().strip())
-                self.current_page = start_page
-                self.log(f"Restarting from saved page: {start_page}")
-        except:
-            start_page = 1
-            self.current_page = 1
-            self.log("Starting from page 1")
-        
-        with open("last_page.txt", "w") as f:
-            f.write(str(start_page))
-            
-        url = f"https://www.autovit.ro/autoturisme?page={start_page}"
-        yield scrapy.Request(
-            url=url, 
-            callback=self.parse,
-            meta={'dont_redirect': False, 'handle_httpstatus_list': [301, 302]}
-        )
+        self.duplicate_cars = 0
+        self.incomplete_cars = 0
+        self.max_pages = 25
+        self.current_page = 1
+        self.incomplete_reasons = {}
 
     def closed(self, reason):
-        if reason == "403_cooldown":
-            self.log_to_file(f"Spider closed due to 403 Forbidden. Sleeping for 5 minutes...")
-            self.log(f"Spider closed due to 403 Forbidden. Sleeping for 5 minutes...")
-            
-            with open("last_page.txt", "w") as f:
-                f.write(str(self.current_page))
-                
-            time.sleep(300)
-            
-            self.log_to_file(f"5-minute cooldown completed. Please restart the spider manually to continue from page {self.current_page}")
-            self.log(f"5-minute cooldown completed. Please restart the spider manually to continue from page {self.current_page}")
-            print(f"\n\nCOOLDOWN COMPLETED: Please restart the spider to continue from page {self.current_page}\n\n")
-        else:
-            print(f"Scraping finished!")
-            print(f"Valid cars added: {self.valid_cars}")
-            print(f"Skipped cars (incomplete or duplicate): {self.skipped_cars}")
-            print(f"Last page processed: {self.current_page}")
-            self.log_to_file(f"Scraping finished! Valid cars: {self.valid_cars}, Skipped: {self.skipped_cars}, Last page: {self.current_page}")
-
-    def log_to_file(self, message):
-        log_path = os.path.join(os.path.dirname(__file__), "../../scraper.log")
-        with open(log_path, "a", encoding="utf-8") as log_file:
-            log_file.write(f"[{datetime.now().isoformat()}] {message}\n")
+        print(f"Scraping finished!")
+        print(f"Valid cars added: {self.valid_cars}")
+        print(f"Skipped cars (total): {self.skipped_cars}")
+        print(f"   - Duplicates: {self.duplicate_cars}")
+        print(f"   - Incomplete data: {self.incomplete_cars}")
+        print(f"Last page processed: {self.current_page}")
+        
+        if self.incomplete_reasons:
+            print("\nIncomplete data statistics:")
+            for reason, count in self.incomplete_reasons.items():
+                print(f"   - {reason}: {count}")
 
     def parse(self, response):
-        if self.got_forbidden:
-            return
-            
-        if response.status == 403:
-            self.got_forbidden = True
-            self.log_to_file(f"Received 403 Forbidden at {response.url}, stopping all operations and sleeping for 5 minutes...")
-            self.log(f"Received 403 Forbidden, stopping all operations and sleeping for 5 minutes...")
-            
-            raise CloseSpider("403_cooldown")
-            
         if response.status in [301, 302]:
             redirect_url = response.headers.get('Location', b'').decode('utf-8')
             if redirect_url:
                 if not redirect_url.startswith(('http://', 'https://')):
                     redirect_url = urljoin(response.url, redirect_url)
                 
-                self.log(f"Following redirect from {response.url} to {redirect_url}")
-                yield scrapy.Request(
-                    url=redirect_url, 
-                    callback=self.parse_ad if '/anunt/' in redirect_url else self.parse,
-                    meta={'dont_redirect': False, 'handle_httpstatus_list': [301, 302]}
-                )
+                print(f"Following redirect from {response.url} to {redirect_url}")
+                yield scrapy.Request(url=redirect_url, callback=self.parse, dont_filter=True)
             return
-            
-        match = re.search(r"page=(\d+)", response.url)
-        if match:
-            self.current_page = int(match.group(1))
-        else:
-            pass
-            
-        self.log_to_file(f"Processing page {self.current_page}: {response.url}")
-        self.log(f"Processing page {self.current_page}")
         
-        if "Nu s-a găsit nicio ofertă care să se potrivească căutării tale" in response.text:
-            self.log_to_file(f"Received 'No results' message at page {self.current_page}, but will continue to next page")
-            self.log(f"Received 'No results' message at page {self.current_page}, but will continue to next page")
-            self.consecutive_empty_pages += 1
-            
-            if self.consecutive_empty_pages >= self.max_consecutive_empty:
-                self.log_to_file(f"Reached {self.max_consecutive_empty} consecutive empty pages, stopping")
-                self.log(f"Reached {self.max_consecutive_empty} consecutive empty pages, stopping")
-                return
-            
-            yield from self.process_next_page()
-            return
-
         ad_links = []
         for link in response.css('a::attr(href)').getall():
             if link.startswith('/autoturisme/anunt/') or link.startswith('https://www.autovit.ro/autoturisme/anunt/'):
@@ -145,76 +71,40 @@ class AutovitAutoturismeSpider(scrapy.Spider):
                 if "ver-" not in link:
                     ad_links.append(link)
                 
-        if not ad_links:
-            self.consecutive_empty_pages += 1
-            self.log_to_file(f"No ads found on page {self.current_page}, consecutive empty pages: {self.consecutive_empty_pages}")
-            self.log(f"No ads found on page {self.current_page}, consecutive empty pages: {self.consecutive_empty_pages}")
-            
-            if self.consecutive_empty_pages >= self.max_consecutive_empty:
-                self.log_to_file(f"Reached {self.max_consecutive_empty} consecutive empty pages, stopping")
-                self.log(f"Reached {self.max_consecutive_empty} consecutive empty pages, stopping")
-                return
-                
-            yield from self.process_next_page()
-            return
-            
-        self.consecutive_empty_pages = 0
-            
-        self.log_to_file(f"Found {len(ad_links)} ads on page {self.current_page}")
-        self.log(f"Found {len(ad_links)} ads on page {self.current_page}")
+        print(f"Found {len(ad_links)} ads on page {self.current_page}")
         
         for link in ad_links:
             yield scrapy.Request(
                 url=link, 
                 callback=self.parse_ad,
-                meta={'dont_redirect': False, 'handle_httpstatus_list': [301, 302]}
+                errback=self.error_handler,
+                meta={'dont_redirect': False}
             )
             
-        yield from self.process_next_page()
-
-    def process_next_page(self):
-        """Metoda pentru a procesa următoarea pagină"""
         if self.current_page < self.max_pages:
-            next_page = self.current_page + 1
-            
-            with open("last_page.txt", "w") as f:
-                f.write(str(next_page))
-
-            time.sleep(2)
-            
-            next_url = f"https://www.autovit.ro/autoturisme?page={next_page}"
-            self.log_to_file(f"Moving to page {next_page}")
-            yield scrapy.Request(
-                url=next_url, 
-                callback=self.parse,
-                meta={'dont_redirect': False, 'handle_httpstatus_list': [301, 302]}
-            )
+            self.current_page += 1
+            next_url = f"https://www.autovit.ro/autoturisme?search%5Border%5D=created_at_first%3Adesc&page={self.current_page}"
+            print(f"Moving to page {self.current_page}")
+            yield scrapy.Request(url=next_url, callback=self.parse)
         else:
-            self.log_to_file(f"Reached maximum page limit ({self.max_pages})")
-            self.log(f"Reached maximum page limit ({self.max_pages})")
-
-    def parse_ad(self, response):
-        if self.got_forbidden:
-            return
-        
-        if response.status == 403:
-            self.got_forbidden = True
-            self.log_to_file(f"Received 403 Forbidden at an ad page: {response.url}, stopping all operations and sleeping for 5 minutes...")
-            self.log(f"Received 403 Forbidden at an ad page, stopping all operations and sleeping for 5 minutes...")
-            
-            raise CloseSpider("403_cooldown")
+            print(f"Reached maximum page limit ({self.max_pages})")
     
+    def error_handler(self, failure):
+        print(f"Request failed: {failure.request.url} - {failure.value}")
+    
+    def parse_ad(self, response):
         if response.status in [301, 302]:
             redirect_url = response.headers.get('Location', b'').decode('utf-8')
             if redirect_url:
                 if not redirect_url.startswith(('http://', 'https://')):
                     redirect_url = urljoin(response.url, redirect_url)
-                    
-                self.log(f"Following ad redirect from {response.url} to {redirect_url}")
+                
+                print(f"Following ad redirect from {response.url} to {redirect_url}")
                 yield scrapy.Request(
-                    url=redirect_url, 
+                    url=redirect_url,
                     callback=self.parse_ad,
-                    meta={'dont_redirect': False, 'handle_httpstatus_list': [301, 302]}
+                    dont_filter=True,
+                    meta={'dont_redirect': False}
                 )
             return
             
@@ -245,7 +135,7 @@ class AutovitAutoturismeSpider(scrapy.Spider):
             try:
                 price = float(price_raw.replace("\xa0", "").replace(" ", "").replace(",", "."))
             except:
-                self.log(f"Error parsing price: {price_raw}")
+                print(f"Error parsing price: {price_raw}")
                 
         source_url = response.url
 
@@ -255,11 +145,46 @@ class AutovitAutoturismeSpider(scrapy.Spider):
         mileage = extract_int("mileage", " km")
         fuel_type = extract_testid_value("fuel_type")
         
+        is_electric = (fuel_type == "Electric")
+        battery_capacity = None
+        range_km = None
+        
         engine_capacity = None
-        if fuel_type == "electric":
+        if is_electric:
             engine_capacity = 0
             
+            detail_elements = response.css('div[data-testid="detail"]')
+            
+            for detail in detail_elements:
+                aria_label = detail.attrib.get('aria-label', '')
+                
+                if 'Autonomie' in aria_label:
+                    try:
+                        km_text = detail.css('p.ez0zock2::text').get() or detail.css('p.ooa-11fwepm::text').get()
+                        if km_text:
+                            range_km = int(km_text.replace('km', '').strip())
+                    except Exception as e:
+                        print(f"Error extracting range: {e}")
+                        
+                elif 'Capacitate baterie' in aria_label:
+                    try:
+                        battery_text = detail.css('p.ez0zock2::text').get() or detail.css('p.ooa-11fwepm::text').get()
+                        if battery_text:
+                            battery_capacity = float(battery_text.replace('kWh/100km', '').strip())
+                    except Exception as e:
+                        print(f"Error extracting battery capacity: {e}")
+                        
+                elif 'Consum mediu' in aria_label:
+                    try:
+                        consumption_text = detail.css('p.ez0zock2::text').get() or detail.css('p.ooa-11fwepm::text').get()
+                        if consumption_text:
+                            consumption_mixed = consumption_text.strip()
+                    except Exception as e:
+                        print(f"Error extracting consumption: {e}")
+            
         transmission = extract_testid_value("gearbox")
+        if is_electric and transmission == None:
+            transmission = "Automata"
         engine_power = extract_int("engine_power", " CP")
         emission_standard = extract_testid_value("pollution_standard")
         doors = extract_int("door_count")
@@ -279,6 +204,7 @@ class AutovitAutoturismeSpider(scrapy.Spider):
         emissions = extract_testid_value("co2_emissions")
         consumption_city = extract_testid_value("urban_consumption")
         consumption_highway = extract_testid_value("extra_urban_consumption")
+        consumption_mixed = extract_testid_value("mixed_consumption") or extract_testid_value("avg_energy_consumption")
         origin_country = extract_testid_value("country_origin")
         registered = extract_boolean("registered")
         first_owner = extract_boolean("original_owner")
@@ -286,22 +212,20 @@ class AutovitAutoturismeSpider(scrapy.Spider):
         service_book = extract_boolean("service_record")
         
         right_hand_drive = extract_boolean("rhd")
-
         damaged = extract_boolean("damaged")
 
         seller_type = None
         
         for seller_li in response.css("li"):
             svg_name = seller_li.css("svg::attr(name)").get()
-            if svg_name in ["dealer", "private-seller"]:
+            if svg_name in ["dealer", "private-seller","authorized-dealer"]:
                 text = seller_li.css("p::text").get()
                 if text:
-                    if "dealer" in svg_name:
-                        seller_type = "dealer"
-                    elif "private" in svg_name:
-                        seller_type = "private"
+                    if "Dealer" in svg_name or "Dealer Autorizat" in svg_name:
+                        seller_type = "Dealer"
+                    elif "Persoana fizica" in svg_name:
+                        seller_type = "Private"
                 break
-
 
         possible_locations = response.css("p.ef0vquw1.ooa-1frho3b::text").getall()
         location = next((loc.strip() for loc in possible_locations if "," in loc or "Sector" in loc or "judet" in loc.lower()), None)
@@ -336,14 +260,37 @@ class AutovitAutoturismeSpider(scrapy.Spider):
                 anul = parts[2]
                 ad_created_at = datetime.strptime(f"{ziua}.{luna}.{anul}", "%d.%m.%Y")
             except Exception as e:
-                self.log(f"Date parse error: {e}")
+                print(f"Date parse error: {e}")
 
         created_at = datetime.now()
 
-        mandatory_fields = [title, price, brand, model, year, mileage, fuel_type, engine_capacity, transmission]
+        mandatory_fields = [title, price, brand, model, year, mileage, fuel_type, transmission]
+        missing_fields = {}
+        
+        missing_field_list = []
+        
+        field_names = ["title", "price", "brand", "model", "year", "mileage", "fuel_type", "transmission", "engine_capacity"]
+        field_values = [title, price, brand, model, year, mileage, fuel_type, transmission, engine_capacity]
+        
+        if not is_electric:
+            mandatory_fields.append(engine_capacity)
+        
+        for idx, name in enumerate(field_names):
+            if idx < len(field_values) and field_values[idx] is None:
+                if name == "engine_capacity" and is_electric:
+                    continue
+                missing_fields[f"no_{name}"] = True
+                missing_field_list.append(name)
+                
+                if name not in self.incomplete_reasons:
+                    self.incomplete_reasons[name] = 0
+                self.incomplete_reasons[name] += 1
+        
         if any(field is None for field in mandatory_fields):
+            self.update_incomplete_stats("autovit", missing_fields)
             self.skipped_cars += 1
-            self.log(f"Incomplete ad: {source_url}")
+            self.incomplete_cars += 1
+            print(f"Incomplete ad: {source_url} - Missing fields: {', '.join(missing_field_list)}")
             return
 
         session = SessionLocal()
@@ -358,11 +305,13 @@ class AutovitAutoturismeSpider(scrapy.Spider):
                         existing.price_history = json.dumps(history)
                         existing.created_at = created_at
                         session.commit()
-                        self.log(f"Updated price for: {source_url}")
+                        print(f"Updated price for: {source_url}")
                     except Exception as e:
-                        self.log(f"Error updating price: {e}")
+                        print(f"Error updating price: {e}")
                         session.rollback()
                 self.skipped_cars += 1
+                self.duplicate_cars += 1
+                print(f"Duplicate ad: {source_url}")
                 return
 
             car = CarListing(
@@ -397,6 +346,7 @@ class AutovitAutoturismeSpider(scrapy.Spider):
                 emissions=emissions,
                 consumption_city=consumption_city,
                 consumption_highway=consumption_highway,
+                consumption_mixed=consumption_mixed,
                 origin_country=origin_country,
                 first_owner=first_owner,
                 no_accident=no_accident,
@@ -410,14 +360,95 @@ class AutovitAutoturismeSpider(scrapy.Spider):
                 sold=False,
                 damaged=damaged,
                 right_hand_drive=right_hand_drive,
+                battery_capacity=battery_capacity,
+                range_km=range_km
             )
 
             session.add(car)
             session.commit()
             self.valid_cars += 1
-            self.log(f"Added new car: {brand} {model} ({year})")
+            print(f"Added new car: {brand} {model} ({year})")
         except Exception as e:
-            self.log(f"DB Error: {e}")
+            print(f"DB Error: {e}")
             session.rollback()
         finally:
             session.close()
+            
+    def update_incomplete_stats(self, source, fields):
+        db = SessionLocal()
+        try:
+            stats = db.query(IncompleteDataStats).filter_by(source=source).first()
+            if not stats:
+                stats = IncompleteDataStats(source=source)
+                db.add(stats)
+                stats.total_incomplete = 0
+                stats.no_title = 0
+                stats.no_price = 0
+                stats.no_brand = 0
+                stats.no_model = 0
+                stats.no_year = 0
+                stats.no_mileage = 0
+                stats.no_fuel_type = 0
+                stats.no_transmission = 0
+                stats.no_engine_capacity = 0
+            
+            if stats.total_incomplete is None:
+                stats.total_incomplete = 0
+            stats.total_incomplete += 1
+            
+            if fields.get("no_title"):
+                if stats.no_title is None:
+                    stats.no_title = 0
+                stats.no_title += 1
+                
+            if fields.get("no_price"):
+                if stats.no_price is None:
+                    stats.no_price = 0
+                stats.no_price += 1
+                
+            if fields.get("no_brand"):
+                if stats.no_brand is None:
+                    stats.no_brand = 0
+                stats.no_brand += 1
+                
+            if fields.get("no_model"):
+                if stats.no_model is None:
+                    stats.no_model = 0
+                stats.no_model += 1
+                
+            if fields.get("no_year"):
+                if stats.no_year is None:
+                    stats.no_year = 0
+                stats.no_year += 1
+                
+            if fields.get("no_mileage"):
+                if stats.no_mileage is None:
+                    stats.no_mileage = 0
+                stats.no_mileage += 1
+                
+            if fields.get("no_fuel_type"):
+                if stats.no_fuel_type is None:
+                    stats.no_fuel_type = 0
+                stats.no_fuel_type += 1
+                
+            if fields.get("no_transmission"):
+                if stats.no_transmission is None:
+                    stats.no_transmission = 0
+                stats.no_transmission += 1
+                
+            if fields.get("no_engine_capacity"):
+                if stats.no_engine_capacity is None:
+                    stats.no_engine_capacity = 0
+                stats.no_engine_capacity += 1
+            
+            if stats.last_update is None:
+                stats.last_update = datetime.utcnow()
+            else:
+                stats.last_update = datetime.utcnow()
+                
+            db.commit()
+        except Exception as e:
+            print(f"Error updating incomplete stats: {e}")
+            db.rollback()
+        finally:
+            db.close()

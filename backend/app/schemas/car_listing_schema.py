@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional
 
 class CarListingOut(BaseModel):
     id: int
@@ -51,6 +51,8 @@ class CarListingOut(BaseModel):
     damaged: Optional[bool]
     right_hand_drive: Optional[bool]
     views: Optional[int]
+    battery_capacity: Optional[float]
+    range_km: Optional[int]
     created_at: datetime
     is_favorite: Optional[bool] = False
     
