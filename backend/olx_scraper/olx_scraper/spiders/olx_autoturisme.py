@@ -1,6 +1,5 @@
 import scrapy
-from urllib.parse import urljoin
-from app.models.models import CarListing
+from app.models.models import CarListing, IncompleteDataStats
 from app.database import SessionLocal
 import json
 from datetime import datetime, timedelta
@@ -24,17 +23,78 @@ month_map = {
 class OlxAutoturismeSpider(scrapy.Spider):
     name = "olx_autoturisme"
     allowed_domains = ["olx.ro"]
-    start_urls = ["https://www.olx.ro/auto-masini-moto-ambarcatiuni/autoturisme/"]
+    start_urls = ["https://www.olx.ro/auto-masini-moto-ambarcatiuni/autoturisme/?currency=EUR&search%5Border%5D=created_at:desc"]
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.valid_cars = 0
         self.skipped_cars = 0
+        self.duplicate_cars = 0
+        self.incomplete_cars = 0
+        self.max_pages = 25
+        self.current_page = 1
+        self.incomplete_reasons = {}
+        self.increment_runs_counter("olx")
+
+    def increment_runs_counter(self, source):
+        db = SessionLocal()
+        try:
+            stats = db.query(IncompleteDataStats).filter_by(source=source).first()
+            if not stats:
+                stats = IncompleteDataStats(source=source)
+                db.add(stats)
+                stats.total_incomplete = 0
+                stats.valid_cars_added = 0
+                stats.total_runs = 0
+                stats.no_title = 0
+                stats.no_price = 0
+                stats.no_brand = 0
+                stats.no_model = 0
+                stats.no_year = 0
+                stats.no_mileage = 0
+                stats.no_fuel_type = 0
+                stats.no_transmission = 0
+                stats.no_engine_capacity = 0
+            
+            if stats.total_runs is None:
+                stats.total_runs = 0
+            stats.total_runs += 1
+            
+            stats.last_update = datetime.utcnow()
+            db.commit()
+            print(f"Incremented run counter for {source}. Total runs: {stats.total_runs}")
+        except Exception as e:
+            print(f"Error updating runs counter: {e}")
+            db.rollback()
+        finally:
+            db.close()
     
     def closed(self, reason):
         print(f"Scraping finished!")
         print(f"Valid cars added: {self.valid_cars}")
-        print(f"Skipped cars (incomplete or duplicate): {self.skipped_cars}")
+        print(f"Skipped cars (total): {self.skipped_cars}")
+        print(f"   - Duplicates: {self.duplicate_cars}")
+        print(f"   - Incomplete data: {self.incomplete_cars}")
+        print(f"Last page processed: {self.current_page}")
+        
+        if self.incomplete_reasons:
+            print("\nIncomplete data statistics:")
+            for reason, count in self.incomplete_reasons.items():
+                print(f"   - {reason}: {count}")
+        
+        db = SessionLocal()
+        try:
+            stats = db.query(IncompleteDataStats).filter_by(source=self.name.split("_")[0]).first()
+            if stats:
+                print("\nGlobal statistics:")
+                print(f"Total runs: {stats.total_runs}")
+                print(f"Total valid cars added: {stats.valid_cars_added}")
+                print(f"Total cars with incomplete data: {stats.total_incomplete}")
+                print(f"Success rate: {stats.valid_cars_added / (stats.valid_cars_added + stats.total_incomplete) * 100:.2f}% ")
+        except Exception as e:
+            print(f"Error getting global statistics: {e}")
+        finally:
+            db.close()
 
     def start_requests(self):
         from app.database import SessionLocal
@@ -50,15 +110,24 @@ class OlxAutoturismeSpider(scrapy.Spider):
 
     def parse(self, response):
         ads = response.css("div.css-u2ayx9")
+        print(f"Found {len(ads)} ads on page {self.current_page}")
+        
         for ad in ads:
             ad_url = ad.css("a.css-1tqlkj0::attr(href)").get()
             if ad_url:
                 ad_url = response.urljoin(ad_url)
                 yield scrapy.Request(url=ad_url, callback=self.parse_ad)
+        
+        if self.current_page >= self.max_pages:
+            print(f"Reached maximum page limit ({self.max_pages})")
+            return
+        
+        self.current_page += 1
                 
         next_page = response.css("a[data-testid='pagination-forward']::attr(href)").get()
         if next_page:
             next_page_url = response.urljoin(next_page)
+            print(f"Moving to page {self.current_page}")
             yield scrapy.Request(url=next_page_url, callback=self.parse)
 
     def parse_ad(self, response):
@@ -111,11 +180,20 @@ class OlxAutoturismeSpider(scrapy.Spider):
         year = int(details.get("an de fabricatie", "0").replace(" ", "")) or None
         mileage = int(details.get("rulaj", "0").replace("km", "").replace(" ", "")) or None
         fuel_type = details.get("combustibil")
+        
+        is_electric = (fuel_type == "Electric")
+        
         engine_capacity = int(details.get("capacitate motor", "0").replace("cm³", "").replace(" ", "")) or None
-        if(fuel_type == 'electric'):
+        
+        if is_electric:
             engine_capacity = 0
+        
         engine_power = int(details.get("putere", "0").replace("CP", "").replace(" ", "")) or None
         transmission = details.get("cutie de viteze")
+        
+        if is_electric and transmission is None:
+            transmission = "Automata"
+            
         drive_type = details.get("caroserie")
         color = details.get("culoare")
         doors = int(details["numar de usi"]) if "numar de usi" in details and details["numar de usi"].isdigit() else None
@@ -127,10 +205,10 @@ class OlxAutoturismeSpider(scrapy.Spider):
 
         if seller_type_raw:
             seller_type_raw = seller_type_raw.strip().lower()
-            if "persoana" in seller_type_raw:
-                seller_type = "private"
-            elif "firma" in seller_type_raw:
-                seller_type = "dealer"
+            if "persoana" in seller_type_raw or "fizica" in seller_type_raw or "privat" in seller_type_raw:
+                seller_type = "Private"
+            elif "firma" in seller_type_raw or "dealer" in seller_type_raw:
+                seller_type = "Dealer"
 
         right_hand_drive = False
         right_hand_drive = any("partea dreapta" in el.lower() for el in response.css("p::text").getall())
@@ -162,45 +240,42 @@ class OlxAutoturismeSpider(scrapy.Spider):
                 vin = p.split(":")[-1].strip()
                 break
 
-
-        mandatory_fields = [title, price, brand, model, year, mileage, fuel_type, engine_capacity, transmission]
+        mandatory_fields = [title, price, brand, model, year, mileage, fuel_type, transmission]
+        missing_fields = {}
+        
+        missing_field_list = []
+        
+        field_names = ["title", "price", "brand", "model", "year", "mileage", "fuel_type", "transmission", "engine_capacity"]
+        field_values = [title, price, brand, model, year, mileage, fuel_type, transmission, engine_capacity]
+        
+        if not is_electric:
+            mandatory_fields.append(engine_capacity)
+        
+        for idx, name in enumerate(field_names):
+            if idx < len(field_values) and field_values[idx] is None:
+                if name == "engine_capacity" and is_electric:
+                    continue
+                missing_fields[f"no_{name}"] = True
+                missing_field_list.append(name)
+                
+                if name not in self.incomplete_reasons:
+                    self.incomplete_reasons[name] = 0
+                self.incomplete_reasons[name] += 1
+        
         if any(field is None for field in mandatory_fields):
+            try:
+                self.update_incomplete_stats("olx", missing_fields)
+            except Exception as e:
+                print(f"Error updating incomplete stats: {e}")
             self.skipped_cars += 1
-            print("Incomplete data, skipping car...")
+            self.incomplete_cars += 1
+            print(f"Incomplete ad: {response.url} - Missing fields: {', '.join(missing_field_list)}")
             return
 
-
         source_url = response.url
-        image_url = response.css("img::attr(src)").getall()
-        image_url = [url for url in image_url if "olxcdn.com" in url]
-
-        car = CarListing(
-            title=title,
-            price=price,
-            description=description,
-            location=location,
-            brand=brand,
-            model=model,
-            year=year,
-            mileage=mileage,
-            fuel_type=fuel_type,
-            engine_capacity=engine_capacity,
-            engine_power=engine_power,
-            transmission=transmission,
-            drive_type=drive_type,
-            color=color,
-            emission_standard=None,
-            seller_type=seller_type,
-            is_new=True,
-            doors=doors,
-            vehicle_condition=vehicle_condition,
-            images=json.dumps(image_url),
-            source_url=source_url,
-            created_at=created_at,
-            right_hand_drive=right_hand_drive,
-            ad_created_at=ad_created_at,
-            vin=vin
-        )
+        image_urls = response.css("img::attr(src)").getall()
+        image_urls = [url for url in image_urls if "olxcdn.com" in url]
+        images = json.dumps(image_urls)
 
         session = SessionLocal()
         try:
@@ -208,15 +283,171 @@ class OlxAutoturismeSpider(scrapy.Spider):
                 source_url=source_url
             ).first()
 
-            if existing is None:
-                session.add(car)
-                session.commit()
-                self.valid_cars += 1
-            else:
+            if existing:
+                if existing.price != price:
+                    try:
+                        history = json.loads(existing.price_history or "[]")
+                        history.append({"price": existing.price, "date": existing.created_at.isoformat()})
+                        existing.price = price
+                        existing.price_history = json.dumps(history)
+                        existing.created_at = created_at
+                        session.commit()
+                        print(f"Updated price for: {source_url}")
+                    except Exception as e:
+                        print(f"Error updating price: {e}")
+                        session.rollback()
                 self.skipped_cars += 1
-                print("Duplicate found, skipping...")
+                self.duplicate_cars += 1
+                print(f"Duplicate ad: {source_url}")
+                return
+
+            car = CarListing(
+                title=title,
+                price=price,
+                description=description,
+                location=location,
+                brand=brand,
+                model=model,
+                year=year,
+                mileage=mileage,
+                fuel_type=fuel_type,
+                engine_capacity=engine_capacity,
+                engine_power=engine_power,
+                transmission=transmission,
+                drive_type=drive_type,
+                color=color,
+                emission_standard=None,
+                seller_type=seller_type,
+                is_new=True,
+                doors=doors,
+                vehicle_condition=vehicle_condition,
+                images=images,
+                source_url=source_url,
+                created_at=created_at,
+                right_hand_drive=right_hand_drive,
+                ad_created_at=ad_created_at,
+                vin=vin,
+                battery_capacity=None,
+                range_km=None
+            )
+
+            session.add(car)
+            session.commit()
+            self.valid_cars += 1
+            self.increment_valid_cars_counter("olx")
+            print(f"Added new car: {brand} {model} ({year})")
         except Exception as e:
-            print("DB Error:", e)
+            print(f"DB Error: {e}")
             session.rollback()
         finally:
             session.close()
+    
+    def increment_valid_cars_counter(self, source):
+        db = SessionLocal()
+        try:
+            stats = db.query(IncompleteDataStats).filter_by(source=source).first()
+            if not stats:
+                stats = IncompleteDataStats(source=source)
+                db.add(stats)
+                stats.total_incomplete = 0
+                stats.valid_cars_added = 0
+                stats.total_runs = 0
+                stats.no_title = 0
+                stats.no_price = 0
+                stats.no_brand = 0
+                stats.no_model = 0
+                stats.no_year = 0
+                stats.no_mileage = 0
+                stats.no_fuel_type = 0
+                stats.no_transmission = 0
+                stats.no_engine_capacity = 0
+            
+            if stats.valid_cars_added is None:
+                stats.valid_cars_added = 0
+            stats.valid_cars_added += 1
+            
+            db.commit()
+        except Exception as e:
+            print(f"Error updating valid cars counter: {e}")
+            db.rollback()
+        finally:
+            db.close()
+    
+    def update_incomplete_stats(self, source, fields):
+        db = SessionLocal()
+        try:
+            stats = db.query(IncompleteDataStats).filter_by(source=source).first()
+            if not stats:
+                stats = IncompleteDataStats(source=source)
+                db.add(stats)
+                stats.total_incomplete = 0
+                stats.no_title = 0
+                stats.no_price = 0
+                stats.no_brand = 0
+                stats.no_model = 0
+                stats.no_year = 0
+                stats.no_mileage = 0
+                stats.no_fuel_type = 0
+                stats.no_transmission = 0
+                stats.no_engine_capacity = 0
+            
+            if stats.total_incomplete is None:
+                stats.total_incomplete = 0
+            stats.total_incomplete += 1
+            
+            if fields.get("no_title"):
+                if stats.no_title is None:
+                    stats.no_title = 0
+                stats.no_title += 1
+                
+            if fields.get("no_price"):
+                if stats.no_price is None:
+                    stats.no_price = 0
+                stats.no_price += 1
+                
+            if fields.get("no_brand"):
+                if stats.no_brand is None:
+                    stats.no_brand = 0
+                stats.no_brand += 1
+                
+            if fields.get("no_model"):
+                if stats.no_model is None:
+                    stats.no_model = 0
+                stats.no_model += 1
+                
+            if fields.get("no_year"):
+                if stats.no_year is None:
+                    stats.no_year = 0
+                stats.no_year += 1
+                
+            if fields.get("no_mileage"):
+                if stats.no_mileage is None:
+                    stats.no_mileage = 0
+                stats.no_mileage += 1
+                
+            if fields.get("no_fuel_type"):
+                if stats.no_fuel_type is None:
+                    stats.no_fuel_type = 0
+                stats.no_fuel_type += 1
+                
+            if fields.get("no_transmission"):
+                if stats.no_transmission is None:
+                    stats.no_transmission = 0
+                stats.no_transmission += 1
+                
+            if fields.get("no_engine_capacity"):
+                if stats.no_engine_capacity is None:
+                    stats.no_engine_capacity = 0
+                stats.no_engine_capacity += 1
+            
+            if stats.last_update is None:
+                stats.last_update = datetime.utcnow()
+            else:
+                stats.last_update = datetime.utcnow()
+                
+            db.commit()
+        except Exception as e:
+            print(f"Error updating incomplete stats: {e}")
+            db.rollback()
+        finally:
+            db.close()

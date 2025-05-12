@@ -38,6 +38,40 @@ class AutovitAutoturismeSpider(scrapy.Spider):
         self.max_pages = 25
         self.current_page = 1
         self.incomplete_reasons = {}
+        self.increment_runs_counter("autovit")
+
+    def increment_runs_counter(self, source):
+        db = SessionLocal()
+        try:
+            stats = db.query(IncompleteDataStats).filter_by(source=source).first()
+            if not stats:
+                stats = IncompleteDataStats(source=source)
+                db.add(stats)
+                stats.total_incomplete = 0
+                stats.valid_cars_added = 0
+                stats.total_runs = 0
+                stats.no_title = 0
+                stats.no_price = 0
+                stats.no_brand = 0
+                stats.no_model = 0
+                stats.no_year = 0
+                stats.no_mileage = 0
+                stats.no_fuel_type = 0
+                stats.no_transmission = 0
+                stats.no_engine_capacity = 0
+            
+            if stats.total_runs is None:
+                stats.total_runs = 0
+            stats.total_runs += 1
+            
+            stats.last_update = datetime.utcnow()
+            db.commit()
+            print(f"Incremented run counter for {source}. Total runs: {stats.total_runs}")
+        except Exception as e:
+            print(f"Error updating runs counter: {e}")
+            db.rollback()
+        finally:
+            db.close()
 
     def closed(self, reason):
         print(f"Scraping finished!")
@@ -51,6 +85,20 @@ class AutovitAutoturismeSpider(scrapy.Spider):
             print("\nIncomplete data statistics:")
             for reason, count in self.incomplete_reasons.items():
                 print(f"   - {reason}: {count}")
+                
+        db = SessionLocal()
+        try:
+            stats = db.query(IncompleteDataStats).filter_by(source=self.name.split("_")[0]).first()
+            if stats:
+                print("\nGlobal statistics:")
+                print(f"Total runs: {stats.total_runs}")
+                print(f"Total valid cars added: {stats.valid_cars_added}")
+                print(f"Total cars with incomplete data: {stats.total_incomplete}")
+                print(f"Success rate: {stats.valid_cars_added / (stats.valid_cars_added + stats.total_incomplete) * 100:.2f}% ")
+        except Exception as e:
+            print(f"Error getting global statistics: {e}")
+        finally:
+            db.close()
 
     def parse(self, response):
         if response.status in [301, 302]:
@@ -367,6 +415,7 @@ class AutovitAutoturismeSpider(scrapy.Spider):
             session.add(car)
             session.commit()
             self.valid_cars += 1
+            self.increment_valid_cars_counter("autovit")
             print(f"Added new car: {brand} {model} ({year})")
         except Exception as e:
             print(f"DB Error: {e}")
@@ -374,6 +423,37 @@ class AutovitAutoturismeSpider(scrapy.Spider):
         finally:
             session.close()
             
+    def increment_valid_cars_counter(self, source):
+        db = SessionLocal()
+        try:
+            stats = db.query(IncompleteDataStats).filter_by(source=source).first()
+            if not stats:
+                stats = IncompleteDataStats(source=source)
+                db.add(stats)
+                stats.total_incomplete = 0
+                stats.valid_cars_added = 0
+                stats.total_runs = 0
+                stats.no_title = 0
+                stats.no_price = 0
+                stats.no_brand = 0
+                stats.no_model = 0
+                stats.no_year = 0
+                stats.no_mileage = 0
+                stats.no_fuel_type = 0
+                stats.no_transmission = 0
+                stats.no_engine_capacity = 0
+            
+            if stats.valid_cars_added is None:
+                stats.valid_cars_added = 0
+            stats.valid_cars_added += 1
+            
+            db.commit()
+        except Exception as e:
+            print(f"Error updating valid cars counter: {e}")
+            db.rollback()
+        finally:
+            db.close()
+        
     def update_incomplete_stats(self, source, fields):
         db = SessionLocal()
         try:

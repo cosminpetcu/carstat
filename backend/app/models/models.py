@@ -95,6 +95,8 @@ class IncompleteDataStats(Base):
     id = Column(Integer, primary_key=True, index=True)
     source = Column(String, nullable=False)
     total_incomplete = Column(Integer, default=0)
+    valid_cars_added = Column(Integer, default=0)
+    total_runs = Column(Integer, default=0)
     no_title = Column(Integer, default=0)
     no_price = Column(Integer, default=0)
     no_brand = Column(Integer, default=0)
