@@ -69,6 +69,8 @@ class CarListing(Base):
     views = Column(Integer, nullable=True)
     battery_capacity = Column(Float, nullable=True)
     range_km = Column(Integer, nullable=True)
+    quality_score = Column(Integer, nullable=True)
+    suspicious_price = Column(Boolean, default=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
 class Favorite(Base):

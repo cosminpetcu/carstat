@@ -17,4 +17,6 @@ scrapy crawl autovit_autoturisme
 
 call venv_scrapy\Scripts\deactivate
 
+cd /d "C:\Users\cosmi\Desktop\LICENTA\CarStat"
+
 echo Scraping completed at %date% %time%

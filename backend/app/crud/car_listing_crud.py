@@ -41,6 +41,8 @@ def get_all_car_listings(
     sold: Optional[bool] = None,
     damaged: Optional[bool] = None,
     right_hand_drive: Optional[bool] = None,
+    quality_score: Optional[int] = None,
+    suspicious_price: Optional[bool] = False,
     is_new: Optional[bool] = None,
     sort_by: str = None,
     order: str = "asc",
@@ -128,6 +130,10 @@ def get_all_car_listings(
         query = query.filter(CarListing.damaged == damaged)
     if right_hand_drive is not None:
         query = query.filter(CarListing.right_hand_drive == right_hand_drive)
+    if suspicious_price is not None:
+        query = query.filter(CarListing.suspicious_price == suspicious_price)
+    if quality_score is not None:
+        query = query.filter(CarListing.quality_score == quality_score)
     if is_new is not None:
         query = query.filter(CarListing.is_new == is_new)
 
