@@ -62,6 +62,7 @@ class CarListing(Base):
     ad_created_at = Column(DateTime, nullable=True)
     price_history = Column(Text, nullable=True)
     sold = Column(Boolean, default=False)
+    sold_detected_at = Column(DateTime, nullable=True)
     estimated_price = Column(Float, nullable=True)
     damaged = Column(Boolean, nullable=True)
     right_hand_drive = Column(Boolean, nullable=True)

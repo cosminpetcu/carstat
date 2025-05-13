@@ -218,7 +218,7 @@ class AutovitAutoturismeSpider(scrapy.Spider):
                     try:
                         battery_text = detail.css('p.ez0zock2::text').get() or detail.css('p.ooa-11fwepm::text').get()
                         if battery_text:
-                            battery_capacity = float(battery_text.replace('kWh/100km', '').strip())
+                            battery_capacity = float(battery_text.replace('kWh', '').replace('kWh/100km', '').strip())
                     except Exception as e:
                         print(f"Error extracting battery capacity: {e}")
                         
