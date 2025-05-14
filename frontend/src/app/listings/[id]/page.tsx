@@ -14,6 +14,9 @@ import {
   ResponsiveContainer,
   CartesianGrid,
   ReferenceLine,
+  BarChart,
+  Bar,
+  Cell
 } from "recharts";
 
 type Car = {
@@ -67,6 +70,44 @@ type Car = {
   deal_rating?: string;
 };
 
+interface ModelStats {
+  totalCount: number;
+  averagePrice: number;
+  averageMileage: number;
+  averageYear: number;
+  soldCount: number;
+  avgSaleTime: number | null;
+  priceDistribution: {
+    range: string;
+    count: number;
+    minPrice: number;
+    maxPrice: number;
+  }[];
+  yearDistribution: {
+    year: number;
+    count: number;
+  }[];
+  fuelTypeDistribution: {
+    type: string;
+    count: number;
+  }[];
+  transmissionDistribution: {
+    type: string;
+    count: number;
+  }[];
+}
+
+interface CustomTooltipPayload {
+  payload?: {
+    percent?: number;
+    type?: string;
+  };
+  percent?: number;
+  name?: string;
+  value?: number;
+  type?: string;
+}
+
 export default function CarDetailPage() {
   const { id } = useParams();
   const router = useRouter();
@@ -80,6 +121,9 @@ export default function CarDetailPage() {
   const [showAdmin, setShowAdmin] = useState(true);
   const [showDescription, setShowDescription] = useState(false);
   const [showPriceHistory, setShowPriceHistory] = useState(true);
+
+  const [showModelStats, setShowModelStats] = useState(false);
+  const [modelStats, setModelStats] = useState<ModelStats | null>(null);
 
   const getQualityScoreColor = (score: number | undefined) => {
     if (!score) return "bg-gray-300";
@@ -98,6 +142,19 @@ export default function CarDetailPage() {
     if (score >= 20) return "Below Average";
     return "Poor";
   };
+
+  useEffect(() => {
+  if (showModelStats && car?.brand && car?.model) {
+    fetch(`http://localhost:8000/cars/model-stats?brand=${car.brand}&model=${car.model}`)
+      .then(res => res.json())
+      .then(data => {
+        setModelStats(data);
+      })
+      .catch(err => {
+        console.error("Failed to fetch model statistics:", err);
+      });
+  }
+}, [showModelStats, car?.brand, car?.model]);
 
 
   useEffect(() => {
@@ -628,6 +685,206 @@ export default function CarDetailPage() {
                 })()}
               </div>
             )}
+
+            {/* Model Statistics Card */}
+            <div className="bg-white rounded-xl border shadow-sm mb-6">
+              <button 
+                onClick={() => setShowModelStats(!showModelStats)} 
+                className="w-full flex items-center justify-between p-4 text-left border-b focus:outline-none"
+              >
+                <span className="flex items-center gap-2 font-medium">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                    <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                    <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                  </svg>
+                  Model Statistics
+                </span>
+                <svg 
+                  className={`w-5 h-5 transition-transform ${showModelStats ? "transform rotate-180" : ""}`} 
+                  xmlns="http://www.w3.org/2000/svg" 
+                  viewBox="0 0 24 24" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  strokeWidth="2" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round"
+                >
+                  <polyline points="6 9 12 15 18 9"></polyline>
+                </svg>
+              </button>
+              
+              {showModelStats && (
+                <div className="p-6 space-y-6">
+                  {!modelStats ? (
+                    <div className="text-center">
+                      <div className="inline-block animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+                      <p className="mt-2 text-gray-600">Loading statistics...</p>
+                    </div>
+                  ) : (
+                    <>
+                      {/* Price Distribution Chart */}
+                      <div>
+                        <h3 className="text-lg font-medium mb-4">Price Distribution for {car?.brand} {car?.model}</h3>
+                        <div className="h-64 bg-white rounded-lg">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <BarChart data={modelStats.priceDistribution || []} margin={{ top: 10, right: 30, left: 20, bottom: 40 }}>
+                              <CartesianGrid stroke="#e0e0e0" strokeDasharray="3 3" />
+                              <XAxis 
+                                dataKey="range" 
+                                stroke="#333"
+                                angle={-45}
+                                textAnchor="end"
+                                tick={{ fontSize: 12 }}
+                                height={70}
+                              />
+                              <YAxis 
+                                stroke="#333"
+                                tickFormatter={(value) => value}
+                              />
+                              <Tooltip
+                                formatter={(value) => [`${value} cars`, "Count"]}
+                                labelFormatter={(value) => `Price range: ${value}`}
+                              />
+                              <Bar 
+                                dataKey="count" 
+                                fill="#3b82f6" 
+                                barSize={30}
+                                radius={[4, 4, 0, 0]}
+                              >
+                                {(modelStats.priceDistribution || []).map((entry, index) => {
+                                  const isCurrentCarRange = car?.price && car.price >= entry.minPrice && car.price <= entry.maxPrice;
+                                  return (
+                                    <Cell 
+                                      key={`cell-${index}`} 
+                                      fill={isCurrentCarRange ? "#10b981" : "#3b82f6"} 
+                                    />
+                                  );
+                                })}
+                              </Bar>
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+
+                      {/* Key Statistics */}
+                      <div>
+                        <h3 className="text-lg font-medium mb-4">Key Statistics</h3>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                          <div className="bg-gray-50 p-4 rounded-lg">
+                            <div className="text-sm text-gray-500">Average Price</div>
+                            <div className="text-xl font-semibold text-gray-800">€{Math.round(modelStats.averagePrice || 0)}</div>
+                            {car?.price && (
+                              <div className={`text-xs mt-1 ${car.price < (modelStats.averagePrice || 0) ? "text-green-600" : "text-red-600"}`}>
+                                {car.price < (modelStats.averagePrice || 0) ? 
+                                  `€${Math.round((modelStats.averagePrice || 0) - car.price)} below avg` : 
+                                  `€${Math.round(car.price - (modelStats.averagePrice || 0))} above avg`}
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className="bg-gray-50 p-4 rounded-lg">
+                            <div className="text-sm text-gray-500">Average Mileage</div>
+                            <div className="text-xl font-semibold text-gray-800">{Math.round(modelStats.averageMileage || 0)} km</div>
+                            {car?.mileage && (
+                              <div className={`text-xs mt-1 ${car.mileage < (modelStats.averageMileage || 0) ? "text-green-600" : "text-red-600"}`}>
+                                {car.mileage < (modelStats.averageMileage || 0) ? 
+                                  `${Math.round((modelStats.averageMileage || 0) - car.mileage)} km below avg` : 
+                                  `${Math.round(car.mileage - (modelStats.averageMileage || 0))} km above avg`}
+                              </div>
+                            )}
+                          </div>
+                          
+                          <div className="bg-gray-50 p-4 rounded-lg">
+                            <div className="text-sm text-gray-500">Count</div>
+                            <div className="text-xl font-semibold text-gray-800">{modelStats.totalCount || 0} cars</div>
+                            <div className="text-xs mt-1 text-gray-500">in database</div>
+                          </div>
+                          
+                          <div className="bg-gray-50 p-4 rounded-lg">
+                            <div className="text-sm text-gray-500">Average Year</div>
+                            <div className="text-xl font-semibold text-gray-800">{modelStats.averageYear || 0}</div>
+                            {car?.year && (
+                              <div className={`text-xs mt-1 ${car.year > (modelStats.averageYear || 0) ? "text-green-600" : "text-red-600"}`}>
+                                {car.year > (modelStats.averageYear || 0) ? 
+                                  `${car.year - (modelStats.averageYear || 0)} years newer` : 
+                                  `${(modelStats.averageYear || 0) - car.year} years older`}
+                              </div>
+                            )}
+                          </div>
+                          
+                          {/* New Stat: Sold Cars */}
+                          <div className="bg-gray-50 p-4 rounded-lg">
+                            <div className="text-sm text-gray-500">Sold Cars</div>
+                            <div className="text-xl font-semibold text-gray-800">{modelStats.soldCount || 0}</div>
+                            <div className="text-xs mt-1 text-gray-500">
+                              {modelStats.soldCount && modelStats.totalCount ? 
+                                `${Math.round((modelStats.soldCount / modelStats.totalCount) * 100)}% of total` : 
+                                'No data'}
+                            </div>
+                          </div>
+                          
+                          {/* New Stat: Average Sale Time */}
+                          <div className="bg-gray-50 p-4 rounded-lg">
+                            <div className="text-sm text-gray-500">Avg. Time to Sell</div>
+                            <div className="text-xl font-semibold text-gray-800">
+                              {modelStats.avgSaleTime ? `${modelStats.avgSaleTime} days` : 'N/A'}
+                            </div>
+                            <div className="text-xs mt-1 text-gray-500">from listing to sale</div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Year Distribution Chart */}
+                      <div>
+                        <h3 className="text-lg font-medium mb-4">Year Distribution</h3>
+                        <div className="h-64 bg-white rounded-lg">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <LineChart data={modelStats.yearDistribution || []} margin={{ top: 10, right: 30, left: 20, bottom: 10 }}>
+                              <CartesianGrid stroke="#e0e0e0" strokeDasharray="3 3" />
+                              <XAxis 
+                                dataKey="year" 
+                                stroke="#333"
+                              />
+                              <YAxis 
+                                stroke="#333"
+                                tickFormatter={(value) => value}
+                              />
+                              <Tooltip
+                                formatter={(value) => [`${value} cars`, "Count"]}
+                                labelFormatter={(value) => `Year: ${value}`}
+                              />
+                              {car?.year && (
+                                <ReferenceLine 
+                                  x={car.year} 
+                                  stroke="#FF8C00" 
+                                  strokeDasharray="3 3" 
+                                  label={{ 
+                                    value: "This Car", 
+                                    position: "top", 
+                                    fill: "#FF8C00",
+                                    fontSize: 14,
+                                    fontWeight: "bold",
+                                    offset: -10
+                                  }} 
+                                />
+                              )}
+                              <Line 
+                                type="monotone" 
+                                dataKey="count" 
+                                stroke="#3b82f6" 
+                                strokeWidth={2} 
+                                dot={{ r: 4, strokeWidth: 2, fill: "#fff" }} 
+                              />
+                            </LineChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
 
             {/* Location */}
             <div className="bg-white rounded-xl border shadow-sm mb-6">

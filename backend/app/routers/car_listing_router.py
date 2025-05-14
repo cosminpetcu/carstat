@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app.schemas.car_listing_schema import CarListingOut, CarListingCreate
+from app.models.models import CarListing
 from app.crud.car_listing_crud import (
     get_all_car_listings,
     create_car_listing,
@@ -209,7 +210,125 @@ def count_cars(
     )
     return {"total": result["total"]}
 
-
+@router.get("/cars/model-stats")
+def get_car_model_stats(
+    brand: str,
+    model: str,
+    db: Session = Depends(get_db)
+):
+    cars = db.query(CarListing).filter(
+        CarListing.brand == brand,
+        CarListing.model == model,
+        (CarListing.suspicious_price != True) | (CarListing.suspicious_price == None),
+        (CarListing.damaged != True) | (CarListing.damaged == None)
+    ).all()
+    
+    if not cars:
+        return {
+            "totalCount": 0,
+            "averagePrice": 0,
+            "averageMileage": 0,
+            "averageYear": 0,
+            "soldCount": 0,
+            "avgSaleTime": None,
+            "priceDistribution": [],
+            "yearDistribution": [],
+            "fuelTypeDistribution": [],
+            "transmissionDistribution": []
+        }
+    
+    total_count = len(cars)
+    
+    prices = [car.price for car in cars if car.price is not None]
+    mileages = [car.mileage for car in cars if car.mileage is not None]
+    years = [car.year for car in cars if car.year is not None]
+    
+    avg_price = sum(prices) / len(prices) if prices else 0
+    avg_mileage = sum(mileages) / len(mileages) if mileages else 0
+    avg_year = round(sum(years) / len(years)) if years else 0
+    
+    sold_cars = [car for car in cars if car.sold == True]
+    sold_count = len(sold_cars)
+    
+    avg_sale_time = None
+    if sold_cars:
+        cars_with_sale_data = [car for car in sold_cars 
+                              if car.created_at is not None and car.sold_detected_at is not None]
+        
+        if cars_with_sale_data:
+            sale_times = [(car.sold_detected_at - car.created_at).days 
+                          for car in cars_with_sale_data]
+            
+            avg_sale_time = round(sum(max(0, days) for days in sale_times) / len(sale_times))
+    
+    if prices:
+        min_price = min(prices)
+        max_price = max(prices)
+        price_range = max_price - min_price
+    else:
+        min_price = 0
+        max_price = 0
+        price_range = 0
+    
+    price_brackets = 8
+    bracket_size = price_range / price_brackets if price_range > 0 else 1000
+    
+    price_distribution = []
+    for i in range(price_brackets):
+        min_bracket = min_price + (i * bracket_size)
+        max_bracket = min_price + ((i + 1) * bracket_size)
+        
+        count = sum(1 for car in cars if car.price is not None and min_bracket <= car.price < max_bracket)
+        
+        price_distribution.append({
+            "range": f"€{int(min_bracket):,} - €{int(max_bracket):,}",
+            "count": count,
+            "minPrice": min_bracket,
+            "maxPrice": max_bracket
+        })
+    
+    if years:
+        min_year = min(years)
+        max_year = max(years)
+    else:
+        min_year = 0
+        max_year = 0
+    
+    year_distribution = []
+    for year in range(min_year, max_year + 1):
+        count = sum(1 for car in cars if car.year == year)
+        year_distribution.append({
+            "year": year,
+            "count": count
+        })
+    
+    fuel_types = {}
+    for car in cars:
+        if car.fuel_type:
+            fuel_types[car.fuel_type] = fuel_types.get(car.fuel_type, 0) + 1
+    
+    fuel_type_distribution = [{"type": fuel, "count": count} for fuel, count in fuel_types.items()]
+    
+    transmissions = {}
+    for car in cars:
+        if car.transmission:
+            transmissions[car.transmission] = transmissions.get(car.transmission, 0) + 1
+    
+    transmission_distribution = [{"type": trans, "count": count} for trans, count in transmissions.items()]
+    
+    return {
+        "totalCount": total_count,
+        "averagePrice": avg_price,
+        "averageMileage": avg_mileage,
+        "averageYear": avg_year,
+        "soldCount": sold_count,
+        "avgSaleTime": avg_sale_time,
+        "priceDistribution": price_distribution,
+        "yearDistribution": year_distribution,
+        "fuelTypeDistribution": fuel_type_distribution,
+        "transmissionDistribution": transmission_distribution
+    }
+    
 @router.get("/cars/{car_id}", response_model=CarListingOut)
 def read_car_by_id(
     car_id: int,
