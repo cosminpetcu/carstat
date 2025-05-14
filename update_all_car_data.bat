@@ -80,3 +80,19 @@ echo ========================================
 echo Car Data Update Process Completed
 echo Finished at %date% %time%
 echo ========================================
+
+for /f "tokens=1-3 delims=:" %%a in ("%time%") do (
+    set hour=%%a
+    set minute=%%b
+)
+set hour=%hour: =%
+
+if %hour% GEQ 1 (
+    if %hour% LEQ 8 (
+        echo.
+        echo Time is between 1 AM and 6 AM. Putting PC to hibernate in 60 seconds.
+        echo Press Ctrl+C to cancel...
+        timeout /t 60
+        rundll32.exe powrprof.dll,SetSuspendState 1,1,0
+    )
+)
