@@ -25,6 +25,8 @@ type Car = {
   deal_rating?: string;
   estimated_price?: number;
   engine_power?: number;
+  quality_score?: number;
+  suspicious_price?: boolean;
 };
 
 export default function ListingsPage() {
@@ -41,6 +43,15 @@ export default function ListingsPage() {
   const [toastMessage, setToastMessage] = useState("");
   const [toastType, setToastType] = useState<"success" | "error" | "">("");
   const [viewMode, setViewMode] = useState("grid");
+
+  const getQualityScoreColor = (quality_score: number | undefined) => {
+    if (!quality_score) return "bg-gray-300";
+    if (quality_score >= 80) return "bg-green-500";
+    if (quality_score >= 60) return "bg-green-400";
+    if (quality_score >= 40) return "bg-yellow-400";
+    if (quality_score >= 20) return "bg-orange-400";
+    return "bg-red-500";
+  };
 
   useEffect(() => {
     if (toastMessage) {
@@ -344,17 +355,36 @@ export default function ListingsPage() {
                 )}
               </div>
 
-              {/* Price Section */}
-              <div className="flex flex-col">
-                <div className="text-xl font-bold text-blue-600">
-                  {car.price !== null
-                    ? `€${car.price.toLocaleString()}`
-                    : "Price on request"}
+              {/* Price and Quality Score Section */}
+              <div className="flex justify-between items-start">
+                <div className="flex flex-col">
+                  <div className="text-xl font-bold text-blue-600">
+                    {car.price !== null
+                      ? `€${car.price.toLocaleString()}`
+                      : "Price on request"}
+                  </div>
+                  
+                  {car.estimated_price && (
+                    <div className="text-sm text-gray-500">
+                      Est. Value: €{car.estimated_price.toLocaleString()}
+                    </div>
+                  )}
                 </div>
                 
-                {car.estimated_price && (
-                  <div className="text-sm text-gray-500">
-                    Est. Value: €{car.estimated_price.toLocaleString()}
+                {car.quality_score !== undefined && (
+                  <div className="relative">
+                    <div 
+                      className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium text-white cursor-pointer ${
+                        car.quality_score >= 80 ? "bg-green-500" : 
+                        car.quality_score >= 60 ? "bg-green-400" : 
+                        car.quality_score >= 40 ? "bg-yellow-400" : 
+                        car.quality_score >= 20 ? "bg-orange-500" : 
+                        "bg-red-500"
+                      }`}
+                      title="Quality Score"
+                    >
+                      {car.quality_score}
+                    </div>
                   </div>
                 )}
               </div>
@@ -363,6 +393,16 @@ export default function ListingsPage() {
               {rating && (
                 <div className={`mt-3 w-full py-1.5 text-center text-xs font-semibold rounded-md ${rating.color} ${rating.textColor}`}>
                   {rating.label}
+                </div>
+              )}
+
+               {/* Suspicious Price Label */}
+              {car.suspicious_price && (
+                <div className="mt-2 flex items-center text-red-500">
+                  <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <span className="text-xs">Suspicious Price</span>
                 </div>
               )}
             </div>
@@ -492,23 +532,45 @@ export default function ListingsPage() {
                 <span>{car.transmission}</span>
               </div>
               {car.engine_capacity && (
-                  <div className="flex items-center">
-                    <EngineIcon className="w-4 h-4 mr-1.5" />
-                    <span>{car.engine_capacity} cm³</span>
-                  </div>
-                )}
-                {car.engine_power && (
-                  <div className="flex items-center">
-                    <SpeedometerIcon className="w-4 h-4 mr-1.5" />
-                    <span>{car.engine_power} hp</span>
-                  </div>
-                )}
+                <div className="flex items-center">
+                  <EngineIcon className="w-4 h-4 mr-1.5" />
+                  <span>{car.engine_capacity} cm³</span>
+                </div>
+              )}
+              {car.engine_power && (
+                <div className="flex items-center">
+                  <SpeedometerIcon className="w-4 h-4 mr-1.5" />
+                  <span>{car.engine_power} hp</span>
+                </div>
+              )}
             </div>
             
-            {/* Deal Rating */}
-            {rating && (
-              <div className={`w-full md:w-48 py-1.5 text-center text-xs font-semibold rounded-md ${rating.color} ${rating.textColor}`}>
-                {rating.label}
+            {/* Deal Rating and Quality Score in the same row */}
+            <div className="flex items-center justify-between">
+              {rating && (
+                <div className={`w-auto md:w-48 py-1.5 text-center text-xs font-semibold rounded-md ${rating.color} ${rating.textColor}`}>
+                  {rating.label}
+                </div>
+              )}
+              
+              {car.quality_score !== undefined && (
+                <div className="relative">
+                  <div 
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium text-white cursor-pointer ${getQualityScoreColor(car.quality_score)}`}
+                    title="Quality Score"
+                  >
+                    {car.quality_score}
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {car.suspicious_price && (
+              <div className="mt-2 flex items-center text-red-500">
+                <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <span className="text-xs">Suspicious Price</span>
               </div>
             )}
           </div>

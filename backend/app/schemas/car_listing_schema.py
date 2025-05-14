@@ -53,6 +53,8 @@ class CarListingOut(BaseModel):
     views: Optional[int]
     battery_capacity: Optional[float]
     range_km: Optional[int]
+    quality_score: Optional[int]
+    suspicious_price: Optional[bool]
     created_at: datetime
     is_favorite: Optional[bool] = False
     

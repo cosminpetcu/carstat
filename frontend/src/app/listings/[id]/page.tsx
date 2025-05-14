@@ -58,6 +58,13 @@ type Car = {
   images?: string[] | string;
   description?: string;
   price_history?: string;
+  quality_score?: number;
+  suspicious_price?: boolean;
+  sold_detected_at?: string;
+  battery_capacity?: number;
+  range_km?: number;
+  consumption_mixed?: string;
+  deal_rating?: string;
 };
 
 export default function CarDetailPage() {
@@ -73,6 +80,25 @@ export default function CarDetailPage() {
   const [showAdmin, setShowAdmin] = useState(true);
   const [showDescription, setShowDescription] = useState(false);
   const [showPriceHistory, setShowPriceHistory] = useState(true);
+
+  const getQualityScoreColor = (score: number | undefined) => {
+    if (!score) return "bg-gray-300";
+    if (score >= 80) return "bg-green-500 text-white";
+    if (score >= 60) return "bg-green-400 text-white";
+    if (score >= 40) return "bg-yellow-400 text-black";
+    if (score >= 20) return "bg-orange-500 text-white";
+    return "bg-red-500 text-white";
+  };
+
+  const getQualityScoreLabel = (score: number | undefined) => {
+    if (!score) return "Unrated";
+    if (score >= 80) return "Excellent";
+    if (score >= 60) return "Good";
+    if (score >= 40) return "Average";
+    if (score >= 20) return "Below Average";
+    return "Poor";
+  };
+
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -177,6 +203,20 @@ export default function CarDetailPage() {
         <div className="flex flex-col lg:flex-row gap-8">
           {/* Main Content */}
           <div className="lg:w-2/3">
+            {car.suspicious_price && (
+              <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6 rounded shadow-sm">
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <svg className="h-5 w-5 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm">This listing has a suspicious price. It may be significantly below market value, have damages, or other pricing issues.</p>
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="flex items-start justify-between mb-4">
               <div>
                 <h1 className="text-3xl text-gray-800 font-bold mb-1">{car.title}</h1>
@@ -297,6 +337,9 @@ export default function CarDetailPage() {
                   {renderInfoItem("Consumption Highway", car.consumption_highway)}
                   {renderInfoItem("Traction", car.traction)}
                   {renderInfoItem("Drive Type", car.drive_type)}
+                  {car.fuel_type === "Electric" && car.battery_capacity && renderInfoItem("Battery Capacity", `${car.battery_capacity} kWh`)}
+                  {car.fuel_type === "Electric" && car.range_km && renderInfoItem("Range", `${car.range_km} km`)}
+                  {car.fuel_type === "Electric" && car.consumption_mixed && renderInfoItem("Energy Consumption", car.consumption_mixed)}
                 </div>
               )}
             </div>
@@ -381,6 +424,7 @@ export default function CarDetailPage() {
                   {renderInfoItem("Service Book", car.service_book ? "Yes" : "No")}
                   {renderInfoItem("Registered", car.registered ? "Yes" : "No")}
                   {renderInfoItem("Ad Created At", formatDate(car.created_at))}
+                  {car.sold && car.sold_detected_at && renderInfoItem("Sold Date", formatDate(car.sold_detected_at))}
                 </div>
               )}
             </div>
@@ -615,15 +659,38 @@ export default function CarDetailPage() {
             {/* Price Card */}
             <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
               <div className="bg-blue-50 p-6">
-                <div className="flex items-baseline justify-between mb-1">
+                <div className="flex items-center justify-between mb-1">
                   <span className="text-3xl font-bold text-blue-600">
                     €{car.price?.toLocaleString() ?? "N/A"}
                   </span>
-                  {car.sold && (
-                    <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full font-medium">
-                      SOLD
-                    </span>
-                  )}
+                  <div className="flex items-center">
+                    {car.deal_rating && (
+                      <div className={`ml-2 px-3 py-1 rounded-md text-xs font-semibold ${
+                        car.deal_rating === "S" ? "bg-green-700 text-white" : 
+                        car.deal_rating === "A" ? "bg-lime-600 text-white" : 
+                        car.deal_rating === "B" ? "bg-emerald-500 text-white" : 
+                        car.deal_rating === "C" ? "bg-yellow-400 text-black" : 
+                        car.deal_rating === "D" ? "bg-orange-500 text-white" : 
+                        car.deal_rating === "E" ? "bg-rose-500 text-white" : 
+                        car.deal_rating === "F" ? "bg-red-700 text-white" : 
+                        "bg-gray-400 text-white"
+                      }`}>
+                        {car.deal_rating === "S" ? "Exceptional Price" : 
+                        car.deal_rating === "A" ? "Very Good Price" : 
+                        car.deal_rating === "B" ? "Good Price" : 
+                        car.deal_rating === "C" ? "Fair Price" : 
+                        car.deal_rating === "D" ? "Expensive" : 
+                        car.deal_rating === "E" ? "Very Expensive" : 
+                        car.deal_rating === "F" ? "Overpriced" : 
+                        "Unrated"}
+                      </div>
+                    )}
+                    {car.sold && (
+                      <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full font-medium">
+                        SOLD
+                      </span>
+                    )}
+                  </div>
                 </div>
                 {car.estimated_price && (
                   <div className="text-sm text-gray-800 flex items-center">
@@ -653,21 +720,6 @@ export default function CarDetailPage() {
                       View original ad
                     </a>
                   )}
-                  
-                  <button className="w-full flex items-center justify-center gap-2 py-3 px-4 border border-gray-300 hover:bg-gray-50 rounded-lg font-medium transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
-                      <polyline points="22,6 12,13 2,6"/>
-                    </svg>
-                    Test button
-                  </button>
-                  
-                  <button className="w-full flex items-center justify-center gap-2 py-3 px-4 border border-gray-300 hover:bg-gray-50 rounded-lg font-medium transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/>
-                    </svg>
-                    Test button 2
-                  </button>
                 </div>
               </div>
             </div>
@@ -684,6 +736,20 @@ export default function CarDetailPage() {
                 {renderInfoItem("Transmission", car.transmission)}
                 {renderInfoItem("Engine Capacity", car.engine_capacity ? `${car.engine_capacity} cc` : "N/A")}
                 {renderInfoItem("Power", car.engine_power  ? `${car.engine_power} hp` : "N/A")}
+                {car.quality_score !== undefined && (
+                  <div className="mt-4 border-t pt-4">
+                    <h4 className="text-sm font-medium mb-2">Quality Score</h4>
+                    <div className="flex items-center">
+                      <div className={`w-12 h-12 rounded-full flex items-center justify-center text-sm font-bold ${getQualityScoreColor(car.quality_score)}`}>
+                        {car.quality_score}
+                      </div>
+                      <div className="ml-3">
+                        <span className="text-sm font-medium">{getQualityScoreLabel(car.quality_score)}</span>
+                        <p className="text-xs text-gray-500">Vehicle condition assessment</p>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
