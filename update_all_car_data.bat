@@ -7,23 +7,23 @@ echo ========================================
 cd /d "C:\Users\cosmi\Desktop\LICENTA\CarStat"
 
 echo.
-echo Step 1/5: Running OLX Scraper
-echo ----------------------------------------
-cd /d "C:\Users\cosmi\Desktop\LICENTA\CarStat\backend\olx_scraper"
-set PYTHONPATH=%PYTHONPATH%;C:\Users\cosmi\Desktop\LICENTA\CarStat\backend\olx_scraper
-call venv_scrapy\Scripts\activate
-timeout /t 5 /nobreak
-scrapy crawl olx_autoturisme
-call venv_scrapy\Scripts\deactivate
-
-echo.
-echo Step 2/5: Running Autovit Scraper
+echo Step 1/5: Running Autovit Scraper
 echo ----------------------------------------
 cd /d "C:\Users\cosmi\Desktop\LICENTA\CarStat\backend\olx_scraper"
 set PYTHONPATH=%PYTHONPATH%;C:\Users\cosmi\Desktop\LICENTA\CarStat\backend\olx_scraper
 call venv_scrapy\Scripts\activate
 timeout /t 5 /nobreak
 scrapy crawl autovit_autoturisme
+call venv_scrapy\Scripts\deactivate
+
+echo.
+echo Step 2/5: Running OLX Scraper
+echo ----------------------------------------
+cd /d "C:\Users\cosmi\Desktop\LICENTA\CarStat\backend\olx_scraper"
+set PYTHONPATH=%PYTHONPATH%;C:\Users\cosmi\Desktop\LICENTA\CarStat\backend\olx_scraper
+call venv_scrapy\Scripts\activate
+timeout /t 5 /nobreak
+scrapy crawl olx_autoturisme
 call venv_scrapy\Scripts\deactivate
 
 echo.

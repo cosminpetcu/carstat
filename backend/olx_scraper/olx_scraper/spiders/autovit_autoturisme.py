@@ -157,7 +157,7 @@ class AutovitAutoturismeSpider(scrapy.Spider):
             return
             
         def extract_testid_value(testid):
-            sel = response.css(f'div[data-testid="{testid}"] p.ekwurce9::text').get()
+            sel = response.css(f'div[data-testid="{testid}"] p.eur4qwl9::text').get()
             return sel.strip() if sel else None
 
         def extract_boolean(testid):
