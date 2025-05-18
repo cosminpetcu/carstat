@@ -17,29 +17,30 @@ import {
   GPSIcon
 } from "@/components/Icons";
 
-// Define mappings between display (English) and backend values (Romanian)
 const vehicleConditionMap = {
-  "New": "Nou",
-  "Used": "Utilizat"
+  "New": "New",
+  "Used": "Used"
 };
 
 const fuelTypeMap = {
   "Petrol": "Petrol",
   "Diesel": "Diesel",
-  "Electric": "Electric", 
   "Hybrid": "Hybrid",
-  "LPG": "LPG"
+  "Plug-in Hybrid": "Plug-in Hybrid",
+  "LPG": "LPG/GPL",
+  "CNG": "CNG",
+  "Electric": "Electric"
 };
 
 const transmissionMap = {
   "Manual": "Manual",
-  "Automatic": "Automatic",
-  "Semi-automatic": "Semi-automatic"
+  "Automatic": "Automatic"
 };
 
+
 // Filter options constants
-const driveTypes = ["Hatchback", "Sedan", "SUV", "Coupe", "Convertible", "Wagon", "Van", "Minivan"];
-const colorOptions = ["White", "Black", "Silver", "Gray", "Blue", "Red", "Green", "Yellow", "Brown", "Orange", "Purple"];
+const driveTypes = ["Sedan", "SUV", "Wagon", "Hatchback", "MPV", "Coupe", "Convertible", "Pickup"];
+const colorOptions = ["Black", "Grey", "White", "Blue", "Red", "Silver", "Brown", "Beige", "Green", "Yellow/Gold", "Orange", "Other"];
 const sellerTypes = ["Private", "Dealer"];
 
 // Deal Rating with descriptions

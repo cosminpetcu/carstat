@@ -2,12 +2,11 @@ import scrapy
 from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app.models.models import CarListing
-from datetime import datetime, timedelta
+from datetime import datetime
 import json
 from tqdm import tqdm
 import os
 import re
-import time
 from scrapy.exceptions import CloseSpider
 
 class UpdatePartialSpider(scrapy.Spider):

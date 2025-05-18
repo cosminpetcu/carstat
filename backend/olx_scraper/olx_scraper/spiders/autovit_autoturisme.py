@@ -4,8 +4,8 @@ from app.database import SessionLocal
 from datetime import datetime
 import json
 import re
-import time
 from urllib.parse import urljoin
+from app.constants.mappings import standardize_drive_type, standardize_fuel_type, standardize_transmission, standardize_vehicle_condition, standardize_color, standardize_emission_standard
 
 month_map = {
     "ianuarie": "01",
@@ -191,7 +191,8 @@ class AutovitAutoturismeSpider(scrapy.Spider):
         model = extract_testid_value("model")
         year = extract_int("year", "")
         mileage = extract_int("mileage", " km")
-        fuel_type = extract_testid_value("fuel_type")
+        fuel_type_original = extract_testid_value("fuel_type")
+        fuel_type = standardize_fuel_type(fuel_type_original)
         
         is_electric = (fuel_type == "Electric")
         battery_capacity = None
@@ -230,18 +231,23 @@ class AutovitAutoturismeSpider(scrapy.Spider):
                     except Exception as e:
                         print(f"Error extracting consumption: {e}")
             
-        transmission = extract_testid_value("gearbox")
+        transmission_original = extract_testid_value("gearbox")
+        transmission = standardize_transmission(transmission_original)
         if is_electric and transmission == None:
-            transmission = "Automata"
+            transmission = "Automatic"
         engine_power = extract_int("engine_power", " CP")
-        emission_standard = extract_testid_value("pollution_standard")
+        emission_standard_original = extract_testid_value("pollution_standard")
+        emission_standard = standardize_emission_standard(emission_standard_original)
         doors = extract_int("door_count")
         nr_seats = extract_int("nr_seats")
-        color = extract_testid_value("color")
+        color_original = extract_testid_value("color")
+        color = standardize_color(color_original)
         color_type = extract_testid_value("colour_type")
-        drive_type = extract_testid_value("body_type")
+        drive_type_original = extract_testid_value("body_type")
+        drive_type = standardize_drive_type(drive_type_original)
         traction = extract_testid_value("transmission")
-        vehicle_condition = extract_testid_value("new_used")
+        vehicle_condition_original = extract_testid_value("new_used")
+        vehicle_condition = standardize_vehicle_condition(vehicle_condition_original)
         vin = extract_testid_value("advert-vin")
         
         if engine_capacity is None:

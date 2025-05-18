@@ -88,7 +88,7 @@ def calculate_quality_score(car):
     if car.registered == True:
         score += 5
     
-    if car.transmission and "automat" in car.transmission.lower():
+    if car.transmission and "automatic" in car.transmission.lower():
         score += 10
     
     if car.right_hand_drive == True:

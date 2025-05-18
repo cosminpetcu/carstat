@@ -4,6 +4,7 @@ from app.database import SessionLocal
 import json
 from datetime import datetime, timedelta
 import re
+from app.constants.mappings import standardize_drive_type, standardize_fuel_type, standardize_transmission, standardize_vehicle_condition, standardize_color
 
 month_map = {
     "ianuarie": "01",
@@ -97,7 +98,6 @@ class OlxAutoturismeSpider(scrapy.Spider):
             db.close()
 
     def start_requests(self):
-        from app.database import SessionLocal
         session = SessionLocal()
         try:
             session.query(CarListing).update({CarListing.is_new: False})
@@ -152,7 +152,6 @@ class OlxAutoturismeSpider(scrapy.Spider):
         price = None
 
         if description_meta:
-            import re
             match = re.search(r"([\d\s]+) €:?\s*", description_meta)
             if match:
                 price = float(match.group(1).replace(" ", "").replace("€", ""))
@@ -179,7 +178,8 @@ class OlxAutoturismeSpider(scrapy.Spider):
         model = details.get("model")
         year = int(details.get("an de fabricatie", "0").replace(" ", "")) or None
         mileage = int(details.get("rulaj", "0").replace("km", "").replace(" ", "")) or None
-        fuel_type = details.get("combustibil")
+        fuel_type_original = details.get("combustibil")
+        fuel_type = standardize_fuel_type(fuel_type_original)
         
         is_electric = (fuel_type == "Electric")
         
@@ -189,15 +189,20 @@ class OlxAutoturismeSpider(scrapy.Spider):
             engine_capacity = 0
         
         engine_power = int(details.get("putere", "0").replace("CP", "").replace(" ", "")) or None
-        transmission = details.get("cutie de viteze")
+        
+        transmission_original = details.get("cutie de viteze")
+        transmission = standardize_transmission(transmission_original)
         
         if is_electric and transmission is None:
-            transmission = "Automata"
+            transmission = "Automatic"
             
-        drive_type = details.get("caroserie")
-        color = details.get("culoare")
+        drive_type_original = details.get("caroserie")
+        drive_type = standardize_drive_type(drive_type_original)
+        color_original = details.get("culoare")
+        color = standardize_color(color_original)
         doors = int(details["numar de usi"]) if "numar de usi" in details and details["numar de usi"].isdigit() else None
-        vehicle_condition = details.get("stare")
+        vehicle_condition_original = details.get("stare")
+        vehicle_condition = standardize_vehicle_condition(vehicle_condition_original)
         created_at = datetime.now()
         
         seller_type_raw = response.css("div[data-testid='ad-parameters-container'] span::text").get()

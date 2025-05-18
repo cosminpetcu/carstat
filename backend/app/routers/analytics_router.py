@@ -1018,7 +1018,8 @@ def get_generation_analysis(db: Session = Depends(get_db)):
     
     generation_analysis = []
     
-    for brand, model in models_with_generations:
+    # Fix: Unpack all three values from the query result
+    for brand, model, generation_count in models_with_generations:
         generations = db.execute(text(f"""
             SELECT 
                 generation,
@@ -1045,6 +1046,7 @@ def get_generation_analysis(db: Session = Depends(get_db)):
             generation_analysis.append({
                 "brand": brand,
                 "model": model,
+                "generation_count": generation_count,  # Optional: include this in response
                 "generations": [
                     {
                         "generation": row[0],
@@ -1124,7 +1126,6 @@ def get_mileage_impact(db: Session = Depends(get_db)):
             ORDER BY deal_rating
         """)).fetchall()
         
-        # Extragem valorile din rezultate
         avg_price = price_data[0] if price_data and price_data[0] is not None else None
         min_price = price_data[1] if price_data and price_data[1] is not None else None
         max_price = price_data[2] if price_data and price_data[2] is not None else None
@@ -1135,12 +1136,10 @@ def get_mileage_impact(db: Session = Depends(get_db)):
         
         sales_rate = sales_rate_data[0] if sales_rate_data and sales_rate_data[0] is not None else None
         
-        # Procesam distribuția de deal ratings
         deal_ratings = {}
         for deal_rating, rating_count in deal_ratings_data:
             deal_ratings[deal_rating] = rating_count
         
-        # Calculăm procentajul de bune afaceri (S, A, B) 
         good_deals_count = sum(deal_ratings.get(rating, 0) for rating in ['S', 'A', 'B'])
         total_rated = sum(deal_ratings.values())
         good_deals_percentage = (good_deals_count / total_rated * 100) if total_rated > 0 else None
@@ -1160,22 +1159,16 @@ def get_mileage_impact(db: Session = Depends(get_db)):
             "goodDealsPercentage": round(good_deals_percentage, 1) if good_deals_percentage is not None else None
         })
     
-    # Sortăm rezultatele în ordine crescătoare a kilometrajului
     results.sort(key=lambda x: x["minMileage"])
     
     return results
 
 @router.get("/suspicious-listings")
 def get_suspicious_listings_analysis(db: Session = Depends(get_db)):
-    """Returnează analiză despre anunțurile marcate ca suspecte și cele incomplete"""
-    
-    # Numărul total de anunțuri suspecte
     total_suspicious = db.query(CarListing).filter(CarListing.suspicious_price == True).count()
     
-    # Numărul total de anunțuri
     total_listings = db.query(CarListing).count()
     
-    # Factori comuni în anunțuri suspecte - caracteristici ale mașinilor
     suspicious_factors = db.execute(text("""
         SELECT 
             COUNT(CASE WHEN brand IS NOT NULL THEN 1 ELSE NULL END) as with_brand,
@@ -1196,8 +1189,7 @@ def get_suspicious_listings_analysis(db: Session = Depends(get_db)):
         FROM car_listings
         WHERE suspicious_price = true
     """)).fetchone()
-    
-    # Statistici similare pentru anunțuri normale pentru comparație
+
     normal_factors = db.execute(text("""
         SELECT 
             COUNT(CASE WHEN brand IS NOT NULL THEN 1 ELSE NULL END) as with_brand,
@@ -1219,7 +1211,6 @@ def get_suspicious_listings_analysis(db: Session = Depends(get_db)):
         WHERE suspicious_price IS NULL OR suspicious_price = false
     """)).fetchone()
     
-    # Top branduri în anunțuri suspecte
     top_suspicious_brands = db.execute(text("""
         SELECT 
             brand,
@@ -1234,7 +1225,6 @@ def get_suspicious_listings_analysis(db: Session = Depends(get_db)):
         LIMIT 10
     """)).fetchall()
     
-    # Intervalele de preț pentru anunțuri suspecte
     price_ranges_suspicious = db.execute(text("""
         SELECT 
             CASE 
@@ -1253,7 +1243,6 @@ def get_suspicious_listings_analysis(db: Session = Depends(get_db)):
         ORDER BY MIN(price)
     """)).fetchall()
     
-    # Statistici despre anunțuri incomplete
     incomplete_sources = db.execute(text("""
         SELECT 
             source,
@@ -1339,7 +1328,6 @@ def get_suspicious_listings_analysis(db: Session = Depends(get_db)):
             "difference": round(suspicious_pct - normal_pct, 1)
         })
     
-    # Statistici specifice
     right_hand_drive_pct_suspicious = (suspicious_dict.get("right_hand_drive", 0) / total_suspicious) * 100 if total_suspicious > 0 else 0
     right_hand_drive_pct_normal = (normal_dict.get("right_hand_drive", 0) / (total_listings - total_suspicious)) * 100 if (total_listings - total_suspicious) > 0 else 0
     
