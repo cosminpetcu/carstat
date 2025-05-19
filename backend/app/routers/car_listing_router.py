@@ -10,6 +10,7 @@ from app.crud.car_listing_crud import (
 )
 from typing import List, Optional, Dict, Any
 from datetime import datetime
+from sqlalchemy import func
 
 router = APIRouter()
 
@@ -339,3 +340,32 @@ def read_car_by_id(
     if car is None:
         return {"error": "Car not found"}
     return car
+
+@router.get("/cars/{car_id}/similar")
+def get_similar_cars(
+    car_id: int,
+    limit: int = 12,
+    db: Session = Depends(get_db)
+):
+    car = db.query(CarListing).filter(CarListing.id == car_id).first()
+    if not car:
+        return {"error": "Car not found"}
+    
+    similar_cars = (
+        db.query(CarListing)
+        .filter(
+            CarListing.id != car_id,
+            CarListing.brand == car.brand,
+            CarListing.model == car.model,
+            CarListing.sold == False,
+            (CarListing.suspicious_price != True) | (CarListing.suspicious_price == None),
+            CarListing.year.between(car.year - 3, car.year + 3) if car.year else True,
+            CarListing.engine_capacity.between(car.engine_capacity - 300, car.engine_capacity + 300) if car.engine_capacity else True,
+            CarListing.fuel_type == car.fuel_type if car.fuel_type else True,
+        )
+        .order_by(func.abs(CarListing.price - car.price))
+        .limit(limit)
+        .all()
+    )
+    
+    return [CarListingOut.from_orm(similar_car) for similar_car in similar_cars]

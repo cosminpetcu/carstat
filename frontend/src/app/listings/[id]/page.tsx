@@ -68,6 +68,7 @@ type Car = {
   range_km?: number;
   consumption_mixed?: string;
   deal_rating?: string;
+  estimated_price?: number;
 };
 
 interface ModelStats {
@@ -108,10 +109,24 @@ interface CustomTooltipPayload {
   type?: string;
 }
 
+interface MainImageGalleryProps {
+  images: string[];
+  currentIndex: number;
+  setCurrentIndex: React.Dispatch<React.SetStateAction<number>>;
+  openImageModal: (index: number) => void;
+}
+
+interface ImageModalProps {
+  images: string[];
+  modalImageIndex: number;
+  setModalImageIndex: React.Dispatch<React.SetStateAction<number>>;
+  closeImageModal: () => void;
+}
+
 export default function CarDetailPage() {
   const { id } = useParams();
   const router = useRouter();
-  const [car, setCar] = useState<Car & { estimated_price?: number } | null>(null);
+  const [car, setCar] = useState<Car | null>(null);
   const [loading, setLoading] = useState(true);
   const [images, setImages] = useState<string[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -124,6 +139,14 @@ export default function CarDetailPage() {
 
   const [showModelStats, setShowModelStats] = useState(false);
   const [modelStats, setModelStats] = useState<ModelStats | null>(null);
+
+  const [similarCars, setSimilarCars] = useState<Car[]>([]);
+  const [loadingSimilar, setLoadingSimilar] = useState(false);
+  const [similarCarsPage, setSimilarCarsPage] = useState(0);
+  const visibleCars = 4;
+
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [modalImageIndex, setModalImageIndex] = useState(0);
 
   const getQualityScoreColor = (score: number | undefined) => {
     if (!score) return "bg-gray-300";
@@ -141,6 +164,40 @@ export default function CarDetailPage() {
     if (score >= 40) return "Average";
     if (score >= 20) return "Below Average";
     return "Poor";
+  };
+
+  const formatAdAge = (dateString: string | undefined) => {
+    if (!dateString) return "N/A";
+    const adDate = new Date(dateString);
+    const now = new Date();
+    const diffDays = Math.floor((now.getTime() - adDate.getTime()) / (1000 * 60 * 60 * 24));
+    
+    if (diffDays === 0) return "Today";
+    if (diffDays === 1) return "Yesterday";
+    if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+    if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
+    return `${Math.floor(diffDays / 365)} years ago`;
+  };
+
+  const parseImage = (images: string[] | string): string => {
+    try {
+      const parsed = typeof images === "string" ? JSON.parse(images) : images;
+      return Array.isArray(parsed) && parsed.length > 0 ? parsed[0] : "/default-car.webp";
+    } catch {
+      return "/default-car.webp";
+    }
+  };
+
+  const openImageModal = (index: number) => {
+    setModalImageIndex(index);
+    setShowImageModal(true);
+    document.body.style.overflow = 'hidden';
+  };
+
+  const closeImageModal = () => {
+    setShowImageModal(false);
+    document.body.style.overflow = 'auto';
   };
 
   useEffect(() => {
@@ -190,6 +247,22 @@ export default function CarDetailPage() {
       });
   }, [id]);
 
+  useEffect(() => {
+    if (car?.id) {
+      setLoadingSimilar(true);
+      fetch(`http://localhost:8000/cars/${car.id}/similar`)
+        .then(res => res.json())
+        .then(data => {
+          setSimilarCars(data);
+          setLoadingSimilar(false);
+        })
+        .catch(err => {
+          console.error("Failed to fetch similar cars", err);
+          setLoadingSimilar(false);
+        });
+    }
+  }, [car?.id]);
+
   const toggleFavorite = async () => {
     const token = localStorage.getItem("token");
     const userRaw = localStorage.getItem("user");
@@ -238,6 +311,213 @@ export default function CarDetailPage() {
       <span className="font-medium">{value ?? "N/A"}</span>
     </div>
   );
+
+  const nextSimilarCarsPage = () => {
+    const maxPage = Math.ceil(similarCars.length / visibleCars) - 1;
+    setSimilarCarsPage(prev => Math.min(prev + 1, maxPage));
+  };
+
+  const prevSimilarCarsPage = () => {
+    setSimilarCarsPage(prev => Math.max(prev - 1, 0));
+  };
+
+  const getRatingColor = (rating: string | undefined) => {
+    switch (rating?.toUpperCase()) {
+      case "S": return "bg-green-700 text-white";
+      case "A": return "bg-lime-600 text-white";
+      case "B": return "bg-emerald-500 text-white";
+      case "C": return "bg-yellow-400 text-black";
+      case "D": return "bg-orange-500 text-white";
+      case "E": return "bg-rose-500 text-white";
+      case "F": return "bg-red-700 text-white";
+      default: return "bg-gray-400 text-white";
+    }
+  };
+
+  const getRatingText = (rating: string | undefined) => {
+    switch (rating?.toUpperCase()) {
+      case "S": return "Exceptional Price";
+      case "A": return "Very Good Price";
+      case "B": return "Good Price";
+      case "C": return "Fair Price";
+      case "D": return "Expensive";
+      case "E": return "Very Expensive";
+      case "F": return "Overpriced";
+      default: return "Unrated";
+    }
+  };
+
+  const MainImageGallery = ({ images, currentIndex, setCurrentIndex, openImageModal }: MainImageGalleryProps) => {
+    if (!images || images.length === 0) {
+      return (
+        <div className="w-full h-[300px] bg-gray-100 rounded-xl flex items-center justify-center text-gray-800 mb-8">
+          <div className="text-center">
+            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="mx-auto mb-2">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
+              <circle cx="8.5" cy="8.5" r="1.5"/>
+              <polyline points="21 15 16 10 5 21"/>
+            </svg>
+            <span>No images available</span>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="relative w-full h-[500px] mb-8 rounded-xl overflow-hidden shadow-lg">
+        <Image 
+          src={images[currentIndex]} 
+          alt="Car image" 
+          fill
+          className="object-cover cursor-pointer"
+          priority
+          onClick={() => openImageModal(currentIndex)}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              openImageModal(currentIndex);
+            }
+          }}
+        />
+        
+        <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent pointer-events-none"></div>
+        
+        <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
+          {images.map((_, idx: number) => (
+            <button 
+              key={idx}
+              onClick={() => setCurrentIndex(idx)}
+              className={`w-3 h-3 rounded-full ${currentIndex === idx ? "bg-white" : "bg-white/40"}`}
+              aria-label={`View image ${idx + 1}`}
+            />
+          ))}
+        </div>
+        
+        <div className="absolute top-4 right-4 bg-black/60 text-white text-xs px-3 py-1 rounded-full">
+          {currentIndex + 1} / {images.length}
+        </div>
+        
+        <button 
+          onClick={(e) => {
+            e.stopPropagation();
+            setCurrentIndex((prev: number) => (prev === 0 ? images.length - 1 : prev - 1));
+          }}
+          className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/30 hover:bg-black/60 text-white w-10 h-10 rounded-full flex items-center justify-center transition-colors z-10"
+          aria-label="Previous image"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M15 18l-6-6 6-6"/>
+          </svg>
+        </button>
+        
+        <button 
+          onClick={(e) => {
+            e.stopPropagation();
+            setCurrentIndex((prev: number) => (prev === images.length - 1 ? 0 : prev + 1));
+          }}
+          className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black/30 hover:bg-black/60 text-white w-10 h-10 rounded-full flex items-center justify-center transition-colors z-10"
+          aria-label="Next image"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 18l6-6-6-6"/>
+          </svg>
+        </button>
+      </div>
+    );
+  };
+
+  const ImageModal = ({ images, modalImageIndex, setModalImageIndex, closeImageModal }: ImageModalProps) => {
+    useEffect(() => {
+      const handleKeyDown = (e: KeyboardEvent) => {
+        if (e.key === 'Escape') {
+          closeImageModal();
+        } else if (e.key === 'ArrowLeft') {
+          setModalImageIndex((prev: number) => (prev === 0 ? images.length - 1 : prev - 1));
+        } else if (e.key === 'ArrowRight') {
+          setModalImageIndex((prev: number) => (prev === images.length - 1 ? 0 : prev + 1));
+        }
+      };
+
+      window.addEventListener('keydown', handleKeyDown);
+      return () => {
+        window.removeEventListener('keydown', handleKeyDown);
+      };
+    }, [closeImageModal, images, setModalImageIndex]);
+
+    return (
+      <div 
+        className="fixed inset-0 z-50 bg-black bg-opacity-90 flex items-center justify-center"
+        onClick={closeImageModal}
+      >
+        <button 
+          onClick={closeImageModal}
+          className="absolute top-4 right-4 text-white hover:text-gray-300 z-50"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+        
+        <div 
+          className="relative w-full h-full max-w-screen-xl max-h-screen flex items-center justify-center"
+          onClick={(e) => e.stopPropagation()} 
+        >
+          <Image
+            src={images[modalImageIndex]}
+            alt="Full size car image"
+            fill
+            className="object-contain"
+            priority
+          />
+          
+          {images.length > 1 && (
+            <>
+              <button
+                onClick={(e: React.MouseEvent) => {
+                  e.stopPropagation();
+                  setModalImageIndex((prev: number) => (prev === 0 ? images.length - 1 : prev - 1));
+                }}
+                className="absolute left-4 z-50 bg-black/30 hover:bg-black/60 text-white w-12 h-12 rounded-full flex items-center justify-center transition-colors"
+                aria-label="Previous image"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M15 18l-6-6 6-6"/>
+                </svg>
+              </button>
+              
+              <button
+                onClick={(e: React.MouseEvent) => {
+                  e.stopPropagation();
+                  setModalImageIndex((prev: number) => (prev === images.length - 1 ? 0 : prev + 1));
+                }}
+                className="absolute right-4 z-50 bg-black/30 hover:bg-black/60 text-white w-12 h-12 rounded-full flex items-center justify-center transition-colors"
+                aria-label="Next image"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M9 18l6-6-6-6"/>
+                </svg>
+              </button>
+              
+              <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
+                {images.map((_, idx: number) => (
+                  <button 
+                    key={idx}
+                    onClick={(e: React.MouseEvent) => {
+                      e.stopPropagation();
+                      setModalImageIndex(idx);
+                    }}
+                    className={`w-3 h-3 rounded-full ${modalImageIndex === idx ? "bg-white" : "bg-white/40"}`}
+                    aria-label={`View image ${idx + 1}`}
+                  />
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   return (
     <main className="bg-white min-h-screen">
@@ -297,52 +577,12 @@ export default function CarDetailPage() {
 
             {/* Image Gallery */}
             {images.length > 0 ? (
-              <div className="relative w-full h-[500px] mb-8 rounded-xl overflow-hidden shadow-lg">
-                <Image 
-                  src={images[currentIndex]} 
-                  alt={`${car.brand} ${car.model}`} 
-                  fill
-                  className="object-cover"
-                  priority
-                />
-                
-                <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
-                
-                <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2">
-                  {images.map((_, idx) => (
-                    <button 
-                      key={idx}
-                      onClick={() => setCurrentIndex(idx)}
-                      className={`w-3 h-3 rounded-full ${currentIndex === idx ? "bg-white" : "bg-white/40"}`}
-                      aria-label={`View image ${idx + 1}`}
-                    />
-                  ))}
-                </div>
-                
-                <div className="absolute top-4 right-4 bg-black/60 text-white text-xs px-3 py-1 rounded-full">
-                  {currentIndex + 1} / {images.length}
-                </div>
-                
-                <button 
-                  onClick={() => setCurrentIndex((prev) => (prev === 0 ? images.length - 1 : prev - 1))}
-                  className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-black/30 hover:bg-black/60 text-white w-10 h-10 rounded-full flex items-center justify-center transition-colors"
-                  aria-label="Previous image"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M15 18l-6-6 6-6"/>
-                  </svg>
-                </button>
-                
-                <button 
-                  onClick={() => setCurrentIndex((prev) => (prev === images.length - 1 ? 0 : prev + 1))}
-                  className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-black/30 hover:bg-black/60 text-white w-10 h-10 rounded-full flex items-center justify-center transition-colors"
-                  aria-label="Next image"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M9 18l6-6-6-6"/>
-                  </svg>
-                </button>
-              </div>
+              <MainImageGallery 
+                images={images}
+                currentIndex={currentIndex}
+                setCurrentIndex={setCurrentIndex}
+                openImageModal={openImageModal}
+              />
             ) : (
               <div className="w-full h-[300px] bg-gray-100 rounded-xl flex items-center justify-center text-gray-800 mb-8">
                 <div className="text-center">
@@ -382,21 +622,18 @@ export default function CarDetailPage() {
                 </svg>
               </button>
               
-              {showTechnical && (
+              {showAdmin && (
                 <div className="p-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                  {renderInfoItem("Fuel Type", car.fuel_type)}
-                  {renderInfoItem("Transmission", car.transmission)}
-                  {renderInfoItem("Engine Power", car.engine_power ? `${car.engine_power} hp` : "N/A")}
-                  {renderInfoItem("Engine Capacity", car.engine_capacity ? `${car.engine_capacity} cc` : "N/A")}
-                  {renderInfoItem("Emissions", car.emissions)}
-                  {renderInfoItem("Emission Standard", car.emission_standard)}
-                  {renderInfoItem("Consumption City", car.consumption_city)}
-                  {renderInfoItem("Consumption Highway", car.consumption_highway)}
-                  {renderInfoItem("Traction", car.traction)}
-                  {renderInfoItem("Drive Type", car.drive_type)}
-                  {car.fuel_type === "Electric" && car.battery_capacity && renderInfoItem("Battery Capacity", `${car.battery_capacity} kWh`)}
-                  {car.fuel_type === "Electric" && car.range_km && renderInfoItem("Range", `${car.range_km} km`)}
-                  {car.fuel_type === "Electric" && car.consumption_mixed && renderInfoItem("Energy Consumption", car.consumption_mixed)}
+                  {car.vin && renderInfoItem("VIN", car.vin)}
+                  {car.itp_valid_until && renderInfoItem("ITP Valid Until", formatDate(car.itp_valid_until))}
+                  {car.seller_type && renderInfoItem("Seller Type", car.seller_type)}
+                  {car.origin_country && renderInfoItem("Origin Country", car.origin_country)}
+                  {car.first_owner !== null && renderInfoItem("First Owner", car.first_owner ? "Yes" : "No")}
+                  {car.no_accident !== null && renderInfoItem("No Accident", car.no_accident ? "Yes" : "No")}
+                  {car.service_book !== null && renderInfoItem("Service Book", car.service_book ? "Yes" : "No")}
+                  {car.registered !== null && renderInfoItem("Registered", car.registered ? "Yes" : "No")}
+                  {car.created_at && renderInfoItem("Ad Created At", formatDate(car.created_at))}
+                  {car.sold && car.sold_detected_at && renderInfoItem("Sold Date", formatDate(car.sold_detected_at))}
                 </div>
               )}
             </div>
@@ -430,14 +667,14 @@ export default function CarDetailPage() {
               
               {showPhysical && (
                 <div className="p-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                  {renderInfoItem("Color", car.color)}
-                  {renderInfoItem("Color Type", car.color_type)}
-                  {renderInfoItem("Doors", car.doors)}
-                  {renderInfoItem("Seats", car.nr_seats)}
-                  {renderInfoItem("Version", car.version)}
-                  {renderInfoItem("Generation", car.generation)}
-                  {renderInfoItem("Vehicle Condition", car.vehicle_condition)}
-                  {renderInfoItem("Right-hand Drive", car.right_hand_drive ? "Yes" : "No")}
+                  {car.color && renderInfoItem("Color", car.color)}
+                  {car.color_type && renderInfoItem("Color Type", car.color_type)}
+                  {car.doors && renderInfoItem("Doors", car.doors)}
+                  {car.nr_seats && renderInfoItem("Seats", car.nr_seats)}
+                  {car.version && renderInfoItem("Version", car.version)}
+                  {car.generation && renderInfoItem("Generation", car.generation)}
+                  {car.vehicle_condition && renderInfoItem("Vehicle Condition", car.vehicle_condition)}
+                  {car.right_hand_drive !== null && renderInfoItem("Right-hand Drive", car.right_hand_drive ? "Yes" : "No")}
                 </div>
               )}
             </div>
@@ -472,15 +709,15 @@ export default function CarDetailPage() {
               
               {showAdmin && (
                 <div className="p-4 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                  {renderInfoItem("VIN", car.vin)}
-                  {renderInfoItem("ITP Valid Until", formatDate(car.itp_valid_until))}
-                  {renderInfoItem("Seller Type", car.seller_type)}
-                  {renderInfoItem("Origin Country", car.origin_country)}
-                  {renderInfoItem("First Owner", car.first_owner ? "Yes" : "No")}
-                  {renderInfoItem("No Accident", car.no_accident ? "Yes" : "No")}
-                  {renderInfoItem("Service Book", car.service_book ? "Yes" : "No")}
-                  {renderInfoItem("Registered", car.registered ? "Yes" : "No")}
-                  {renderInfoItem("Ad Created At", formatDate(car.created_at))}
+                  {car.vin && renderInfoItem("VIN", car.vin)}
+                  {car.itp_valid_until && renderInfoItem("ITP Valid Until", formatDate(car.itp_valid_until))}
+                  {car.seller_type && renderInfoItem("Seller Type", car.seller_type)}
+                  {car.origin_country && renderInfoItem("Origin Country", car.origin_country)}
+                  {car.first_owner !== null && renderInfoItem("First Owner", car.first_owner ? "Yes" : "No")}
+                  {car.no_accident !== null && renderInfoItem("No Accident", car.no_accident ? "Yes" : "No")}
+                  {car.service_book !== null && renderInfoItem("Service Book", car.service_book ? "Yes" : "No")}
+                  {car.registered !== null && renderInfoItem("Registered", car.registered ? "Yes" : "No")}
+                  {car.created_at && renderInfoItem("Ad Created At", formatDate(car.created_at))}
                   {car.sold && car.sold_detected_at && renderInfoItem("Sold Date", formatDate(car.sold_detected_at))}
                 </div>
               )}
@@ -772,17 +1009,20 @@ export default function CarDetailPage() {
                         <h3 className="text-lg font-medium mb-4">Key Statistics</h3>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                           <div className="bg-gray-50 p-4 rounded-lg">
-                            <div className="text-sm text-gray-500">Average Price</div>
-                            <div className="text-xl font-semibold text-gray-800">€{Math.round(modelStats.averagePrice || 0)}</div>
-                            {car?.price && (
-                              <div className={`text-xs mt-1 ${car.price < (modelStats.averagePrice || 0) ? "text-green-600" : "text-red-600"}`}>
-                                {car.price < (modelStats.averagePrice || 0) ? 
-                                  `€${Math.round((modelStats.averagePrice || 0) - car.price)} below avg` : 
-                                  `€${Math.round(car.price - (modelStats.averagePrice || 0))} above avg`}
-                              </div>
-                            )}
+                            <div className="text-sm text-gray-500">Market Demand</div>
+                            <div className="text-xl font-semibold text-gray-800">
+                              {modelStats.avgSaleTime != null ? 
+                                (modelStats.avgSaleTime < 14 ? 
+                                  (modelStats.avgSaleTime < 7 ? "High" : "Medium") 
+                                  : "Low")
+                                : "Unknown"}
+                            </div>
+                            <div className="text-xs mt-1 text-gray-500">
+                              {modelStats.avgSaleTime != null ? 
+                                `Based on ${modelStats.avgSaleTime} days to sell` : 
+                                "Insufficient sale data"}
+                            </div>
                           </div>
-                          
                           <div className="bg-gray-50 p-4 rounded-lg">
                             <div className="text-sm text-gray-500">Average Mileage</div>
                             <div className="text-xl font-semibold text-gray-800">{Math.round(modelStats.averageMileage || 0)} km</div>
@@ -909,6 +1149,94 @@ export default function CarDetailPage() {
                 </div>
               </div>
             </div>
+
+            {/* Similar Cars Section */}
+            {similarCars.length > 0 && (
+              <div className="bg-white shadow rounded-xl p-6 mt-6">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-xl font-semibold">Similar Cars</h2>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={prevSimilarCarsPage}
+                      disabled={similarCarsPage === 0}
+                      className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M15 18l-6-6 6-6"/>
+                      </svg>
+                    </button>
+                    <button
+                      onClick={nextSimilarCarsPage}
+                      disabled={similarCarsPage >= Math.ceil(similarCars.length / visibleCars) - 1}
+                      className="w-8 h-8 flex items-center justify-center rounded-full bg-gray-200 text-gray-700 hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M9 18l6-6-6-6"/>
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                
+                {loadingSimilar ? (
+                  <div className="flex justify-center py-8">
+                    <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-4 gap-4">
+                    {similarCars
+                      .slice(similarCarsPage * visibleCars, similarCarsPage * visibleCars + visibleCars)
+                      .map(similarCar => (
+                        <a 
+                          key={similarCar.id}
+                          href={`/listings/${similarCar.id}`}
+                          className="bg-white border rounded-lg overflow-hidden hover:shadow-md transition-shadow"
+                        >
+                          <div className="relative h-40">
+                            <Image
+                              src={parseImage(similarCar.images || '')}
+                              alt={similarCar.title}
+                              fill
+                              className="object-cover"
+                            />
+                            {similarCar.deal_rating && (
+                              <div className={`absolute top-2 right-2 px-2 py-0.5 rounded-md text-xs font-semibold ${getRatingColor(similarCar.deal_rating)}`}>
+                                {similarCar.deal_rating}
+                              </div>
+                            )}
+                            {similarCar.sold && (
+                              <div className="absolute top-2 left-2 bg-red-600 text-white text-xs px-2 py-0.5 rounded-md">
+                                Sold
+                              </div>
+                            )}
+                          </div>
+                          <div className="p-3">
+                            <h3 className="font-medium text-sm line-clamp-1">{similarCar.title}</h3>
+                            <div className="flex flex-wrap gap-2 text-xs text-gray-500 my-1">
+                              <span>{similarCar.year}</span>
+                              <span>•</span>
+                              <span>{similarCar.mileage?.toLocaleString() || 'N/A'} km</span>
+                              <span>•</span>
+                              <span>{similarCar.fuel_type}</span>
+                            </div>
+                            <div className="flex justify-between items-end mt-2">
+                              <div>
+                                <div className="text-lg font-bold text-blue-600">
+                                  €{similarCar.price?.toLocaleString() || "N/A"}
+                                </div>
+                                {similarCar.estimated_price && (
+                                  <div className="text-xs text-gray-500 mt-0.5">
+                                    Est: €{similarCar.estimated_price.toLocaleString()}
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </a>
+                      ))}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Sidebar */}
@@ -963,6 +1291,11 @@ export default function CarDetailPage() {
                     )}
                   </div>
                 )}
+                {!car.sold && car.created_at && (
+                      <div className="text-sm text-gray-500 mt-1">
+                        Listed: {formatAdAge(car.created_at)}
+                      </div>
+                    )}
               </div>
               
               <div className="p-6">
@@ -1012,6 +1345,16 @@ export default function CarDetailPage() {
           </div>
         </div>
       </section>
+      
+      {showImageModal && (
+        <ImageModal 
+          images={images}
+          modalImageIndex={modalImageIndex}
+          setModalImageIndex={setModalImageIndex}
+          closeImageModal={closeImageModal}
+        />
+      )}
+
       <Footer />
     </main>
     );
