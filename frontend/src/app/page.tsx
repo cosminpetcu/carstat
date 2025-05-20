@@ -62,7 +62,7 @@ export default function Home() {
           {/* Quick stats container with increased margin from search box */}
           <div className="grid grid-cols-3 gap-8 mt-4 text-white text-center">
             <div className="space-y-1">
-              <div className="text-3xl font-bold">50,000+</div>
+              <div className="text-3xl font-bold">100,000+</div>
               <div className="text-blue-200 text-sm">Total Cars</div>
             </div>
             <div className="space-y-1">

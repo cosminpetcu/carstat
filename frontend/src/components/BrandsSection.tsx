@@ -6,27 +6,44 @@ import { useRouter } from "next/navigation";
 const BrandsSection = () => {
   const router = useRouter();
 
-  const brands = ["audi", "bmw", "ford", "mercedes-Benz", "peugeot", "volkswagen"];
+  const brands = [
+    { name: "Audi", image: "/audi.png" },
+    { name: "BMW", image: "/bmw.png" },
+    { name: "Ford", image: "/ford.png" },
+    { name: "Mercedes-Benz", image: "/mercedes-benz.png" },
+    { name: "Peugeot", image: "/peugeot.png" },
+    { name: "Volkswagen", image: "/volkswagen.png" }
+  ];
 
   const handleBrandClick = (brand: string) => {
-    const formattedBrand = brand.charAt(0).toUpperCase() + brand.slice(1);
-    router.push(`/listings?brand=${encodeURIComponent(formattedBrand)}`);
+    router.push(`/listings?brand=${encodeURIComponent(brand)}`);
   };
 
   return (
-    <section className="py-12 px-6">
-      <h2 className="text-2xl font-semibold text-center mb-6">Explore Our Premium Brands</h2>
-      <div className="flex justify-center gap-6 flex-wrap">
-        {brands.map((brand) => (
-          <button
-            key={brand}
-            onClick={() => handleBrandClick(brand)}
-            className="flex flex-col items-center w-[100px] h-[120px] bg-white rounded-xl shadow p-4 hover:shadow-lg transition"
-          >
-            <Image src={`/${brand}.png`} alt={brand} width={50} height={50} />
-            <span className="mt-2 capitalize text-black text-sm">{brand}</span>
-          </button>
-        ))}
+    <section className="py-16 px-6 bg-white">
+      <div className="max-w-7xl mx-auto">
+        <h2 className="text-3xl font-bold text-center mb-10">Explore Our Premium Brands</h2>
+        
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6">
+          {brands.map((brand) => (
+            <button
+              key={brand.name}
+              onClick={() => handleBrandClick(brand.name)}
+              className="flex flex-col items-center justify-center bg-white rounded-xl shadow-md hover:shadow-lg transition-all duration-300 p-6 h-[160px]"
+            >
+              <div className="w-[80px] h-[80px] relative flex items-center justify-center mb-4">
+                <Image 
+                  src={brand.image} 
+                  alt={brand.name} 
+                  width={80} 
+                  height={80} 
+                  className="object-contain"
+                />
+              </div>
+              <span className="text-center font-medium text-gray-800">{brand.name}</span>
+            </button>
+          ))}
+        </div>
       </div>
     </section>
   );
