@@ -476,7 +476,7 @@ export default function Dashboard() {
                 : "text-gray-500 hover:text-gray-700"
             }`}
           >
-            Suspicious Listings
+            Suspicious & Incomplete Listings
           </button>
         </div>
       </section>

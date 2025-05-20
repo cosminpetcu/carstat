@@ -141,6 +141,113 @@ class OlxAutoturismeSpider(scrapy.Spider):
             before_dot = full_title.split("•")[0].strip()
             location_part = before_dot.replace(core_title, "").strip()
             return location_part if location_part else None
+        
+        def normalize_brand(brand_name):
+            if not brand_name:
+                return None
+            
+            brand_mapping = {
+                "citroen": "Citroen",
+                "citroën": "Citroen",
+                "gmc": "GMC",
+                "xev": "XEV"
+            }
+
+            normalized = brand_name.lower()
+            if normalized in brand_mapping:
+                return brand_mapping[normalized]
+            return brand_name
+
+        def normalize_model(model_name, brand=None):
+            if not model_name:
+                return None
+            
+            original_model = model_name
+            
+            normalized = model_name.lower()
+            
+            if " class" in normalized:
+                model_name = model_name.replace(" Class", "")
+            
+            if normalized == "altul":
+                return "Altul"
+            
+            if brand == "Ford":
+                ford_models = {
+                    "b-max": "B-MAX",
+                    "b max": "B-MAX",
+                    "bmax": "B-MAX",
+                    "c-max": "C-MAX",
+                    "c max": "C-MAX",
+                    "cmax": "C-MAX",
+                    "edge": "Edge",
+                    "grand c-max": "Grand C-MAX",
+                    "grand c max": "Grand C-MAX",
+                    "ka": "Ka",
+                    "ka+": "Ka+"
+                }
+                if normalized in ford_models:
+                    return ford_models[normalized]
+                
+            if brand == "Citroen":
+                citroen_models = {
+                    "c3 aircross": "C3 Aircross",
+                }
+                if normalized in citroen_models:
+                    return citroen_models[normalized]
+            
+            elif brand == "Hyundai":
+                hyundai_models = {
+                    "ioniq": "IONIQ",
+                    "ioniq 5": "IONIQ 5",
+                    "ioniq5": "IONIQ 5",
+                    "kona": "Kona"
+                }
+                if normalized in hyundai_models:
+                    return hyundai_models[normalized]
+            
+            elif brand == "Nissan":
+                if normalized == "leaf":
+                    return "Leaf"
+            
+            elif brand == "Renault":
+                if normalized == "zoe":
+                    return "ZOE"
+            
+            elif brand == "SsangYong":
+                ssangyong_models = {
+                    "musso": "Musso",
+                    "rexton": "Rexton",
+                }
+                if normalized in ssangyong_models:
+                    return ssangyong_models[normalized]
+            
+            elif brand == "Subaru":
+                if normalized == "outback":
+                    return "Outback"
+            
+            elif brand == "Toyota":
+                if normalized in ["rav4", "rav-4"]:
+                    return "RAV-4"
+            
+            elif brand == "Volkswagen":
+                if normalized == "arteon":
+                    return "Arteon"
+                elif normalized in ["t-roc", "t roc", "troc"]:
+                    return "T-Roc"
+            
+            elif brand == "Mini":
+                if normalized == "one":
+                    return "ONE"
+            
+            elif brand == "Lamborghini":
+                if normalized == "urus":
+                    return "URUS"
+            
+            if model_name != original_model:
+                return model_name
+            
+            return original_model
 
 
         title = clean(response.css("h4.css-1dcem4b::text").get())
@@ -177,8 +284,8 @@ class OlxAutoturismeSpider(scrapy.Spider):
 
         model = details.get("model")
         
-        if " Class" in model:
-            model = model.replace(" Class", "")
+        brand = normalize_brand(brand)
+        model = normalize_model(model, brand)
         
         year = int(details.get("an de fabricatie", "0").replace(" ", "")) or None
         mileage = int(details.get("rulaj", "0").replace("km", "").replace(" ", "")) or None

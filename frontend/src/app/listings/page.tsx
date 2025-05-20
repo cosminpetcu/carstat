@@ -634,7 +634,7 @@ export default function ListingsPage() {
                       id="limit"
                       value={limit}
                       onChange={(e) => updateLimit(parseInt(e.target.value))}
-                      className="border border-gray-300 rounded-md px-2 py-1.5 text-sm bg-white"
+                      className="border border-gray-300 text-gray-600 rounded-md px-2 py-1.5 text-sm bg-white"
                     >
                       {[9, 15, 30, 60].map((val) => (
                         <option key={val} value={val}>{val}</option>
