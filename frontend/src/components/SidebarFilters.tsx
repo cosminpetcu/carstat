@@ -2,7 +2,6 @@
 
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import brandsModels from "@/app/data/brands_models";
 import { 
   CarIcon, 
   FuelIcon, 
@@ -119,6 +118,11 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
     }));
   };
 
+  const [availableBrands, setAvailableBrands] = useState<string[]>([]);
+  const [availableModels, setAvailableModels] = useState<string[]>([]);
+  const [isLoadingBrands, setIsLoadingBrands] = useState(true);
+  const [isLoadingModels, setIsLoadingModels] = useState(false);
+
   // Initialize filters from URL params on component mount and when URL changes
   useEffect(() => {
     const params = new URLSearchParams(searchParams.toString());
@@ -158,7 +162,7 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
     }
   
     const query = searchParams.toString();
-  
+
     try {
       const response = await fetch("http://localhost:8000/saved-searches", {
         method: "POST",
@@ -260,6 +264,61 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
     router.push('/listings');
   };
 
+  useEffect(() => {
+    const fetchBrands = async () => {
+      setIsLoadingBrands(true);
+      try {
+        const response = await fetch('http://localhost:8000/analytics/available-brands');
+        if (response.ok) {
+          const brands = await response.json();
+          setAvailableBrands(brands);
+        } else {
+          console.error('Failed to fetch brands');
+          setToastMessage('Failed to load brands from server');
+          setToastType('error');
+        }
+      } catch (error) {
+        console.error('Error fetching brands:', error);
+        setToastMessage('Error connecting to server');
+        setToastType('error');
+      } finally {
+        setIsLoadingBrands(false);
+      }
+    };
+
+    fetchBrands();
+  }, []);
+
+  useEffect(() => {
+    if (!filters.brand) {
+      setAvailableModels([]);
+      return;
+    }
+
+    const fetchModels = async () => {
+      setIsLoadingModels(true);
+      try {
+        const response = await fetch(`http://localhost:8000/analytics/available-models/${filters.brand}`);
+        if (response.ok) {
+          const models = await response.json();
+          setAvailableModels(models);
+        } else {
+          console.error('Failed to fetch models');
+          setToastMessage('Failed to load models from server');
+          setToastType('error');
+        }
+      } catch (error) {
+        console.error('Error fetching models:', error);
+        setToastMessage('Error connecting to server');
+        setToastType('error');
+      } finally {
+        setIsLoadingModels(false);
+      }
+    };
+
+    fetchModels();
+  }, [filters.brand]);
+
   return (
     <aside className="bg-gradient-to-b from-gray-900 to-gray-800 text-white p-5 rounded-xl w-full max-w-[320px] shadow-xl">
       <div className="flex justify-between items-center mb-6">
@@ -308,16 +367,26 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
                         updateFilter("brand", e.target.value);
                       }
                     }}
-                    className="w-full rounded-lg p-2.5 pl-10 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none"
+                    className={`w-full rounded-lg p-2.5 pl-10 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none ${isLoadingBrands ? 'opacity-50' : ''}`}
+                    disabled={isLoadingBrands}
                   >
                     <option value="">All Brands</option>
-                    {Object.keys(brandsModels).map((brand) => (
-                      <option key={brand} value={brand}>{brand}</option>
-                    ))}
+                    {isLoadingBrands ? (
+                      <option value="" disabled>Loading brands...</option>
+                    ) : (
+                      availableBrands.map((brand) => (
+                        <option key={brand} value={brand}>{brand}</option>
+                      ))
+                    )}
                   </select>
                   <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                     <CarIcon className="w-5 h-5 text-gray-400" />
                   </div>
+                  {isLoadingBrands && (
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                      <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -328,17 +397,26 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
                   <select 
                     value={filters.model} 
                     onChange={(e) => updateFilter("model", e.target.value)} 
-                    className="w-full rounded-lg p-2.5 pl-10 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none"
-                    disabled={!filters.brand}
+                    className={`w-full rounded-lg p-2.5 pl-10 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none ${isLoadingModels || !filters.brand ? 'opacity-50' : ''}`}
+                    disabled={isLoadingModels || !filters.brand}
                   >
                     <option value="">All Models</option>
-                    {(brandsModels[filters.brand] || []).map((model) => (
-                      <option key={model} value={model}>{model}</option>
-                    ))}
+                    {isLoadingModels ? (
+                      <option value="" disabled>Loading models...</option>
+                    ) : (
+                      availableModels.map((model) => (
+                        <option key={model} value={model}>{model}</option>
+                      ))
+                    )}
                   </select>
                   <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                     <ParkingIcon className="w-5 h-5 text-gray-400" />
                   </div>
+                  {isLoadingModels && (
+                    <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+                      <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+                    </div>
+                  )}
                 </div>
               </div>
               

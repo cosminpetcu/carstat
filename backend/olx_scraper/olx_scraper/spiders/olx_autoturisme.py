@@ -176,6 +176,10 @@ class OlxAutoturismeSpider(scrapy.Spider):
                 details[key.strip().lower()] = value.strip()
 
         model = details.get("model")
+        
+        if " Class" in model:
+            model = model.replace(" Class", "")
+        
         year = int(details.get("an de fabricatie", "0").replace(" ", "")) or None
         mileage = int(details.get("rulaj", "0").replace("km", "").replace(" ", "")) or None
         fuel_type_original = details.get("combustibil")

@@ -4,7 +4,6 @@ import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
-import brandsModels from "@/app/data/brands_models";
 
 const fuelTypes = ["Petrol", "Diesel", "Electric", "Hybrid", "LPG"];
 const sellerTypes = ["Private", "Dealer"];
@@ -39,6 +38,10 @@ export default function DetailedSearchPage() {
   const [isNew, setIsNew] = useState("any");
   const [sellerType, setSellerType] = useState("");
   const [carsCount, setCarsCount] = useState<number | null>(null);
+  const [availableBrands, setAvailableBrands] = useState<string[]>([]);
+  const [availableModels, setAvailableModels] = useState<string[]>([]);
+  const [isLoadingBrands, setIsLoadingBrands] = useState(true);
+  const [isLoadingModels, setIsLoadingModels] = useState(false);
 
   useEffect(() => {
     const params = new URLSearchParams();
@@ -90,6 +93,53 @@ export default function DetailedSearchPage() {
     router.push(`/listings?${params.toString()}`);
   };
 
+  useEffect(() => {
+    const fetchBrands = async () => {
+      setIsLoadingBrands(true);
+      try {
+        const response = await fetch('http://localhost:8000/analytics/available-brands');
+        if (response.ok) {
+          const brands = await response.json();
+          setAvailableBrands(brands);
+        } else {
+          console.error('Failed to fetch brands');
+        }
+      } catch (error) {
+        console.error('Error fetching brands:', error);
+      } finally {
+        setIsLoadingBrands(false);
+      }
+    };
+
+    fetchBrands();
+  }, []);
+
+  useEffect(() => {
+    if (!brand) {
+      setAvailableModels([]);
+      return;
+    }
+
+    const fetchModels = async () => {
+      setIsLoadingModels(true);
+      try {
+        const response = await fetch(`http://localhost:8000/analytics/available-models/${brand}`);
+        if (response.ok) {
+          const models = await response.json();
+          setAvailableModels(models);
+        } else {
+          console.error('Failed to fetch models');
+        }
+      } catch (error) {
+        console.error('Error fetching models:', error);
+      } finally {
+        setIsLoadingModels(false);
+      }
+    };
+
+    fetchModels();
+  }, [brand]);
+
   return (
     <main className="min-h-screen flex flex-col bg-white text-black">
       <Navbar />
@@ -98,23 +148,55 @@ export default function DetailedSearchPage() {
 
         <form onSubmit={handleSearch} className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Brand */}
-          <select value={brand} onChange={(e) => {
-            setBrand(e.target.value);
-            setModel("");
-          }} className="border px-4 py-2 rounded-md text-sm">
-            <option value="">All Brands</option>
-            {Object.keys(brandsModels).map((b) => (
-              <option key={b} value={b}>{b}</option>
-            ))}
-          </select>
+          <div className="relative w-full">
+            <select 
+              value={brand} 
+              onChange={(e) => {
+                setBrand(e.target.value);
+                setModel("");
+              }} 
+              className={`border px-4 py-2 rounded-md text-sm w-full ${isLoadingBrands ? 'opacity-50' : ''}`}
+              disabled={isLoadingBrands}
+            >
+              <option value="">All Brands</option>
+              {isLoadingBrands ? (
+                <option value="" disabled>Loading brands...</option>
+              ) : (
+                availableBrands.map((b) => (
+                  <option key={b} value={b}>{b}</option>
+                ))
+              )}
+            </select>
+            {isLoadingBrands && (
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+              </div>
+            )}
+          </div>
 
           {/* Model */}
-          <select value={model} onChange={(e) => setModel(e.target.value)} className="border px-4 py-2 rounded-md text-sm">
-            <option value="">All Models</option>
-            {(brandsModels[brand] || []).map((m) => (
-              <option key={m} value={m}>{m}</option>
-            ))}
-          </select>
+          <div className="relative w-full">
+            <select 
+              value={model} 
+              onChange={(e) => setModel(e.target.value)} 
+              className={`border px-4 py-2 rounded-md text-sm w-full ${isLoadingModels || !brand ? 'opacity-50' : ''}`}
+              disabled={isLoadingModels || !brand}
+            >
+              <option value="">All Models</option>
+              {isLoadingModels ? (
+                <option value="" disabled>Loading models...</option>
+              ) : (
+                availableModels.map((m) => (
+                  <option key={m} value={m}>{m}</option>
+                ))
+              )}
+            </select>
+            {isLoadingModels && (
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+              </div>
+            )}
+          </div>
 
           {/* Fuel Type */}
           <select value={fuelType} onChange={(e) => setFuelType(e.target.value)} className="border px-4 py-2 rounded-md text-sm">

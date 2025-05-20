@@ -189,6 +189,10 @@ class AutovitAutoturismeSpider(scrapy.Spider):
 
         brand = extract_testid_value("make")
         model = extract_testid_value("model")
+        
+        if " Class" in model:
+            model = model.replace(" Class", "")
+        
         year = extract_int("year", "")
         mileage = extract_int("mileage", " km")
         fuel_type_original = extract_testid_value("fuel_type")

@@ -2,13 +2,12 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import brandsModels from "@/app/data/brands_models";
 
-const fuelTypes = ["Petrol", "Diesel", "Electric", "Hybrid", "LPG"];
+const fuelTypes = ["Petrol", "Diesel", "Electric", "Hybrid", "LPG", "CNG", "Plug-in Hybrid"];
 const vehicleConditions = [
   { label: "All", value: "" },
-  { label: "New", value: "Nou" },
-  { label: "Used", value: "Utilizat" }
+  { label: "New", value: "New" },
+  { label: "Used", value: "Used" }
 ];
 const dealRatings = [
   { label: "Any Deal", value: "" },
@@ -33,6 +32,11 @@ const SearchBox = () => {
   const [maxPrice, setMaxPrice] = useState("");
   const [totalCars, setTotalCars] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+
+  const [availableBrands, setAvailableBrands] = useState<string[]>([]);
+  const [availableModels, setAvailableModels] = useState<string[]>([]);
+  const [isLoadingBrands, setIsLoadingBrands] = useState(true);
+  const [isLoadingModels, setIsLoadingModels] = useState(false);
 
   // Debounce effect to prevent too many API calls
   useEffect(() => {
@@ -110,6 +114,55 @@ const SearchBox = () => {
     return total.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   };
 
+  // Fetch available brands when component mounts
+  useEffect(() => {
+    const fetchBrands = async () => {
+      setIsLoadingBrands(true);
+      try {
+        const response = await fetch('http://localhost:8000/analytics/available-brands');
+        if (response.ok) {
+          const brands = await response.json();
+          setAvailableBrands(brands);
+        } else {
+          console.error('Failed to fetch brands');
+        }
+      } catch (error) {
+        console.error('Error fetching brands:', error);
+      } finally {
+        setIsLoadingBrands(false);
+      }
+    };
+
+    fetchBrands();
+  }, []);
+
+  // Fetch available models when brand changes
+  useEffect(() => {
+    if (!selectedBrand) {
+      setAvailableModels([]);
+      return;
+    }
+
+    const fetchModels = async () => {
+      setIsLoadingModels(true);
+      try {
+        const response = await fetch(`http://localhost:8000/analytics/available-models/${selectedBrand}`);
+        if (response.ok) {
+          const models = await response.json();
+          setAvailableModels(models);
+        } else {
+          console.error('Failed to fetch models');
+        }
+      } catch (error) {
+        console.error('Error fetching models:', error);
+      } finally {
+        setIsLoadingModels(false);
+      }
+    };
+
+    fetchModels();
+  }, [selectedBrand]);
+
   return (
     <form onSubmit={handleSearch} className="bg-white bg-opacity-95 backdrop-blur-md p-6 sm:p-8 rounded-3xl shadow-2xl w-full max-w-2xl space-y-5 border border-gray-200">
       {/* Header */}
@@ -144,13 +197,23 @@ const SearchBox = () => {
           <select
             value={selectedBrand}
             onChange={handleBrandChange}
-            className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all bg-white text-gray-800"
+            className={`w-full px-3 py-2 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all bg-white text-gray-800 ${isLoadingBrands ? 'opacity-50' : ''}`}
+            disabled={isLoadingBrands}
           >
             <option value="">All Brands</option>
-            {Object.keys(brandsModels).map((brand) => (
-              <option key={brand} value={brand}>{brand}</option>
-            ))}
+            {isLoadingBrands ? (
+              <option value="" disabled>Loading brands...</option>
+            ) : (
+              availableBrands.map((brand) => (
+                <option key={brand} value={brand}>{brand}</option>
+              ))
+            )}
           </select>
+          {isLoadingBrands && (
+            <div className="absolute right-2 top-8">
+              <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+            </div>
+          )}
         </div>
 
         {/* Model */}
@@ -159,14 +222,23 @@ const SearchBox = () => {
           <select
             value={selectedModel}
             onChange={(e) => setSelectedModel(e.target.value)}
-            disabled={!selectedBrand}
-            className="w-full px-3 py-2 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all bg-white text-gray-800 disabled:bg-gray-100 disabled:text-gray-400"
+            disabled={!selectedBrand || isLoadingModels}
+            className={`w-full px-3 py-2 rounded-lg border border-gray-300 focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all bg-white text-gray-800 disabled:bg-gray-100 disabled:text-gray-400 ${isLoadingModels ? 'opacity-50' : ''}`}
           >
             <option value="">All Models</option>
-            {(brandsModels[selectedBrand] || []).map((model) => (
-              <option key={model} value={model}>{model}</option>
-            ))}
+            {isLoadingModels ? (
+              <option value="" disabled>Loading models...</option>
+            ) : (
+              availableModels.map((model) => (
+                <option key={model} value={model}>{model}</option>
+              ))
+            )}
           </select>
+          {isLoadingModels && (
+            <div className="absolute right-2 top-8">
+              <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+            </div>
+          )}
         </div>
 
         {/* Fuel Type */}
