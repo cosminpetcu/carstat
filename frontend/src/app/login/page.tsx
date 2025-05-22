@@ -5,10 +5,14 @@ import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { useSearchParams } from "next/navigation";
 import Footer from "@/components/Footer";
+import { usePendingActions } from "@/hooks/usePendingActions";
+import { PendingActionsManager } from '@/utils/pendingActions';
 
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { executePendingAction, hasPendingAction } = usePendingActions();
+  
   const [tab, setTab] = useState<"signin" | "register">("signin");
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
@@ -34,9 +38,24 @@ export default function LoginPage() {
         };
         localStorage.setItem("user", JSON.stringify(user));
       }
+      
+      handleSuccessfulLogin();
+    }
+  }, [searchParams]);
+
+  const handleSuccessfulLogin = async () => {
+    try {
+      if (hasPendingAction) {
+        console.log('Executing pending action after login...');
+        await executePendingAction();
+      } else {
+        router.push("/");
+      }
+    } catch (error) {
+      console.error('Error executing pending action:', error);
       router.push("/");
     }
-  }, [searchParams, router]);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,7 +93,8 @@ export default function LoginPage() {
       const data = await res.json();
       localStorage.setItem("token", data.access_token);
       localStorage.setItem("user", JSON.stringify(data.user));
-      router.push("/");
+      
+      await handleSuccessfulLogin();
     } catch (err) {
       console.error(err);
       setError("Something went wrong");
@@ -102,6 +122,30 @@ export default function LoginPage() {
               <h2 className="text-2xl font-bold text-gray-800 mb-1">Welcome to CARSTAT</h2>
               <p className="text-gray-500 text-sm">Your automotive market analytics platform</p>
             </div>
+
+            {/* Show pending action info if exists */}
+            {hasPendingAction && (() => {
+              const pendingAction = PendingActionsManager.getPendingAction();
+              const messages = {
+                'add_favorite': 'Complete your login to add this car to favorites',
+                'remove_favorite': 'Complete your login to remove this car from favorites', 
+                'save_search': 'Complete your login to save your search',
+                'navigation': 'Complete your login to continue'
+              };
+              
+              const message = pendingAction ? messages[pendingAction.type] || 'Complete your login to continue with your action' : 'Complete your login to continue with your action';
+              
+              return (
+                <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <svg className="w-4 h-4 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="text-sm text-blue-700">{message}</span>
+                  </div>
+                </div>
+              );
+            })()}
             
             {/* Tabs */}
             <div className="flex justify-center mb-6">

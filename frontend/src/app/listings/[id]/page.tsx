@@ -18,6 +18,7 @@ import {
   Bar,
   Cell
 } from "recharts";
+import { PendingActionsManager, getCurrentUrlForReturn } from '@/utils/pendingActions';
 
 type Car = {
   id: number;
@@ -143,6 +144,7 @@ export default function CarDetailPage() {
   const [similarCars, setSimilarCars] = useState<Car[]>([]);
   const [loadingSimilar, setLoadingSimilar] = useState(false);
   const [similarCarsPage, setSimilarCarsPage] = useState(0);
+  const [updatingFavorite, setUpdatingFavorite] = useState(false);
   const visibleCars = 4;
 
   const [showImageModal, setShowImageModal] = useState(false);
@@ -264,33 +266,65 @@ export default function CarDetailPage() {
   }, [car?.id]);
 
   const toggleFavorite = async () => {
+    if (!car) return;
+    
     const token = localStorage.getItem("token");
     const userRaw = localStorage.getItem("user");
-    if (!token || !userRaw) return router.push("/login");
 
-    const user = JSON.parse(userRaw);
+    if (!token || !userRaw) {
+      const currentUrl = getCurrentUrlForReturn();
+      const actionType = car.is_favorite ? 'remove' : 'add';
+      
+      PendingActionsManager.saveFavoriteAction(car.id, actionType, currentUrl);
+      
+      window.location.href = '/login';
+      return;
+    }
+
+    let user;
     try {
-      if (car?.is_favorite) {
+      user = JSON.parse(userRaw);
+      if (!user.id) throw new Error("Invalid user object");
+    } catch (err) {
+      console.error("User object invalid:", err);
+      
+      const currentUrl = getCurrentUrlForReturn();
+      const actionType = car.is_favorite ? 'remove' : 'add';
+      
+      PendingActionsManager.saveFavoriteAction(car.id, actionType, currentUrl);
+      window.location.href = '/login';
+      return;
+    }
+
+    setUpdatingFavorite(true);
+
+    try {
+      if (car.is_favorite) {
         await fetch(`http://localhost:8000/favorites/${car.id}`, {
           method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` },
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
         });
       } else {
-        if (!car) return;
-        
-        await fetch(`http://localhost:8000/favorites`, {
+        await fetch("http://localhost:8000/favorites", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${token}`,
           },
-          body: JSON.stringify({ user_id: user.id, car_id: car.id }),
+          body: JSON.stringify({
+            user_id: user.id,
+            car_id: car.id,
+          }),
         });
       }
 
-      setCar((prev) => prev ? { ...prev, is_favorite: !prev.is_favorite } : null);
+      setCar((prevCar) => prevCar ? { ...prevCar, is_favorite: !prevCar.is_favorite } : null);
     } catch (err) {
-      console.error("Failed to toggle favorite", err);
+      console.error("Favorite toggle failed", err);
+    } finally {
+      setUpdatingFavorite(false);
     }
   };
 
@@ -568,10 +602,17 @@ export default function CarDetailPage() {
                 </div>
               </div>
               <button 
-                onClick={toggleFavorite} 
-                className={`p-2 rounded-full ${car.is_favorite ? "bg-red-50" : "bg-gray-50"}`}
+                onClick={() => toggleFavorite()} 
+                className={`p-2 rounded-full ${car.is_favorite ? "bg-red-50" : "bg-gray-50"} ${
+                  updatingFavorite ? "opacity-50 cursor-not-allowed" : ""
+                }`}
+                disabled={updatingFavorite}
               >
-                <span className="text-2xl">{car.is_favorite ? "❤️" : "🤍"}</span>
+                {updatingFavorite ? (
+                  <div className="w-6 h-6 animate-spin border-2 border-gray-300 border-t-blue-600 rounded-full"></div>
+                ) : (
+                  <span className="text-2xl">{car.is_favorite ? "❤️" : "🤍"}</span>
+                )}
               </button>
             </div>
 

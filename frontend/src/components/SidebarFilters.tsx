@@ -1,6 +1,7 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
+import { PendingActionsManager, getCurrentUrlForReturn } from '@/utils/pendingActions';
 import { useEffect, useState } from "react";
 import { 
   CarIcon, 
@@ -141,22 +142,32 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
   const handleSaveSearch = async () => {
     const token = localStorage.getItem("token");
     const userRaw = localStorage.getItem("user");
-  
+
     if (!token || !userRaw) {
-      router.push("/login");
+      const currentUrl = getCurrentUrlForReturn();
+      const query = searchParams.toString();
+      
+      PendingActionsManager.saveSearchAction(query, currentUrl);
+      
+      window.location.href = '/login';
       return;
     }
-  
+
     let user;
     try {
       user = JSON.parse(userRaw);
       if (!user.id) throw new Error("Invalid user object");
     } catch (err) {
       console.error("User object invalid:", err);
-      router.push("/login");
+      
+      const currentUrl = getCurrentUrlForReturn();
+      const query = searchParams.toString();
+      
+      PendingActionsManager.saveSearchAction(query, currentUrl);
+      window.location.href = '/login';
       return;
     }
-  
+
     const query = searchParams.toString();
 
     try {
@@ -171,7 +182,7 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
           query: query,
         }),
       });
-  
+
       if (!response.ok) {
         throw new Error("Failed to save search");
       }

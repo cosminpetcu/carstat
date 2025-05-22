@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
-import { usePathname, useSearchParams } from "next/navigation";
-import Image from "next/image";
+import { usePathname, useSearchParams, useRouter } from "next/navigation";
+import { PendingActionsManager } from '@/utils/pendingActions';
 
 export default function Navbar() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -19,6 +19,8 @@ export default function Navbar() {
   const isListings = pathname === "/listings";
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
+
+  const router = useRouter();
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -111,7 +113,25 @@ export default function Navbar() {
           <nav className="hidden md:flex items-center space-x-4">
             <NavLink href="/" label="Home" active={pathname === "/"} />
             <NavLink href="/listings" label="Listings" active={pathname === "/listings" || pathname.startsWith("/listings/")} />
-            <NavLink href="/favorites" label="Favorites" active={pathname === "/favorites"} />
+            <button
+              onClick={() => {
+                const token = localStorage.getItem("token");
+                if (!token) {
+                  // Save the intention to visit favorites
+                  PendingActionsManager.saveNavigationIntent('/favorites');
+                  window.location.href = '/login';
+                } else {
+                  router.push('/favorites');
+                }
+              }}
+              className={`px-3 py-2 text-sm font-medium transition-colors duration-200 cursor-pointer ${
+                pathname === "/favorites"
+                  ? "text-white bg-gray-700/50 rounded-md" 
+                  : "text-gray-300 hover:text-white"
+              }`}
+            >
+              Favorites
+            </button>
             <NavLink href="/dashboard" label="Dashboard" active={pathname === "/dashboard"} />
             <NavLink href="/detailed-search" label="Advanced Search" active={pathname === "/detailed-search"} />
             
@@ -202,7 +222,25 @@ export default function Navbar() {
           <div className="px-2 pt-2 pb-3 space-y-1 border-t border-gray-700">
             <MobileNavLink href="/" label="Home" active={pathname === "/"} />
             <MobileNavLink href="/listings" label="Listings" active={pathname === "/listings" || pathname.startsWith("/listings/")} />
-            <MobileNavLink href="/favorites" label="Favorites" active={pathname === "/favorites"} />
+            <button
+              onClick={() => {
+                const token = localStorage.getItem("token");
+                if (!token) {
+                  // Save the intention to visit favorites
+                  PendingActionsManager.saveNavigationIntent('/favorites');
+                  window.location.href = '/login';
+                } else {
+                  router.push('/favorites');
+                }
+              }}
+              className={`block px-3 py-2 text-base font-medium w-full text-left transition-colors ${
+                pathname === "/favorites"
+                  ? "bg-gray-800 text-white rounded-md" 
+                  : "text-gray-300 hover:bg-gray-700 hover:text-white hover:rounded-md"
+              }`}
+            >
+              Favorites
+            </button>
             <MobileNavLink href="/dashboard" label="Dashboard" active={pathname === "/dashboard"} />
             <MobileNavLink href="/detailed-search" label="Advanced Search" active={pathname === "/detailed-search"} />
             

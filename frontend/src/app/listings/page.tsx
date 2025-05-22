@@ -7,6 +7,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import SidebarFilters from "@/components/SidebarFilters";
 import { EngineIcon, GaugeIcon, CalendarIcon, FuelIcon, TransmissionIcon, SpeedometerIcon, ChevronLeftIcon, ChevronRightIcon } from "@/components/Icons";
+import { PendingActionsManager, getCurrentUrlForReturn } from '@/utils/pendingActions';
 
 type Car = {
   id: number;
@@ -160,7 +161,12 @@ export default function ListingsPage() {
     const userRaw = localStorage.getItem("user");
 
     if (!token || !userRaw) {
-      router.push("/login");
+      const currentUrl = getCurrentUrlForReturn();
+      const actionType = car.is_favorite ? 'remove' : 'add';
+      
+      PendingActionsManager.saveFavoriteAction(car.id, actionType, currentUrl);
+      
+      window.location.href = '/login';
       return;
     }
 
@@ -170,7 +176,12 @@ export default function ListingsPage() {
       if (!user.id) throw new Error("Invalid user object");
     } catch (err) {
       console.error("User object invalid:", err);
-      router.push("/login");
+      
+      const currentUrl = getCurrentUrlForReturn();
+      const actionType = car.is_favorite ? 'remove' : 'add';
+      
+      PendingActionsManager.saveFavoriteAction(car.id, actionType, currentUrl);
+      window.location.href = '/login';
       return;
     }
 
