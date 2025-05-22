@@ -140,10 +140,12 @@ def get_all_car_listings(
     if is_new is not None:
         query = query.filter(CarListing.is_new == is_new)
 
-    if sort_by in ["price", "year", "mileage", "created_at"]:
+    if sort_by in ["price", "year", "mileage", "created_at", "engine_power"]:
         sort_column = getattr(CarListing, sort_by)
-        sort_column = sort_column.desc() if order == "desc" else sort_column.asc()
-        query = query.order_by(sort_column)
+        if order == "desc":
+            query = query.order_by(sort_column.desc().nulls_last())
+        else:
+            query = query.order_by(sort_column.asc().nulls_last())
 
     total_count = query.count()
     listings = query.offset((page - 1) * limit).limit(limit).all()

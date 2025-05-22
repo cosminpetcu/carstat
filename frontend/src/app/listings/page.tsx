@@ -29,6 +29,18 @@ type Car = {
   suspicious_price?: boolean;
 };
 
+const sortOptions = [
+  { value: "", label: "Default Order", sort_by: "", order: "asc" },
+  { value: "price_asc", label: "Price: Low to High", sort_by: "price", order: "asc" },
+  { value: "price_desc", label: "Price: High to Low", sort_by: "price", order: "desc" },
+  { value: "year_asc", label: "Year: Oldest First", sort_by: "year", order: "asc" },
+  { value: "year_desc", label: "Year: Newest First", sort_by: "year", order: "desc" },
+  { value: "mileage_asc", label: "Mileage: Low to High", sort_by: "mileage", order: "asc" },
+  { value: "mileage_desc", label: "Mileage: High to Low", sort_by: "mileage", order: "desc" },
+  { value: "engine_power_asc", label: "Power: Low to High", sort_by: "engine_power", order: "asc" },
+  { value: "engine_power_desc", label: "Power: High to Low", sort_by: "engine_power", order: "desc" },
+];
+
 export default function ListingsPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -43,6 +55,7 @@ export default function ListingsPage() {
   const [toastMessage, setToastMessage] = useState("");
   const [toastType, setToastType] = useState<"success" | "error" | "">("");
   const [viewMode, setViewMode] = useState("grid");
+  const [sortBy, setSortBy] = useState("");
 
   const getQualityScoreColor = (quality_score: number | undefined) => {
     if (!quality_score) return "bg-gray-300";
@@ -85,6 +98,15 @@ export default function ListingsPage() {
     setPage(currentPage);
     setLimit(currentLimit);
 
+    const urlSortBy = params.get("sort_by") || "";
+    const urlSortOrder = params.get("order") || "asc";
+    
+    const currentSortOption = sortOptions.find(
+      option => option.sort_by === urlSortBy && option.order === urlSortOrder
+    );
+    
+    setSortBy(currentSortOption?.value || "");
+
     params.set("page", currentPage.toString());
     params.set("limit", currentLimit.toString());
 
@@ -114,6 +136,24 @@ export default function ListingsPage() {
         setLoading(false);
       });
   }, [searchParams]);
+
+  const updateSort = (sortValue: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    
+    if (sortValue === "") {
+      params.delete("sort_by");
+      params.delete("order");
+    } else {
+      const selectedOption = sortOptions.find(option => option.value === sortValue);
+      if (selectedOption && selectedOption.sort_by) {
+        params.set("sort_by", selectedOption.sort_by);
+        params.set("order", selectedOption.order);
+      }
+    }
+    
+    params.set("page", "1");
+    router.push(`/listings?${params.toString()}`);
+  };
 
   const toggleFavorite = async (car: Car) => {
     const token = localStorage.getItem("token");
@@ -590,7 +630,7 @@ export default function ListingsPage() {
 
           <div className="w-full lg:w-3/4">
             <div className="bg-white p-4 rounded-xl shadow-sm mb-6">
-              <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-800">Available Cars</h2>
                   <p className="text-gray-500 text-sm">
@@ -598,7 +638,27 @@ export default function ListingsPage() {
                   </p>
                 </div>
 
-                <div className="flex gap-4 items-center">
+                <div className="flex flex-wrap gap-4 items-center">
+                  {/* Sort Dropdown */}
+                  <div className="flex items-center gap-2">
+                    <label htmlFor="sort" className="text-sm text-gray-600 whitespace-nowrap">
+                      Sort by:
+                    </label>
+                    <select
+                      id="sort"
+                      value={sortBy}
+                      onChange={(e) => updateSort(e.target.value)}
+                      className="border border-gray-300 text-gray-600 rounded-md px-3 py-1.5 text-sm bg-white min-w-[180px]"
+                    >
+                      {sortOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* View Mode */}
                   <div className="flex border border-gray-300 rounded-lg overflow-hidden">
                     <button 
                       onClick={() => setViewMode("grid")}
@@ -614,6 +674,7 @@ export default function ListingsPage() {
                     </button>
                   </div>
                   
+                  {/* Per Page */}
                   <div className="flex items-center gap-2">
                     <label htmlFor="limit" className="text-sm text-gray-600 whitespace-nowrap">
                       Per page:
