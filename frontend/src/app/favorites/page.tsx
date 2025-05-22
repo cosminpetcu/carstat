@@ -275,6 +275,13 @@ export default function FavoritesPage() {
   const formatSearchTags = (query: string) => {
     const params = new URLSearchParams(query);
     const tags: {label: string, value: string}[] = [];
+
+    if (params.get("search")) {
+      tags.push({
+        label: "Search",
+        value: params.get("search")!
+      });
+    }
   
     // Brand & Model
     if (params.get("brand")) {

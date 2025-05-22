@@ -81,6 +81,8 @@ echo Car Data Update Process Completed
 echo Finished at %date% %time%
 echo ========================================
 
+cd /d "C:\Users\cosmi\Desktop\LICENTA\CarStat"
+
 for /f "tokens=1-3 delims=:" %%a in ("%time%") do (
     set hour=%%a
     set minute=%%b

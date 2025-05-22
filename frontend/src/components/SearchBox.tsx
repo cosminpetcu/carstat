@@ -365,7 +365,25 @@ const SearchBox = () => {
         
         <button
           type="button"
-          onClick={() => router.push("/detailed-search")}
+          onClick={() => {
+            const params = new URLSearchParams();
+            
+            if (selectedBrand) params.append("brand", selectedBrand);
+            if (selectedModel) params.append("model", selectedModel);
+            if (selectedFuel) params.append("fuel_type", selectedFuel);
+            if (selectedCondition) params.append("vehicle_condition", selectedCondition);
+            if (selectedRating) params.append("deal_rating", selectedRating);
+            if (yearFrom) params.append("year_min", yearFrom);
+            if (maxMileage) params.append("mileage_max", maxMileage);
+            if (maxPrice) params.append("max_price", maxPrice);
+            
+            const queryString = params.toString();
+            if (queryString) {
+              router.push(`/detailed-search?${queryString}`);
+            } else {
+              router.push("/detailed-search");
+            }
+          }}
           className="sm:w-auto bg-white border border-gray-300 text-gray-700 px-4 py-3 rounded-lg font-medium hover:border-blue-300 hover:bg-blue-50 transition-all shadow-sm"
         >
           Advanced Search

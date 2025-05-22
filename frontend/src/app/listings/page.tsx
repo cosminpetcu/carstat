@@ -62,7 +62,16 @@ export default function ListingsPage() {
   
       return () => clearTimeout(timeout);
     }
-  }, [toastMessage]);  
+  }, [toastMessage]);
+
+  useEffect(() => {
+    const handleUrlChange = () => {
+      window.location.reload();
+    };
+
+    window.addEventListener('popstate', handleUrlChange);
+    return () => window.removeEventListener('popstate', handleUrlChange);
+  }, []);
 
   useEffect(() => {
     const params = new URLSearchParams(searchParams.toString());
@@ -222,7 +231,6 @@ export default function ListingsPage() {
     return pages;
   };
 
-  // Loading skeleton
   const renderLoadingSkeleton = () => {
     return Array(limit).fill(0).map((_, idx) => (
       <div key={idx} className="bg-white rounded-xl shadow-md overflow-hidden animate-pulse">
@@ -237,7 +245,6 @@ export default function ListingsPage() {
     ));
   };
 
-  // Car card component for grid view
   const renderGridCard = (car: Car) => {
     const imgs = parseImages(car.images);
     const current = imageIndex[car.id] || 0;
@@ -248,7 +255,6 @@ export default function ListingsPage() {
       <div key={car.id} className="group bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
         <a href={`/listings/${car.id}`} className="block">
           <div className="relative">
-            {/* Favorite Button */}
             <button
               onClick={(e) => {
                 e.preventDefault();
@@ -263,7 +269,6 @@ export default function ListingsPage() {
               <span className="text-2xl">{car.is_favorite ? "❤️" : "🤍"}</span>
             </button>
 
-            {/* Image Container */}
             <div className="relative h-[220px] w-full">
               <Image
                 src={imageUrl}
@@ -273,7 +278,6 @@ export default function ListingsPage() {
                 sizes="(max-width: 768px) 100vw, 50vw"
               />
               
-              {/* Image Navigation */}
               {imgs.length > 1 && (
                 <>
                   <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-md">
@@ -312,7 +316,6 @@ export default function ListingsPage() {
                 </>
               )}
 
-              {/* Sold Badge */}
               {car.sold && (
                 <div className="absolute top-3 left-3 bg-red-600 text-white text-xs px-3 py-1 rounded-md font-medium">
                   Sold
@@ -320,7 +323,6 @@ export default function ListingsPage() {
               )}
             </div>
 
-            {/* Car Details */}
             <div className="p-5">
               <h3 className="font-bold text-lg text-gray-800 mb-1 line-clamp-1">{car.title}</h3>
               
@@ -355,7 +357,6 @@ export default function ListingsPage() {
                 )}
               </div>
 
-              {/* Price and Quality Score Section */}
               <div className="flex justify-between items-start">
                 <div className="flex flex-col">
                   <div className="text-xl font-bold text-blue-600">
@@ -389,14 +390,12 @@ export default function ListingsPage() {
                 )}
               </div>
 
-              {/* Deal Rating */}
               {rating && (
                 <div className={`mt-3 w-full py-1.5 text-center text-xs font-semibold rounded-md ${rating.color} ${rating.textColor}`}>
                   {rating.label}
                 </div>
               )}
 
-               {/* Suspicious Price Label */}
               {car.suspicious_price && (
                 <div className="mt-2 flex items-center text-red-500">
                   <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -411,8 +410,7 @@ export default function ListingsPage() {
       </div>
     );
   };
-  
-  // Car card component for list view
+
   const renderListCard = (car: Car) => {
     const imgs = parseImages(car.images);
     const current = imageIndex[car.id] || 0;
@@ -422,7 +420,6 @@ export default function ListingsPage() {
     return (
       <div key={car.id} className="group bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300">
         <a href={`/listings/${car.id}`} className="flex flex-col md:flex-row">
-          {/* Image Section */}
           <div className="relative w-full md:w-1/3 h-[220px] md:h-auto">
             <Image
               src={imageUrl}
@@ -432,7 +429,6 @@ export default function ListingsPage() {
               sizes="(max-width: 768px) 100vw, 33vw"
             />
             
-            {/* Favorite Button */}
             <button
               onClick={(e) => {
                 e.preventDefault();
@@ -447,7 +443,6 @@ export default function ListingsPage() {
               <span className="text-2xl">{car.is_favorite ? "❤️" : "🤍"}</span>
             </button>
             
-            {/* Image Navigation */}
             {imgs.length > 1 && (
               <>
                 <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-md">
@@ -486,7 +481,6 @@ export default function ListingsPage() {
               </>
             )}
 
-            {/* Sold Badge */}
             {car.sold && (
               <div className="absolute top-3 left-3 bg-red-600 text-white text-xs px-3 py-1 rounded-md font-medium">
                 Sold
@@ -494,7 +488,6 @@ export default function ListingsPage() {
             )}
           </div>
           
-          {/* Details Section */}
           <div className="w-full md:w-2/3 p-5">
             <div className="flex justify-between items-start">
               <div>
@@ -545,7 +538,6 @@ export default function ListingsPage() {
               )}
             </div>
             
-            {/* Deal Rating and Quality Score in the same row */}
             <div className="flex items-center justify-between">
               {rating && (
                 <div className={`w-auto md:w-48 py-1.5 text-center text-xs font-semibold rounded-md ${rating.color} ${rating.textColor}`}>
@@ -592,12 +584,10 @@ export default function ListingsPage() {
 
       <section className="max-w-7xl mx-auto px-6 py-8">
         <div className="flex flex-col lg:flex-row gap-8">
-          {/* Sidebar */}
           <div className="w-full lg:w-1/4 lg:top-8 lg:self-start">
             <SidebarFilters setToastMessage={setToastMessage} setToastType={setToastType} />
           </div>
 
-          {/* Listings */}
           <div className="w-full lg:w-3/4">
             <div className="bg-white p-4 rounded-xl shadow-sm mb-6">
               <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
@@ -609,7 +599,6 @@ export default function ListingsPage() {
                 </div>
 
                 <div className="flex gap-4 items-center">
-                  {/* View Mode Toggle */}
                   <div className="flex border border-gray-300 rounded-lg overflow-hidden">
                     <button 
                       onClick={() => setViewMode("grid")}
@@ -625,7 +614,6 @@ export default function ListingsPage() {
                     </button>
                   </div>
                   
-                  {/* Per Page Selector */}
                   <div className="flex items-center gap-2">
                     <label htmlFor="limit" className="text-sm text-gray-600 whitespace-nowrap">
                       Per page:
@@ -645,7 +633,6 @@ export default function ListingsPage() {
               </div>
             </div>
 
-            {/* Listings Grid/List */}
             <div className={`${
               viewMode === "grid" 
                 ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" 
@@ -665,7 +652,6 @@ export default function ListingsPage() {
               }
             </div>
 
-            {/* Pagination */}
             {!loading && totalPages > 0 && (
               <div className="mt-10 flex justify-center">
                 <div className="inline-flex rounded-md shadow-sm bg-white">
@@ -713,7 +699,6 @@ export default function ListingsPage() {
 
       <Footer />
       
-      {/* Toast Message */}
       {toastMessage && (
         <div 
           className={`fixed bottom-6 right-6 px-6 py-3 rounded-lg shadow-lg transition-all z-50 flex items-center ${

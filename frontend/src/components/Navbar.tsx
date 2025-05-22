@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import Image from "next/image";
 
 export default function Navbar() {
@@ -14,7 +14,9 @@ export default function Navbar() {
   const [searchQuery, setSearchQuery] = useState("");
   
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const isHome = pathname === "/";
+  const isListings = pathname === "/listings";
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -31,7 +33,6 @@ export default function Navbar() {
       }
     }
 
-    // Close dropdown when clicking outside
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
         setDropdownOpen(false);
@@ -43,10 +44,21 @@ export default function Navbar() {
   }, []);
 
   useEffect(() => {
-    // Close mobile menu when changing routes
+    if (isListings) {
+      const searchParam = searchParams.get("search");
+      if (searchParam) {
+        setSearchQuery(searchParam);
+      }
+    } else {
+      if (!searchOpen) {
+        setSearchQuery("");
+      }
+    }
+  }, [isListings, searchParams]);
+
+  useEffect(() => {
     setMobileMenuOpen(false);
     
-    // Focus search input when opened
     if (searchOpen && searchInputRef.current) {
       searchInputRef.current.focus();
     }
@@ -63,8 +75,20 @@ export default function Navbar() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      window.location.href = `/listings?search=${encodeURIComponent(searchQuery.trim())}`;
+      if (isListings) {
+        const currentParams = new URLSearchParams(searchParams.toString());
+        currentParams.set("search", searchQuery.trim());
+        currentParams.set("page", "1");
+        window.history.pushState({}, "", `/listings?${currentParams.toString()}`);
+        window.location.reload();
+      } else {
+        window.location.href = `/listings?search=${encodeURIComponent(searchQuery.trim())}`;
+      }
     }
+  };
+
+  const handleClearSearch = () => {
+    setSearchOpen(false);
   };
 
   return (
@@ -77,7 +101,6 @@ export default function Navbar() {
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 md:h-20">
-          {/* Logo */}
           <div className="flex-shrink-0 flex items-center">
             <Link href="/" className="flex items-center">
               <span className="text-xl font-bold">CARSTAT</span>
@@ -85,7 +108,6 @@ export default function Navbar() {
             </Link>
           </div>
 
-          {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-4">
             <NavLink href="/" label="Home" active={pathname === "/"} />
             <NavLink href="/listings" label="Listings" active={pathname === "/listings" || pathname.startsWith("/listings/")} />
@@ -93,19 +115,19 @@ export default function Navbar() {
             <NavLink href="/dashboard" label="Dashboard" active={pathname === "/dashboard"} />
             <NavLink href="/detailed-search" label="Advanced Search" active={pathname === "/detailed-search"} />
             
-            {/* Search Button */}
-            <button 
-              onClick={() => setSearchOpen(!searchOpen)}
-              className="p-2 rounded-full text-gray-300 hover:text-white focus:outline-none transition-all duration-200"
-              aria-label="Search"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </button>
+            {(!searchOpen) && (
+              <button 
+                onClick={() => setSearchOpen(!searchOpen)}
+                className="p-2 rounded-full text-gray-300 hover:text-white focus:outline-none transition-all duration-200"
+                aria-label="Search"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+              </button>
+            )}
           </nav>
 
-          {/* User Menu and Mobile Menu Button */}
           <div className="flex items-center gap-2">
             {!isLoggedIn ? (
               <Link href="/login">
@@ -155,7 +177,6 @@ export default function Navbar() {
               </div>
             )}
 
-            {/* Mobile menu button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="md:hidden p-2 rounded-md text-gray-300 hover:text-white focus:outline-none"
@@ -176,7 +197,6 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Mobile Navigation */}
       {mobileMenuOpen && (
         <div className="md:hidden bg-gray-900/95 backdrop-blur-sm">
           <div className="px-2 pt-2 pb-3 space-y-1 border-t border-gray-700">
@@ -186,7 +206,6 @@ export default function Navbar() {
             <MobileNavLink href="/dashboard" label="Dashboard" active={pathname === "/dashboard"} />
             <MobileNavLink href="/detailed-search" label="Advanced Search" active={pathname === "/detailed-search"} />
             
-            {/* Mobile Search */}
             <div className="pt-2">
               <form onSubmit={handleSearch} className="flex">
                 <input
@@ -206,7 +225,6 @@ export default function Navbar() {
             </div>
           </div>
 
-          {/* Mobile Account Menu */}
           <div className="border-t border-gray-700 pt-4 pb-3">
             {isLoggedIn ? (
               <div className="px-4 flex flex-col space-y-3">
@@ -260,7 +278,6 @@ export default function Navbar() {
         </div>
       )}
 
-      {/* Search Bar Overlay */}
       {searchOpen && (
         <div className="hidden md:block absolute left-0 right-0 bg-gray-900 backdrop-blur-sm shadow-lg">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
@@ -271,18 +288,19 @@ export default function Navbar() {
                 placeholder="Search for cars by brand, model, or keyword..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-blue-900/20 border border-blue-500/30 text-white px-4 py-3 rounded-l-md focus:outline-none"
+                className="w-full bg-blue-900/20 border border-blue-500/30 text-white px-4 py-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
               <button 
                 type="submit" 
-                className="bg-blue-600 text-white px-6 py-3 rounded-r-md hover:bg-blue-700 ml-2"
+                className="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors ml-2"
               >
                 Search
               </button>
               <button 
                 type="button" 
-                onClick={() => setSearchOpen(false)}
-                className="ml-2 p-3 text-gray-300 hover:text-white rounded-md"
+                onClick={handleClearSearch}
+                className="ml-2 p-3 text-gray-400 hover:text-gray-200 rounded-md hover:bg-gray-700 transition-colors"
+                title="Close search"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

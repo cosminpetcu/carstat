@@ -157,11 +157,11 @@ def update_deal_ratings():
 
             similar_cars = db.query(CarListing).filter(*filters).all()
 
-            if len(similar_cars) < 5:
+            if len(similar_cars) < 4:
                 continue
 
             prices = [c.price for c in similar_cars if c.price and c.price > 0]
-            if len(prices) < 5:
+            if len(prices) < 4:
                 continue
 
             average_price = round(statistics.median(prices), 2)

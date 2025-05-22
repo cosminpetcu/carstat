@@ -220,6 +220,7 @@ export default function DetailedSearchPage() {
     setQualityScoreMin("");
     setQualityScoreMax("");
     setDealRating("");
+    router.push("/detailed-search");
   };
 
   useEffect(() => {
@@ -268,6 +269,21 @@ export default function DetailedSearchPage() {
 
     fetchModels();
   }, [brand]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    
+    if (params.get("brand")) setBrand(params.get("brand")!);
+    if (params.get("model")) setModel(params.get("model")!);
+    if (params.get("fuel_type")) setFuelType(params.get("fuel_type")!);
+    if (params.get("vehicle_condition")) {
+      setIsNew(params.get("vehicle_condition") === "New" ? "true" : "false");
+    }
+    if (params.get("deal_rating")) setDealRating(params.get("deal_rating")!);
+    if (params.get("year_min")) setYearMin(params.get("year_min")!);
+    if (params.get("mileage_max")) setMileageMax(params.get("mileage_max")!);
+    if (params.get("max_price")) setPriceMax(params.get("max_price")!);
+  }, [searchParams]);
 
   return (
     <main className="min-h-screen flex flex-col bg-gray-50 text-black">

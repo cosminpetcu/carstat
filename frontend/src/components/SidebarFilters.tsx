@@ -36,13 +36,10 @@ const transmissionMap = {
   "Automatic": "Automatic"
 };
 
-
-// Filter options constants
 const driveTypes = ["Sedan", "SUV", "Wagon", "Hatchback", "MPV", "Coupe", "Convertible", "Pickup"];
 const colorOptions = ["Black", "Grey", "White", "Blue", "Red", "Silver", "Brown", "Beige", "Green", "Yellow/Gold", "Orange", "Other"];
 const sellerTypes = ["Private", "Dealer"];
 
-// Deal Rating with descriptions
 const dealRatings = [
   { value: "", label: "Any Deal" },
   { value: "S", label: "S - Exceptional Price" },
@@ -65,7 +62,6 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  // State for all filter values
   const [filters, setFilters] = useState({
     brand: "",
     model: "",
@@ -92,13 +88,14 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
     quality_score_max: ""
   });
 
-  // Collapsed state for expandable sections
+  const [currentSearch, setCurrentSearch] = useState("");
+
   const [isCollapsed, setIsCollapsed] = useState({
-    basic: false,         // Essential filters
-    availability: true,   // Availability settings
-    vehicle: true,        // Vehicle characteristics
-    engine: true,         // Engine specifications
-    pricing: true         // Pricing information
+    basic: false,
+    availability: true,
+    vehicle: true,
+    engine: true,
+    pricing: true
   });
 
   const qualityScoreRanges = [
@@ -110,7 +107,6 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
     { label: "Poor (0-19)", value: "poor", min: "0", max: "19" }
   ];
 
-  // Toggle a section's collapsed state
   const toggleSection = (section: keyof typeof isCollapsed) => {
     setIsCollapsed(prev => ({
       ...prev,
@@ -123,12 +119,10 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
   const [isLoadingBrands, setIsLoadingBrands] = useState(true);
   const [isLoadingModels, setIsLoadingModels] = useState(false);
 
-  // Initialize filters from URL params on component mount and when URL changes
   useEffect(() => {
     const params = new URLSearchParams(searchParams.toString());
     const newFilters = { ...filters };
     
-    // For each filter, check if it exists in URL params and update state
     Object.keys(newFilters).forEach((key) => {
       const paramValue = params.get(key);
       if (paramValue !== null) {
@@ -139,9 +133,11 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
     });
     
     setFilters(newFilters);
+
+    const searchParam = params.get("search");
+    setCurrentSearch(searchParam || "");
   }, [searchParams]);
 
-  // Save search functionality
   const handleSaveSearch = async () => {
     const token = localStorage.getItem("token");
     const userRaw = localStorage.getItem("user");
@@ -188,53 +184,50 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
     }
   };
 
-  // Update a single filter and navigate
   const updateFilter = (key: string, value: string) => {
-    // Create a copy of current filters and update the specified key
     const updatedFilters = { ...filters, [key]: value };
     setFilters(updatedFilters);
     
-    // Build URL parameters
     const params = new URLSearchParams();
     
-    // Add all non-empty filters to URL params
+    const currentSearchParam = searchParams.get("search");
+    if (currentSearchParam) {
+      params.set("search", currentSearchParam);
+    }
+    
     Object.entries(updatedFilters).forEach(([key, value]) => {
       if (value) {
         params.set(key, value);
       }
     });
     
-    // Reset to page 1 when changing filters
     params.set("page", "1");
     
-    // Navigate to updated URL
     router.push(`/listings?${params.toString()}`);
   };
 
-  // Update multiple filters at once (for price ranges)
   const updateMultipleFilters = (updates: Record<string, string>) => {
-    // Create a copy of current filters and apply all updates
     const updatedFilters = { ...filters, ...updates };
     setFilters(updatedFilters);
     
-    // Build URL parameters
     const params = new URLSearchParams();
     
-    // Add all non-empty filters to URL params
+    const currentSearchParam = searchParams.get("search");
+    if (currentSearchParam) {
+      params.set("search", currentSearchParam);
+    }
+    
     Object.entries(updatedFilters).forEach(([key, value]) => {
       if (value) {
         params.set(key, value);
       }
     });
     
-    // Reset to page 1 when changing filters
     params.set("page", "1");
     
-    // Navigate to updated URL
     router.push(`/listings?${params.toString()}`);
   };
 
-  // Clear all filters
   const clearAllFilters = () => {
     setFilters({
       brand: "",
@@ -261,7 +254,13 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
       quality_score_min: "",
       quality_score_max: ""
     });
-    router.push('/listings');
+
+    const currentSearchParam = searchParams.get("search");
+    if (currentSearchParam) {
+      router.push(`/listings?search=${encodeURIComponent(currentSearchParam)}`);
+    } else {
+      router.push('/listings');
+    }
   };
 
   useEffect(() => {
@@ -334,8 +333,43 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
         </button>
       </div>
 
+      {currentSearch && (
+        <div className="mb-6 p-3 bg-blue-900/30 rounded-lg border border-blue-700 cursor-pointer hover:bg-blue-900/40 transition-colors"
+          onClick={() => {
+            const searchButton = document.querySelector('button[aria-label="Search"]') as HTMLButtonElement;
+            if (searchButton) {
+              searchButton.click();
+            }
+          }}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+              <span className="text-sm text-blue-200">Search:</span>
+              <span className="text-sm font-medium text-white">{currentSearch}</span>
+            </div>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                const currentParams = new URLSearchParams(searchParams.toString());
+                currentParams.delete("search");
+                currentParams.set("page", "1");
+                window.location.href = `/listings?${currentParams.toString()}`;
+              }}
+              className="ml-2 p-1 text-gray-300 hover:text-white rounded-md hover:bg-gray-700 transition-colors"
+              title="Clear search"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="space-y-6">
-        {/* Basic Filters Section */}
         <div className="border-b border-gray-700 pb-4">
           <button 
             className="flex justify-between items-center w-full text-left mb-3 font-semibold text-lg"
@@ -350,14 +384,12 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
           
           {!isCollapsed.basic && (
             <div className="space-y-3 pl-2">
-              {/* Brand */}
               <div className="mb-3">
                 <label className="block text-xs text-gray-400 mb-1">Brand</label>
                 <div className="relative">
                   <select 
                     value={filters.brand} 
                     onChange={(e) => {
-                      // When changing brand, also reset model
                       if (e.target.value !== filters.brand) {
                         updateMultipleFilters({
                           brand: e.target.value,
@@ -390,7 +422,6 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
                 </div>
               </div>
 
-              {/* Model */}
               <div className="mb-3">
                 <label className="block text-xs text-gray-400 mb-1">Model</label>
                 <div className="relative">
@@ -420,7 +451,6 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
                 </div>
               </div>
               
-              {/* Vehicle Condition */}
               <div className="mb-3">
                 <label className="block text-xs text-gray-400 mb-1">Vehicle Condition</label>
                 <div className="relative">
@@ -442,7 +472,6 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
                 </div>
               </div>
 
-              {/* Fuel Type */}
               <div className="mb-3">
                 <label className="block text-xs text-gray-400 mb-1">Fuel Type</label>
                 <div className="relative">
@@ -462,7 +491,6 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
                 </div>
               </div>
 
-              {/* Transmission */}
               <div className="mb-3">
                 <label className="block text-xs text-gray-400 mb-1">Transmission</label>
                 <div className="relative">
@@ -485,7 +513,6 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
           )}
         </div>
 
-        {/* Availability & Deal Rating Section */}
         <div className="border-b border-gray-700 pb-4">
           <button 
             className="flex justify-between items-center w-full text-left mb-3 font-semibold text-lg"
@@ -503,7 +530,6 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
           
           {!isCollapsed.availability && (
             <div className="space-y-3 pl-2">
-              {/* Seller Type */}
               <div className="mb-3">
                 <label className="block text-xs text-gray-400 mb-1">Seller Type</label>
                 <div className="relative">
@@ -523,7 +549,6 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
                 </div>
               </div>
 
-              {/* Sold Status */}
               <div className="mb-3">
                 <label className="block text-xs text-gray-400 mb-1">Availability</label>
                 <div className="relative">
@@ -544,7 +569,6 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
                 </div>
               </div>
 
-              {/* Deal Rating */}
               <div className="mb-3">
                 <label className="block text-xs text-gray-400 mb-1">Deal Rating</label>
                 <div className="relative">
@@ -567,7 +591,6 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
                 </div>
               </div>
 
-              {/* Quality Score */}
               <div className="mb-3">
                 <label className="block text-xs text-gray-400 mb-1">Quality Score</label>
                 <div className="relative">
@@ -601,7 +624,6 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
           )}
         </div>
 
-        {/* Vehicle Characteristics Section */}
         <div className="border-b border-gray-700 pb-4">
           <button 
             className="flex justify-between items-center w-full text-left mb-3 font-semibold text-lg"
@@ -621,7 +643,6 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
           
           {!isCollapsed.vehicle && (
             <div className="space-y-3 pl-2">
-              {/* Drive Type */}
               <div className="mb-3">
                 <label className="block text-xs text-gray-400 mb-1">Body Type</label>
                 <div className="relative">
@@ -641,7 +662,6 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
                 </div>
               </div>
 
-              {/* Doors */}
               <div className="mb-3">
                 <label className="block text-xs text-gray-400 mb-1">Doors</label>
                 <div className="relative">
@@ -665,7 +685,6 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
                 </div>
               </div>
 
-              {/* Color */}
               <div className="mb-3">
                 <label className="block text-xs text-gray-400 mb-1">Color</label>
                 <div className="relative">
@@ -688,7 +707,6 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
                 </div>
               </div>
 
-              {/* Year Range */}
               <div className="mb-3">
                 <label className="block text-xs text-gray-400 mb-1">Year Range</label>
                 <div className="grid grid-cols-2 gap-2">
@@ -719,7 +737,6 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
                 </div>
               </div>
 
-              {/* Mileage Range */}
               <div className="mb-3">
                 <label className="block text-xs text-gray-400 mb-1">Mileage Range (km)</label>
                 <div className="grid grid-cols-2 gap-2">
@@ -753,7 +770,6 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
           )}
         </div>
 
-        {/* Engine Specifications Section */}
         <div className="border-b border-gray-700 pb-4">
           <button 
             className="flex justify-between items-center w-full text-left mb-3 font-semibold text-lg"
@@ -768,7 +784,6 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
           
           {!isCollapsed.engine && (
             <div className="space-y-3 pl-2">
-              {/* Engine Power Range */}
               <div className="mb-3">
                 <label className="block text-xs text-gray-400 mb-1">Engine Power (hp)</label>
                 <div className="grid grid-cols-2 gap-2">
@@ -799,7 +814,6 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
                 </div>
               </div>
 
-              {/* Engine Capacity Range */}
               <div className="mb-3">
                 <label className="block text-xs text-gray-400 mb-1">Engine Capacity (cc)</label>
                 <div className="grid grid-cols-2 gap-2">
@@ -833,7 +847,6 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
           )}
         </div>
 
-        {/* Price Section */}
         <div className="border-b border-gray-700 pb-4">
           <button 
             className="flex justify-between items-center w-full text-left mb-3 font-semibold text-lg"
@@ -850,7 +863,6 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
           
           {!isCollapsed.pricing && (
             <div className="space-y-3 pl-2">
-              {/* Price Range */}
               <div className="mb-3">
                 <label className="block text-xs text-gray-400 mb-1">Price Range (€)</label>
                 <div className="grid grid-cols-2 gap-2">
@@ -881,7 +893,6 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
                 </div>
               </div>
               
-              {/* Price by ranges */}
               <div className="mb-3">
                 <label className="block text-xs text-gray-400 mb-1">Quick Ranges</label>
                 <div className="grid grid-cols-2 gap-2">
@@ -931,7 +942,6 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
           )}
         </div>
 
-        {/* Actions */}
         <div className="pt-2 space-y-3">
           <button
             type="button"
