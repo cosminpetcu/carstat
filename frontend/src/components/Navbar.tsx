@@ -93,6 +93,16 @@ export default function Navbar() {
     setSearchOpen(false);
   };
 
+  const handleProtectedNavigation = (targetPath: string) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      PendingActionsManager.saveNavigationIntent(targetPath);
+      window.location.href = '/login';
+    } else {
+      router.push(targetPath);
+    }
+  };
+
   return (
     <header 
       className={`w-full z-30 ${
@@ -114,16 +124,7 @@ export default function Navbar() {
             <NavLink href="/" label="Home" active={pathname === "/"} />
             <NavLink href="/listings" label="Listings" active={pathname === "/listings" || pathname.startsWith("/listings/")} />
             <button
-              onClick={() => {
-                const token = localStorage.getItem("token");
-                if (!token) {
-                  // Save the intention to visit favorites
-                  PendingActionsManager.saveNavigationIntent('/favorites');
-                  window.location.href = '/login';
-                } else {
-                  router.push('/favorites');
-                }
-              }}
+              onClick={() => handleProtectedNavigation('/favorites')}
               className={`px-3 py-2 text-sm font-medium transition-colors duration-200 cursor-pointer ${
                 pathname === "/favorites"
                   ? "text-white bg-gray-700/50 rounded-md" 
@@ -132,8 +133,26 @@ export default function Navbar() {
             >
               Favorites
             </button>
-            <NavLink href="/dashboard" label="Dashboard" active={pathname === "/dashboard"} />
-            <NavLink href="/get-estimation" label="Get Estimation" active={pathname === "/get-estimation"} />
+            <button
+              onClick={() => handleProtectedNavigation('/dashboard')}
+              className={`px-3 py-2 text-sm font-medium transition-colors duration-200 cursor-pointer ${
+                pathname === "/dashboard"
+                  ? "text-white bg-gray-700/50 rounded-md" 
+                  : "text-gray-300 hover:text-white"
+              }`}
+            >
+              Dashboard
+            </button>
+            <button
+              onClick={() => handleProtectedNavigation('/get-estimation')}
+              className={`px-3 py-2 text-sm font-medium transition-colors duration-200 cursor-pointer ${
+                pathname === "/get-estimation"
+                  ? "text-white bg-gray-700/50 rounded-md" 
+                  : "text-gray-300 hover:text-white"
+              }`}
+            >
+              Get Estimation
+            </button>
             <NavLink href="/detailed-search" label="Advanced Search" active={pathname === "/detailed-search"} />
             
             {(!searchOpen) && (
@@ -184,6 +203,12 @@ export default function Navbar() {
                     <Link href="/favorites" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                       Favorites
                     </Link>
+                    <Link href="/dashboard" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                      Dashboard
+                    </Link>
+                    <Link href="/get-estimation" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                      Get Estimation
+                    </Link>
                     <button
                       onClick={handleLogout}
                       className="block w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-gray-100 border-t border-gray-100"
@@ -221,15 +246,7 @@ export default function Navbar() {
             <MobileNavLink href="/" label="Home" active={pathname === "/"} />
             <MobileNavLink href="/listings" label="Listings" active={pathname === "/listings" || pathname.startsWith("/listings/")} />
             <button
-              onClick={() => {
-                const token = localStorage.getItem("token");
-                if (!token) {
-                  PendingActionsManager.saveNavigationIntent('/favorites');
-                  window.location.href = '/login';
-                } else {
-                  router.push('/favorites');
-                }
-              }}
+              onClick={() => handleProtectedNavigation('/favorites')}
               className={`block px-3 py-2 text-base font-medium w-full text-left transition-colors ${
                 pathname === "/favorites"
                   ? "bg-gray-800 text-white rounded-md" 
@@ -238,8 +255,26 @@ export default function Navbar() {
             >
               Favorites
             </button>
-            <MobileNavLink href="/dashboard" label="Dashboard" active={pathname === "/dashboard"} />
-            <MobileNavLink href="/get-estimation" label="Get Estimation" active={pathname === "/get-estimation"} />
+            <button
+              onClick={() => handleProtectedNavigation('/dashboard')}
+              className={`block px-3 py-2 text-base font-medium w-full text-left transition-colors ${
+                pathname === "/dashboard"
+                  ? "bg-gray-800 text-white rounded-md" 
+                  : "text-gray-300 hover:bg-gray-700 hover:text-white hover:rounded-md"
+              }`}
+            >
+              Dashboard
+            </button>
+            <button
+              onClick={() => handleProtectedNavigation('/get-estimation')}
+              className={`block px-3 py-2 text-base font-medium w-full text-left transition-colors ${
+                pathname === "/get-estimation"
+                  ? "bg-gray-800 text-white rounded-md" 
+                  : "text-gray-300 hover:bg-gray-700 hover:text-white hover:rounded-md"
+              }`}
+            >
+              Get Estimation
+            </button>
             <MobileNavLink href="/detailed-search" label="Advanced Search" active={pathname === "/detailed-search"} />
             
             <div className="pt-2">
@@ -279,6 +314,18 @@ export default function Navbar() {
                     className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700"
                   >
                     Favorites
+                  </Link>
+                  <Link 
+                    href="/dashboard" 
+                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700"
+                  >
+                    Dashboard
+                  </Link>
+                  <Link 
+                    href="/get-estimation" 
+                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700"
+                  >
+                    Get Estimation
                   </Link>
                   <Link 
                     href="/saved-searches" 
