@@ -5,31 +5,25 @@ from tqdm import tqdm
 import statistics
 from datetime import datetime
 
-def is_suspicious_price(car, db):
+def is_suspicious_price_heuristic(car):
     placeholder_prices = [1, 123, 1111, 1234]
     
     if car.price in placeholder_prices or car.price < 100:
         return True
     
-    if car.estimated_price and car.price < (car.estimated_price * 0.2):
-        return True
-        
-    threshold = 0.3
-    similar_cars = db.query(CarListing).filter(
-        CarListing.brand == car.brand,
-        CarListing.model == car.model,
-        CarListing.year.between(car.year - 3, car.year + 3),
-        CarListing.price > 1000,
-        CarListing.damaged != True
-    ).all()
+    if car.year and car.year >= 2020:
+        if car.brand in ["Toyota", "Honda", "Ford", "Volkswagen"] and car.price > 60000:
+            return True
+        if car.brand in ["Dacia", "Skoda", "Seat"] and car.price > 40000:
+            return True
+        if car.brand in ["Fiat", "Peugeot", "Citroen"] and car.price > 45000:
+            return True
     
-    if len(similar_cars) >= 5:
-        prices = [c.price for c in similar_cars if c.price]
-        if prices:
-            median_price = statistics.median(prices)
-            
-            if car.price < threshold * median_price:
-                return True
+    if car.year and car.year > 2010:
+        if car.brand in ["BMW", "Mercedes-Benz", "Audi"] and car.price < 3000:
+            return True
+        if car.brand in ["Porsche", "Ferrari", "Lamborghini"] and car.price < 15000:
+            return True
     
     return False
 
@@ -113,19 +107,66 @@ def update_deal_ratings():
     db = SessionLocal()
     cars = db.query(CarListing).all()
     total = len(cars)
-    updated = 0
-    flagged_suspicious = 0
-    errors = 0
+    
+    print(f"Începe procesarea pentru {total} mașini cu algoritmul îmbunătățit...")
 
-    for car in tqdm(cars, desc="Pass 0 - Flag suspicious prices"):
-        if car.price:
-            if car.price in [1, 123, 1111, 1234] or car.price < 100:
-                car.suspicious_price = True
-                flagged_suspicious += 1
-
+    flagged_obvious = 0
+    
+    for car in tqdm(cars, desc="Pass 0 - Flag placeholder prices"):
+        if car.price and (car.price in [1, 123, 1111, 1234] or car.price < 100):
+            car.suspicious_price = True
+            flagged_obvious += 1
+    
     db.commit()
+    print(f"Pass 0 completat: {flagged_obvious} prețuri placeholder detectate")
 
-    for car in tqdm(cars, desc="Pass 1 - Calculate estimated prices"):
+    flagged_outliers = 0
+    errors = 0
+    
+    for car in tqdm(cars, desc="Pass 1 - Detect extreme outliers"):
+        try:
+            if car.suspicious_price == True or not car.price:
+                continue
+            
+            if is_suspicious_price_heuristic(car):
+                car.suspicious_price = True
+                flagged_outliers += 1
+                continue
+            
+            if not car.year or not car.brand or not car.model:
+                continue
+                
+            similar_cars = db.query(CarListing).filter(
+                CarListing.id != car.id,
+                CarListing.brand == car.brand,
+                CarListing.model == car.model,
+                CarListing.year.between(car.year - 3, car.year + 3),
+                CarListing.price > 1000,
+                CarListing.price < 200000,
+                (CarListing.damaged != True) | (CarListing.damaged == None),
+                (CarListing.suspicious_price != True) | (CarListing.suspicious_price == None)
+            ).all()
+            
+            if len(similar_cars) >= 5:
+                prices = [c.price for c in similar_cars if c.price and c.price > 0]
+                if len(prices) >= 5:
+                    median_price = statistics.median(prices)
+                    
+                    if car.price < median_price * 0.15 or car.price > median_price * 6:
+                        car.suspicious_price = True
+                        flagged_outliers += 1
+                        
+        except Exception as e:
+            print(f"Error în Pass 1 pentru car ID {car.id}: {str(e)}")
+            errors += 1
+    
+    db.commit()
+    print(f"Pass 1 completat: {flagged_outliers} outliers detectați, {errors} erori")
+    
+    estimated_updated = 0
+    errors = 0
+    
+    for car in tqdm(cars, desc="Pass 2 - Calculate estimated prices"):
         try:
             if car.suspicious_price == True or car.damaged == True:
                 continue
@@ -141,10 +182,12 @@ def update_deal_ratings():
                 CarListing.transmission == car.transmission,
                 CarListing.engine_capacity.between(car.engine_capacity - 200, car.engine_capacity + 200) if car.engine_capacity else True,
                 CarListing.year.between(car.year - 2, car.year + 2) if car.year else True,
-                CarListing.mileage.between(car.mileage - 30000, car.mileage + 30000) if car.mileage else True,
+                CarListing.mileage.between(car.mileage - 15000, car.mileage + 15000) if car.mileage else True,
                 CarListing.drive_type == car.drive_type if car.drive_type else True,
                 (CarListing.damaged != True) | (CarListing.damaged == None),
                 (CarListing.suspicious_price != True) | (CarListing.suspicious_price == None),
+                CarListing.price > 1000,
+                CarListing.price < 100000
             ]
 
             if car.right_hand_drive is not None:
@@ -164,10 +207,10 @@ def update_deal_ratings():
             if len(prices) < 4:
                 continue
 
-            average_price = round(statistics.median(prices), 2)
-            car.estimated_price = average_price
+            estimated_price = round(statistics.median(prices), 2)
+            car.estimated_price = estimated_price
 
-            price_diff_percentage = ((car.price - average_price) / average_price) * 100
+            price_diff_percentage = ((car.price - estimated_price) / estimated_price) * 100
 
             if price_diff_percentage <= -35:
                 car.deal_rating = "S"
@@ -184,61 +227,67 @@ def update_deal_ratings():
             else:
                 car.deal_rating = "F"
 
-            updated += 1
+            estimated_updated += 1
+            
         except Exception as e:
-            print(f"Error processing car ID {car.id}: {str(e)}")
+            print(f"Error în Pass 2 pentru car ID {car.id}: {str(e)}")
             errors += 1
 
     db.commit()
-    print(f"Pass 1 completed: {updated} cars processed, {errors} errors")
+    print(f"Pass 2 completat: {estimated_updated} estimated prices calculate, {errors} erori")
     
-    flagged_in_pass2 = 0
+    flagged_final = 0
     errors = 0
     
-    for car in tqdm(cars, desc="Pass 2 - Flag abnormal prices"):
+    for car in tqdm(cars, desc="Pass 3 - Final suspicious detection"):
         try:
             if car.suspicious_price == True or not car.estimated_price:
                 continue
                 
-            if car.price < (car.estimated_price * 0.2):
+            if car.price < (car.estimated_price * 0.12):
                 car.suspicious_price = True
                 car.deal_rating = None
-                flagged_in_pass2 += 1
-                flagged_suspicious += 1
-                continue
+                car.estimated_price = None
+                flagged_final += 1
                 
-            if is_suspicious_price(car, db):
-                car.suspicious_price = True
-                car.deal_rating = None
-                flagged_in_pass2 += 1
-                flagged_suspicious += 1
         except Exception as e:
-            print(f"Error in Pass 2 for car ID {car.id}: {str(e)}")
+            print(f"Error în Pass 3 pentru car ID {car.id}: {str(e)}")
             errors += 1
     
     db.commit()
-    print(f"Pass 2 completed: {flagged_in_pass2} cars flagged, {errors} errors")
-    
+    print(f"Pass 3 completat: {flagged_final} prețuri suspicious finale, {errors} erori")
+
     quality_scores_updated = 0
     errors = 0
     
-    for car in tqdm(cars, desc="Pass 3 - Calculate quality scores"):
+    for car in tqdm(cars, desc="Pass 4 - Calculate quality scores"):
         try:
             if car.suspicious_price == True or car.damaged == True:
                 continue
                 
             car.quality_score = calculate_quality_score(car)
             quality_scores_updated += 1
+            
         except Exception as e:
-            print(f"Error in Pass 3 for car ID {car.id}: {str(e)}")
+            print(f"Error în Pass 4 pentru car ID {car.id}: {str(e)}")
             errors += 1
     
     db.commit()
     db.close()
     
-    print(f"\nUpdated {updated} cars out of {total}")
-    print(f"Flagged as suspicious: {flagged_suspicious} cars")
-    print(f"Quality scores updated: {quality_scores_updated} cars")
+    total_suspicious = flagged_obvious + flagged_outliers + flagged_final
+    
+    print(f"\n" + "="*60)
+    print(f"PROCESARE COMPLETĂ")
+    print(f"="*60)
+    print(f"Total mașini procesate: {total:,}")
+    print(f"Estimated prices calculate: {estimated_updated:,}")
+    print(f"Quality scores calculate: {quality_scores_updated:,}")
+    print(f"Total suspicious detectate: {total_suspicious:,}")
+    print(f"  - Placeholder prices: {flagged_obvious:,}")
+    print(f"  - Extreme outliers: {flagged_outliers:,}")
+    print(f"  - Final detection: {flagged_final:,}")
+    print(f"="*60)
 
 if __name__ == "__main__":
     update_deal_ratings()

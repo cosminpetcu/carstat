@@ -133,6 +133,7 @@ export default function Navbar() {
               Favorites
             </button>
             <NavLink href="/dashboard" label="Dashboard" active={pathname === "/dashboard"} />
+            <NavLink href="/get-estimation" label="Get Estimation" active={pathname === "/get-estimation"} />
             <NavLink href="/detailed-search" label="Advanced Search" active={pathname === "/detailed-search"} />
             
             {(!searchOpen) && (
@@ -180,9 +181,6 @@ export default function Navbar() {
                       <p className="text-sm font-medium">{user?.full_name || "User"}</p>
                       <p className="text-xs text-gray-500 truncate">{user?.email || ""}</p>
                     </div>
-                    <Link href="/profile" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                      Profile Settings
-                    </Link>
                     <Link href="/favorites" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                       Favorites
                     </Link>
@@ -226,7 +224,6 @@ export default function Navbar() {
               onClick={() => {
                 const token = localStorage.getItem("token");
                 if (!token) {
-                  // Save the intention to visit favorites
                   PendingActionsManager.saveNavigationIntent('/favorites');
                   window.location.href = '/login';
                 } else {
@@ -242,6 +239,7 @@ export default function Navbar() {
               Favorites
             </button>
             <MobileNavLink href="/dashboard" label="Dashboard" active={pathname === "/dashboard"} />
+            <MobileNavLink href="/get-estimation" label="Get Estimation" active={pathname === "/get-estimation"} />
             <MobileNavLink href="/detailed-search" label="Advanced Search" active={pathname === "/detailed-search"} />
             
             <div className="pt-2">
@@ -276,12 +274,6 @@ export default function Navbar() {
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <Link 
-                    href="/profile" 
-                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700"
-                  >
-                    Profile Settings
-                  </Link>
                   <Link 
                     href="/favorites" 
                     className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700"

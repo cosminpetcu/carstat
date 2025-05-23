@@ -72,7 +72,7 @@ export default function ListingsPage() {
       const timeout = setTimeout(() => {
         setToastMessage("");
         setToastType("");
-      }, 3000);
+      }, 10000);
   
       return () => clearTimeout(timeout);
     }
