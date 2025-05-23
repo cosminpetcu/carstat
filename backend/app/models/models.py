@@ -5,6 +5,7 @@ from sqlalchemy import ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy import UniqueConstraint
 from sqlalchemy import Boolean
+from sqlalchemy import JSON
 
 class User(Base):
     __tablename__ = "users"
@@ -14,6 +15,7 @@ class User(Base):
     email = Column(String, unique=True, index=True)
     password = Column(String)
     saved_searches = relationship("SavedSearch", back_populates="user")
+    estimation_history = relationship("EstimationHistory", back_populates="user")
 
 class CarListing(Base):
     __tablename__ = "car_listings"
@@ -91,6 +93,18 @@ class SavedSearch(Base):
     query = Column(String, nullable=False)
 
     user = relationship("User", back_populates="saved_searches")
+
+class EstimationHistory(Base):
+    __tablename__ = "estimation_history"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    car_data = Column(JSON, nullable=False)  # Datele mașinii (brand, model, year, etc.)
+    estimation_result = Column(JSON, nullable=False)  # Rezultatul estimării
+    notes = Column(Text, nullable=True)  # Note personale
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    user = relationship("User", back_populates="estimation_history")
     
 class IncompleteDataStats(Base):
     __tablename__ = "incomplete_data_stats"

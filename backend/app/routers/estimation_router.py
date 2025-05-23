@@ -5,6 +5,10 @@ from app.models.models import CarListing
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
 import statistics
+from app.auth.utils import get_current_user
+from app.models.models import User
+from app.crud import estimation_history_crud
+from app.schemas.estimation_history_schema import EstimationHistoryCreate
 
 router = APIRouter(prefix="/estimation", tags=["Price Estimation"])
 
@@ -38,7 +42,11 @@ class CarEstimationResponse(BaseModel):
     similar_cars_sample: List[Dict[str, Any]]
 
 @router.post("/estimate-price", response_model=CarEstimationResponse)
-def estimate_car_price(car_data: CarEstimationRequest, db: Session = Depends(get_db)):
+def estimate_car_price(
+    car_data: CarEstimationRequest, 
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user)
+):
     
     filters = [
         CarListing.brand == car_data.brand,
@@ -157,7 +165,7 @@ def estimate_car_price(car_data: CarEstimationRequest, db: Session = Depends(get
         "premium_vs_lowest": round(estimated_price - min_price, 2)
     }
     
-    return CarEstimationResponse(
+    estimation_response = CarEstimationResponse(
         estimated_price=estimated_price,
         confidence_level=confidence_level,
         similar_cars_count=len(similar_cars),
@@ -171,6 +179,19 @@ def estimate_car_price(car_data: CarEstimationRequest, db: Session = Depends(get
         price_distribution=price_distribution,
         similar_cars_sample=similar_cars_sample
     )
+    
+    if current_user:
+        try:
+            history_data = EstimationHistoryCreate(
+                user_id=current_user.id,
+                car_data=car_data.dict(),
+                estimation_result=estimation_response.dict()
+            )
+            estimation_history_crud.create_estimation_history(db, history_data)
+        except Exception as e:
+            print(f"Failed to save estimation to history: {e}")
+    
+    return estimation_response
 
 @router.get("/brands")
 def get_available_brands_for_estimation(db: Session = Depends(get_db)):

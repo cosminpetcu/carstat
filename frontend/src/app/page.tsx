@@ -6,6 +6,8 @@ import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import BrandsSection from "@/components/BrandsSection";
+import { useRouter } from "next/navigation";
+import { PendingActionsManager } from '@/utils/pendingActions';
 
 type Car = {
   id: number;
@@ -23,6 +25,18 @@ type Car = {
 };
 
 export default function Home() {
+  const router = useRouter();
+
+  const handleProtectedNavigation = (targetPath: string) => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      PendingActionsManager.saveNavigationIntent(targetPath);
+      window.location.href = '/login';
+    } else {
+      router.push(targetPath);
+    }
+  };
+
   return (
     <main className="min-h-screen bg-white text-black overflow-hidden">
       <Navbar />
@@ -210,12 +224,12 @@ export default function Home() {
             >
               Browse All Cars
             </a>
-            <a
-              href="/detailed-search"
-              className="bg-blue-500 bg-opacity-50 backdrop-blur-sm border border-white/30 px-8 py-4 rounded-lg font-medium hover:bg-opacity-70 transition-all transform hover:scale-105 shadow-lg"
+            <button
+              onClick={() => handleProtectedNavigation('/get-estimation')}
+              className="bg-blue-500 bg-opacity-50 backdrop-blur-sm border border-white/30 px-8 py-4 rounded-lg font-medium hover:bg-opacity-70 transition-all transform hover:scale-105 shadow-lg cursor-pointer"
             >
-              Advanced Search
-            </a>
+              Get Price Estimation
+            </button>
           </div>
         </div>
       </section>
@@ -251,7 +265,6 @@ function HomeListings() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Fetch only exceptional deals (S-rated) that are not sold
     fetch("http://localhost:8000/cars?limit=5&page=1&deal_rating=S&sold=false")
       .then((res) => res.json())
       .then((data) => {

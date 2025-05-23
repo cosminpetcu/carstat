@@ -1,7 +1,7 @@
 from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app.models.models import CarListing
-from tqdm import tqdm
+from tqdm import tqdm # type: ignore
 import statistics
 from datetime import datetime
 

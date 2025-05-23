@@ -4,7 +4,7 @@ from app.database import SessionLocal
 from app.models.models import CarListing
 from datetime import datetime
 import json
-from tqdm import tqdm
+from tqdm import tqdm # type: ignore
 import os
 import re
 from scrapy.exceptions import CloseSpider
