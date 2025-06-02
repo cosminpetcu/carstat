@@ -55,7 +55,7 @@ def estimate_car_price(
         CarListing.transmission == car_data.transmission,
         CarListing.engine_capacity.between(car_data.engine_capacity - 200, car_data.engine_capacity + 200),
         CarListing.year.between(car_data.year - 2, car_data.year + 2),
-        CarListing.mileage.between(car_data.mileage - 30000, car_data.mileage + 30000),
+        CarListing.mileage.between(car_data.mileage - 15000, car_data.mileage + 15000),
         (CarListing.damaged != True) | (CarListing.damaged == None),
         (CarListing.suspicious_price != True) | (CarListing.suspicious_price == None),
         CarListing.price > 1000
@@ -80,7 +80,7 @@ def estimate_car_price(
             CarListing.model == car_data.model,
             CarListing.fuel_type == car_data.fuel_type,
             CarListing.year.between(car_data.year - 2, car_data.year + 2),
-            CarListing.mileage.between(car_data.mileage - 15000, car_data.mileage + 15000),
+            CarListing.mileage.between(car_data.mileage - 30000, car_data.mileage + 30000),
             (CarListing.damaged != True) | (CarListing.damaged == None),
             (CarListing.suspicious_price != True) | (CarListing.suspicious_price == None),
             CarListing.price > 1000

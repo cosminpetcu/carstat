@@ -73,7 +73,7 @@ export default function ListingsPage() {
         setToastMessage("");
         setToastType("");
       }, 10000);
-  
+
       return () => clearTimeout(timeout);
     }
   }, [toastMessage]);
@@ -101,11 +101,11 @@ export default function ListingsPage() {
 
     const urlSortBy = params.get("sort_by") || "";
     const urlSortOrder = params.get("order") || "asc";
-    
+
     const currentSortOption = sortOptions.find(
       option => option.sort_by === urlSortBy && option.order === urlSortOrder
     );
-    
+
     setSortBy(currentSortOption?.value || "");
 
     params.set("page", currentPage.toString());
@@ -140,7 +140,7 @@ export default function ListingsPage() {
 
   const updateSort = (sortValue: string) => {
     const params = new URLSearchParams(searchParams.toString());
-    
+
     if (sortValue === "") {
       params.delete("sort_by");
       params.delete("order");
@@ -151,7 +151,7 @@ export default function ListingsPage() {
         params.set("order", selectedOption.order);
       }
     }
-    
+
     params.set("page", "1");
     router.push(`/listings?${params.toString()}`);
   };
@@ -163,9 +163,9 @@ export default function ListingsPage() {
     if (!token || !userRaw) {
       const currentUrl = getCurrentUrlForReturn();
       const actionType = car.is_favorite ? 'remove' : 'add';
-      
+
       PendingActionsManager.saveFavoriteAction(car.id, actionType, currentUrl);
-      
+
       window.location.href = '/login';
       return;
     }
@@ -176,10 +176,10 @@ export default function ListingsPage() {
       if (!user.id) throw new Error("Invalid user object");
     } catch (err) {
       console.error("User object invalid:", err);
-      
+
       const currentUrl = getCurrentUrlForReturn();
       const actionType = car.is_favorite ? 'remove' : 'add';
-      
+
       PendingActionsManager.saveFavoriteAction(car.id, actionType, currentUrl);
       window.location.href = '/login';
       return;
@@ -264,7 +264,7 @@ export default function ListingsPage() {
         return null;
     }
   };
-  
+
   const totalPages = Math.ceil(total / limit);
   const getDisplayedPages = () => {
     const pages = [];
@@ -312,9 +312,8 @@ export default function ListingsPage() {
                 e.stopPropagation();
                 toggleFavorite(car);
               }}
-              className={`absolute top-3 right-3 z-10 w-10 h-10 flex items-center justify-center rounded-full ${car.is_favorite ? "bg-red-50" : "bg-gray-50"} backdrop-blur-sm shadow-md transition-all duration-300 ${
-                updatingFavorites.includes(car.id) ? "opacity-50" : "opacity-100"
-              }`}
+              className={`absolute top-3 right-3 z-10 w-10 h-10 flex items-center justify-center rounded-full ${car.is_favorite ? "bg-red-50" : "bg-gray-50"} backdrop-blur-sm shadow-md transition-all duration-300 ${updatingFavorites.includes(car.id) ? "opacity-50" : "opacity-100"
+                }`}
               disabled={updatingFavorites.includes(car.id)}
             >
               <span className="text-2xl">{car.is_favorite ? "❤️" : "🤍"}</span>
@@ -328,7 +327,7 @@ export default function ListingsPage() {
                 className="object-cover"
                 sizes="(max-width: 768px) 100vw, 50vw"
               />
-              
+
               {imgs.length > 1 && (
                 <>
                   <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-md">
@@ -376,7 +375,7 @@ export default function ListingsPage() {
 
             <div className="p-5">
               <h3 className="font-bold text-lg text-gray-800 mb-1 line-clamp-1">{car.title}</h3>
-              
+
               <div className="grid grid-cols-2 gap-y-2 text-sm text-gray-600 mb-3">
                 <div className="flex items-center">
                   <CalendarIcon className="w-4 h-4 mr-1.5" />
@@ -415,24 +414,23 @@ export default function ListingsPage() {
                       ? `€${car.price.toLocaleString()}`
                       : "Price on request"}
                   </div>
-                  
+
                   {car.estimated_price && (
                     <div className="text-sm text-gray-500">
                       Est. Value: €{car.estimated_price.toLocaleString()}
                     </div>
                   )}
                 </div>
-                
+
                 {car.quality_score !== undefined && (
                   <div className="relative">
-                    <div 
-                      className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium text-white cursor-pointer ${
-                        car.quality_score >= 80 ? "bg-green-500" : 
-                        car.quality_score >= 60 ? "bg-green-400" : 
-                        car.quality_score >= 40 ? "bg-yellow-400" : 
-                        car.quality_score >= 20 ? "bg-orange-500" : 
-                        "bg-red-500"
-                      }`}
+                    <div
+                      className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium text-white cursor-pointer ${car.quality_score >= 80 ? "bg-green-500" :
+                        car.quality_score >= 60 ? "bg-green-400" :
+                          car.quality_score >= 40 ? "bg-yellow-400" :
+                            car.quality_score >= 20 ? "bg-orange-500" :
+                              "bg-red-500"
+                        }`}
                       title="Quality Score"
                     >
                       {car.quality_score}
@@ -479,21 +477,20 @@ export default function ListingsPage() {
               className="object-cover"
               sizes="(max-width: 768px) 100vw, 33vw"
             />
-            
+
             <button
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 toggleFavorite(car);
               }}
-              className={`absolute top-3 right-3 z-10 w-10 h-10 flex items-center justify-center rounded-full ${car.is_favorite ? "bg-red-50" : "bg-gray-50"} backdrop-blur-sm shadow-md transition-all duration-300 ${
-                updatingFavorites.includes(car.id) ? "opacity-50" : "opacity-100"
-              }`}
+              className={`absolute top-3 right-3 z-10 w-10 h-10 flex items-center justify-center rounded-full ${car.is_favorite ? "bg-red-50" : "bg-gray-50"} backdrop-blur-sm shadow-md transition-all duration-300 ${updatingFavorites.includes(car.id) ? "opacity-50" : "opacity-100"
+                }`}
               disabled={updatingFavorites.includes(car.id)}
             >
               <span className="text-2xl">{car.is_favorite ? "❤️" : "🤍"}</span>
             </button>
-            
+
             {imgs.length > 1 && (
               <>
                 <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-md">
@@ -538,14 +535,14 @@ export default function ListingsPage() {
               </div>
             )}
           </div>
-          
+
           <div className="w-full md:w-2/3 p-5">
             <div className="flex justify-between items-start">
               <div>
                 <h3 className="font-bold text-lg text-gray-800 mb-1">{car.title}</h3>
                 <p className="text-sm text-gray-500">{car.brand} {car.model}</p>
               </div>
-              
+
               <div className="text-right">
                 <div className="text-xl font-bold text-blue-600">
                   {car.price !== null ? `€${car.price.toLocaleString()}` : "Price on request"}
@@ -557,7 +554,7 @@ export default function ListingsPage() {
                 )}
               </div>
             </div>
-            
+
             <div className="grid grid-cols-2 md:grid-cols-3 gap-y-2 text-sm text-gray-600 my-4">
               <div className="flex items-center">
                 <CalendarIcon className="w-4 h-4 mr-1.5" />
@@ -588,17 +585,17 @@ export default function ListingsPage() {
                 </div>
               )}
             </div>
-            
+
             <div className="flex items-center justify-between">
               {rating && (
                 <div className={`w-auto md:w-48 py-1.5 text-center text-xs font-semibold rounded-md ${rating.color} ${rating.textColor}`}>
                   {rating.label}
                 </div>
               )}
-              
+
               {car.quality_score !== undefined && (
                 <div className="relative">
-                  <div 
+                  <div
                     className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium text-white cursor-pointer ${getQualityScoreColor(car.quality_score)}`}
                     title="Quality Score"
                   >
@@ -607,7 +604,7 @@ export default function ListingsPage() {
                 </div>
               )}
             </div>
-            
+
             {car.suspicious_price && (
               <div className="mt-2 flex items-center text-red-500">
                 <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -650,6 +647,7 @@ export default function ListingsPage() {
                 </div>
 
                 <div className="flex flex-wrap gap-4 items-center">
+
                   {/* Sort Dropdown */}
                   <div className="flex items-center gap-2">
                     <label htmlFor="sort" className="text-sm text-gray-600 whitespace-nowrap">
@@ -669,22 +667,6 @@ export default function ListingsPage() {
                     </select>
                   </div>
 
-                  {/* View Mode */}
-                  <div className="flex border border-gray-300 rounded-lg overflow-hidden">
-                    <button 
-                      onClick={() => setViewMode("grid")}
-                      className={`px-3 py-2 ${viewMode === "grid" ? "bg-blue-600 text-white" : "bg-white text-gray-600"}`}
-                    >
-                      Grid
-                    </button>
-                    <button 
-                      onClick={() => setViewMode("list")}
-                      className={`px-3 py-2 ${viewMode === "list" ? "bg-blue-600 text-white" : "bg-white text-gray-600"}`}
-                    >
-                      List
-                    </button>
-                  </div>
-                  
                   {/* Per Page */}
                   <div className="flex items-center gap-2">
                     <label htmlFor="limit" className="text-sm text-gray-600 whitespace-nowrap">
@@ -701,18 +683,33 @@ export default function ListingsPage() {
                       ))}
                     </select>
                   </div>
+
+                  {/* View Mode */}
+                  <div className="flex border border-gray-300 rounded-lg overflow-hidden">
+                    <button
+                      onClick={() => setViewMode("grid")}
+                      className={`px-3 py-2 ${viewMode === "grid" ? "bg-blue-600 text-white" : "bg-white text-gray-600"}`}
+                    >
+                      Grid
+                    </button>
+                    <button
+                      onClick={() => setViewMode("list")}
+                      className={`px-3 py-2 ${viewMode === "list" ? "bg-blue-600 text-white" : "bg-white text-gray-600"}`}
+                    >
+                      List
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
 
-            <div className={`${
-              viewMode === "grid" 
-                ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" 
-                : "flex flex-col gap-6"
-            }`}>
-              {loading 
+            <div className={`${viewMode === "grid"
+              ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
+              : "flex flex-col gap-6"
+              }`}>
+              {loading
                 ? renderLoadingSkeleton()
-                : cars.length > 0 
+                : cars.length > 0
                   ? cars.map((car) => viewMode === "grid" ? renderGridCard(car) : renderListCard(car))
                   : (
                     <div className="col-span-full text-center py-16">
@@ -734,17 +731,16 @@ export default function ListingsPage() {
                   >
                     Previous
                   </button>
-                  
+
                   {getDisplayedPages().map((p, idx) =>
                     typeof p === "number" ? (
                       <button
                         key={idx}
                         onClick={() => goToPage(p)}
-                        className={`px-4 py-2 border-t border-b border-r border-gray-300 ${
-                          p === page 
-                            ? "bg-blue-600 text-white font-medium" 
-                            : "text-gray-600 hover:bg-gray-50"
-                        }`}
+                        className={`px-4 py-2 border-t border-b border-r border-gray-300 ${p === page
+                          ? "bg-blue-600 text-white font-medium"
+                          : "text-gray-600 hover:bg-gray-50"
+                          }`}
                       >
                         {p}
                       </button>
@@ -754,7 +750,7 @@ export default function ListingsPage() {
                       </span>
                     )
                   )}
-                  
+
                   <button
                     onClick={() => goToPage(Math.min(totalPages, page + 1))}
                     disabled={page === totalPages}
@@ -770,12 +766,11 @@ export default function ListingsPage() {
       </section>
 
       <Footer />
-      
+
       {toastMessage && (
-        <div 
-          className={`fixed bottom-6 right-6 px-6 py-3 rounded-lg shadow-lg transition-all z-50 flex items-center ${
-            toastType === "success" ? "bg-green-500 text-white" : "bg-red-500 text-white"
-          }`}
+        <div
+          className={`fixed bottom-6 right-6 px-6 py-3 rounded-lg shadow-lg transition-all z-50 flex items-center ${toastType === "success" ? "bg-green-500 text-white" : "bg-red-500 text-white"
+            }`}
         >
           <span className="mr-2">{toastType === "success" ? "✓" : "✕"}</span>
           {toastMessage}

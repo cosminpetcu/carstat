@@ -10,7 +10,7 @@ echo.
 echo Step 1/5: Running Autovit Scraper
 echo ----------------------------------------
 cd /d "C:\Users\cosmi\Desktop\LICENTA\CarStat\backend\olx_scraper"
-set PYTHONPATH=%PYTHONPATH%;C:\Users\cosmi\Desktop\LICENTA\CarStat\backend\olx_scraper
+set PYTHONPATH=C:\Users\cosmi\Desktop\LICENTA\CarStat\backend;C:\Users\cosmi\Desktop\LICENTA\CarStat\backend\olx_scraper
 call venv_scrapy\Scripts\activate
 timeout /t 5 /nobreak
 scrapy crawl autovit_autoturisme
@@ -20,7 +20,7 @@ echo.
 echo Step 2/5: Running OLX Scraper
 echo ----------------------------------------
 cd /d "C:\Users\cosmi\Desktop\LICENTA\CarStat\backend\olx_scraper"
-set PYTHONPATH=%PYTHONPATH%;C:\Users\cosmi\Desktop\LICENTA\CarStat\backend\olx_scraper
+set PYTHONPATH=C:\Users\cosmi\Desktop\LICENTA\CarStat\backend;C:\Users\cosmi\Desktop\LICENTA\CarStat\backend\olx_scraper
 call venv_scrapy\Scripts\activate
 timeout /t 5 /nobreak
 scrapy crawl olx_autoturisme
@@ -30,7 +30,7 @@ echo.
 echo Step 3/5: Running Update Partial Data
 echo ----------------------------------------
 cd /d "C:\Users\cosmi\Desktop\LICENTA\CarStat\backend\olx_scraper"
-set PYTHONPATH=%PYTHONPATH%;C:\Users\cosmi\Desktop\LICENTA\CarStat\backend\olx_scraper
+set PYTHONPATH=C:\Users\cosmi\Desktop\LICENTA\CarStat\backend;C:\Users\cosmi\Desktop\LICENTA\CarStat\backend\olx_scraper
 call venv_scrapy\Scripts\activate
 
 :run_update_spider
@@ -54,13 +54,15 @@ call venv_scrapy\Scripts\deactivate
 echo.
 echo Step 4/5: Running Fill Missing Generations
 echo ----------------------------------------
-cd /d "C:\Users\cosmi\Desktop\LICENTA\CarStat"
+cd /d "C:\Users\cosmi\Desktop\LICENTA\CarStat\backend"
+set PYTHONPATH=C:\Users\cosmi\Desktop\LICENTA\CarStat\backend
 python -m app.analytics.fill_missing_generations
 
 echo.
 echo Step 5/5: Running Update Deal Ratings
 echo ----------------------------------------
-cd /d "C:\Users\cosmi\Desktop\LICENTA\CarStat"
+cd /d "C:\Users\cosmi\Desktop\LICENTA\CarStat\backend"
+set PYTHONPATH=C:\Users\cosmi\Desktop\LICENTA\CarStat\backend
 python -m app.analytics.update_deal_ratings
 
 echo.
