@@ -7,6 +7,7 @@ import Footer from "@/components/Footer";
 import { motion, AnimatePresence } from "framer-motion";
 import { parseImages } from "@/utils/carUtils";
 import { CarCard, type CarData } from "@/components/ui/CarCard";
+import { useFavorites } from '@/hooks/useFavorites';
 
 type SavedSearch = {
   id: number;
@@ -91,7 +92,6 @@ export default function FavoritesPage() {
   const [savedSearches, setSavedSearches] = useState<SavedSearch[]>([]);
   const [loading, setLoading] = useState(true);
   const [imageIndex, setImageIndex] = useState<{ [carId: number]: number }>({});
-  const [updatingFavorites, setUpdatingFavorites] = useState<number[]>([]);
   const [activeTab, setActiveTab] = useState<"favorites" | "saved-searches">("favorites");
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ show: boolean; id: number | null; type: 'favorite' | 'search' }>({
@@ -130,7 +130,10 @@ export default function FavoritesPage() {
 
         const data = await res.json();
         if (Array.isArray(data)) {
-          const carsOnly = data.map((fav: any) => fav.car);
+          const carsOnly = data.map((fav: any) => ({
+            ...fav.car,
+            is_favorite: true
+          }));
           setCars(carsOnly);
           const indices: { [carId: number]: number } = {};
           carsOnly.forEach((c: CarData) => (indices[c.id] = 0));
@@ -194,6 +197,18 @@ export default function FavoritesPage() {
     }
   };
 
+  const { toggleFavorite, isUpdatingFavorite } = useFavorites(
+    (carId, newState) => {
+      if (!newState) {
+        setCars((prev) => prev.filter((c) => c.id !== carId));
+        showNotification("Car removed from favorites", "success");
+      }
+    },
+    (error) => {
+      showNotification(`Error: ${error}`, "error");
+    }
+  );
+
   const handleFavoriteToggle = async (car: CarData) => {
     setConfirmDelete({ show: true, id: car.id, type: 'favorite' });
   };
@@ -201,54 +216,14 @@ export default function FavoritesPage() {
   const confirmDeleteFavorite = async () => {
     if (!confirmDelete.id) return;
 
-    const token = localStorage.getItem("token");
-    const userRaw = localStorage.getItem("user");
-    if (!token || !userRaw) return router.push("/login");
-
-    setActionLoading(true);
-    setUpdatingFavorites((prev) => [...prev, confirmDelete.id!]);
-
-    try {
-      const res = await fetch(`http://localhost:8000/favorites/${confirmDelete.id}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      if (res.ok) {
-        setCars((prev) => prev.filter((c) => c.id !== confirmDelete.id));
-        showNotification("Car removed from favorites", "success");
-      } else {
-        showNotification("Failed to remove car from favorites", "error");
-      }
-    } catch (err) {
-      console.error("Error toggling favorite:", err);
-      showNotification("Error removing car from favorites", "error");
-    } finally {
-      setUpdatingFavorites((prev) => prev.filter((id) => id !== confirmDelete.id));
-      setActionLoading(false);
-      setConfirmDelete({ show: false, id: null, type: 'favorite' });
-    }
-  };
-
-  const handleImageNavigation = (carId: number, direction: 'prev' | 'next') => {
-    const car = cars.find(c => c.id === carId);
-    if (!car) return;
-
-    const imgs = parseImages(car.images);
-    const currentIndex = imageIndex[carId] || 0;
-    let newIndex: number;
-
-    if (direction === 'next') {
-      newIndex = (currentIndex + 1) % imgs.length;
-    } else {
-      newIndex = (currentIndex - 1 + imgs.length) % imgs.length;
+    const carToRemove = cars.find(c => c.id === confirmDelete.id);
+    if (carToRemove) {
+      await toggleFavorite(carToRemove);
     }
 
-    setImageIndex({
-      ...imageIndex,
-      [carId]: newIndex
-    });
+    setConfirmDelete({ show: false, id: null, type: 'favorite' });
   };
+
   const formatSearchTags = (query: string) => {
     const params = new URLSearchParams(query);
     const tags: { label: string, value: string }[] = [];
@@ -562,7 +537,7 @@ export default function FavoritesPage() {
                     car={car}
                     variant="grid"
                     onFavoriteToggle={handleFavoriteToggle}
-                    isUpdatingFavorite={updatingFavorites.includes(car.id)}
+                    isUpdatingFavorite={isUpdatingFavorite(car.id)}
                     showImageNavigation={true}
                     showQualityScore={true}
                     showEstimatedPrice={true}

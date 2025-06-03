@@ -33,3 +33,12 @@ export const getQualityScoreColor = (score: number | undefined): string => {
     if (score >= 20) return "bg-orange-500";
     return "bg-red-500";
 };
+
+export const getQualityScoreLabel = (score: number | undefined) => {
+    if (!score) return "Unrated";
+    if (score >= 80) return "Excellent";
+    if (score >= 60) return "Good";
+    if (score >= 40) return "Average";
+    if (score >= 20) return "Below Average";
+    return "Poor";
+};

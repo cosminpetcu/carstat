@@ -7,6 +7,7 @@ import Footer from "@/components/Footer";
 import SidebarFilters from "@/components/SidebarFilters";
 import { PendingActionsManager, getCurrentUrlForReturn } from '@/utils/pendingActions';
 import { CarCard, type CarData } from "@/components/ui/CarCard";
+import { useFavorites } from '@/hooks/useFavorites';
 
 const sortOptions = [
   { value: "", label: "Default Order", sort_by: "", order: "asc" },
@@ -30,7 +31,6 @@ export default function ListingsPage() {
   const [limit, setLimit] = useState(9);
   const [total, setTotal] = useState(0);
   const [imageIndex, setImageIndex] = useState<{ [carId: number]: number }>({});
-  const [updatingFavorites, setUpdatingFavorites] = useState<number[]>([]);
   const [toastMessage, setToastMessage] = useState("");
   const [toastType, setToastType] = useState<"success" | "error" | "">("");
   const [viewMode, setViewMode] = useState("grid");
@@ -125,64 +125,19 @@ export default function ListingsPage() {
     router.push(`/listings?${params.toString()}`);
   };
 
-  const handleFavoriteToggle = async (car: CarData) => {
-    const token = localStorage.getItem("token");
-    const userRaw = localStorage.getItem("user");
-
-    if (!token || !userRaw) {
-      const currentUrl = getCurrentUrlForReturn();
-      const actionType = car.is_favorite ? 'remove' : 'add';
-      PendingActionsManager.saveFavoriteAction(car.id, actionType, currentUrl);
-      window.location.href = '/login';
-      return;
-    }
-
-    let user;
-    try {
-      user = JSON.parse(userRaw);
-      if (!user.id) throw new Error("Invalid user object");
-    } catch (err) {
-      console.error("User object invalid:", err);
-      const currentUrl = getCurrentUrlForReturn();
-      const actionType = car.is_favorite ? 'remove' : 'add';
-      PendingActionsManager.saveFavoriteAction(car.id, actionType, currentUrl);
-      window.location.href = '/login';
-      return;
-    }
-
-    setUpdatingFavorites((prev) => [...prev, car.id]);
-
-    try {
-      if (car.is_favorite) {
-        await fetch(`http://localhost:8000/favorites/${car.id}`, {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` },
-        });
-      } else {
-        await fetch("http://localhost:8000/favorites", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            user_id: user.id,
-            car_id: car.id,
-          }),
-        });
-      }
-
+  const { toggleFavorite, isUpdatingFavorite } = useFavorites(
+    (carId, newState) => {
       setCars((prev) =>
         prev.map((c) =>
-          c.id === car.id ? { ...c, is_favorite: !car.is_favorite } : c
+          c.id === carId ? { ...c, is_favorite: newState } : c
         )
       );
-    } catch (err) {
-      console.error("Favorite toggle failed", err);
-    } finally {
-      setUpdatingFavorites((prev) => prev.filter((id) => id !== car.id));
+    },
+    (error) => {
+      setToastMessage(`Error: ${error}`);
+      setToastType("error");
     }
-  };
+  );
 
   const goToPage = (newPage: number) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -325,8 +280,8 @@ export default function ListingsPage() {
                       key={car.id}
                       car={car}
                       variant={viewMode}
-                      onFavoriteToggle={handleFavoriteToggle}
-                      isUpdatingFavorite={updatingFavorites.includes(car.id)}
+                      onFavoriteToggle={toggleFavorite}
+                      isUpdatingFavorite={isUpdatingFavorite(car.id)}
                       showImageNavigation={true}
                       showQualityScore={true}
                       showEstimatedPrice={true}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Navbar from "@/components/Navbar";
@@ -20,6 +20,8 @@ import {
 } from "recharts";
 import { CarCard, type CarData } from "@/components/ui/CarCard";
 import { PendingActionsManager, getCurrentUrlForReturn } from '@/utils/pendingActions';
+import { getQualityScoreColor, getQualityScoreLabel } from '@/utils/ratingUtils'
+import { useFavorites } from '@/hooks/useFavorites';
 
 type Car = {
   id: number;
@@ -100,17 +102,6 @@ interface ModelStats {
   }[];
 }
 
-interface CustomTooltipPayload {
-  payload?: {
-    percent?: number;
-    type?: string;
-  };
-  percent?: number;
-  name?: string;
-  value?: number;
-  type?: string;
-}
-
 interface MainImageGalleryProps {
   images: string[];
   currentIndex: number;
@@ -127,7 +118,6 @@ interface ImageModalProps {
 
 export default function CarDetailPage() {
   const { id } = useParams();
-  const router = useRouter();
   const [car, setCar] = useState<Car | null>(null);
   const [loading, setLoading] = useState(true);
   const [images, setImages] = useState<string[]>([]);
@@ -145,29 +135,10 @@ export default function CarDetailPage() {
   const [similarCars, setSimilarCars] = useState<Car[]>([]);
   const [loadingSimilar, setLoadingSimilar] = useState(false);
   const [similarCarsPage, setSimilarCarsPage] = useState(0);
-  const [updatingFavorite, setUpdatingFavorite] = useState(false);
   const visibleCars = 4;
 
   const [showImageModal, setShowImageModal] = useState(false);
   const [modalImageIndex, setModalImageIndex] = useState(0);
-
-  const getQualityScoreColor = (score: number | undefined) => {
-    if (!score) return "bg-gray-300";
-    if (score >= 80) return "bg-green-500 text-white";
-    if (score >= 60) return "bg-green-400 text-white";
-    if (score >= 40) return "bg-yellow-400 text-black";
-    if (score >= 20) return "bg-orange-500 text-white";
-    return "bg-red-500 text-white";
-  };
-
-  const getQualityScoreLabel = (score: number | undefined) => {
-    if (!score) return "Unrated";
-    if (score >= 80) return "Excellent";
-    if (score >= 60) return "Good";
-    if (score >= 40) return "Average";
-    if (score >= 20) return "Below Average";
-    return "Poor";
-  };
 
   const formatAdAge = (dateString: string | undefined) => {
     if (!dateString) return "N/A";
@@ -181,15 +152,6 @@ export default function CarDetailPage() {
     if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
     if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
     return `${Math.floor(diffDays / 365)} years ago`;
-  };
-
-  const parseImage = (images: string[] | string): string => {
-    try {
-      const parsed = typeof images === "string" ? JSON.parse(images) : images;
-      return Array.isArray(parsed) && parsed.length > 0 ? parsed[0] : "/default-car.webp";
-    } catch {
-      return "/default-car.webp";
-    }
   };
 
   const openImageModal = (index: number) => {
@@ -266,68 +228,14 @@ export default function CarDetailPage() {
     }
   }, [car?.id]);
 
-  const toggleFavorite = async () => {
-    if (!car) return;
-
-    const token = localStorage.getItem("token");
-    const userRaw = localStorage.getItem("user");
-
-    if (!token || !userRaw) {
-      const currentUrl = getCurrentUrlForReturn();
-      const actionType = car.is_favorite ? 'remove' : 'add';
-
-      PendingActionsManager.saveFavoriteAction(car.id, actionType, currentUrl);
-
-      window.location.href = '/login';
-      return;
+  const { toggleFavorite, isUpdatingFavorite } = useFavorites(
+    (carId, newState) => {
+      setCar((prevCar) => prevCar ? { ...prevCar, is_favorite: newState } : null);
+    },
+    (error) => {
+      console.error("Favorite toggle error:", error);
     }
-
-    let user;
-    try {
-      user = JSON.parse(userRaw);
-      if (!user.id) throw new Error("Invalid user object");
-    } catch (err) {
-      console.error("User object invalid:", err);
-
-      const currentUrl = getCurrentUrlForReturn();
-      const actionType = car.is_favorite ? 'remove' : 'add';
-
-      PendingActionsManager.saveFavoriteAction(car.id, actionType, currentUrl);
-      window.location.href = '/login';
-      return;
-    }
-
-    setUpdatingFavorite(true);
-
-    try {
-      if (car.is_favorite) {
-        await fetch(`http://localhost:8000/favorites/${car.id}`, {
-          method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-      } else {
-        await fetch("http://localhost:8000/favorites", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            user_id: user.id,
-            car_id: car.id,
-          }),
-        });
-      }
-
-      setCar((prevCar) => prevCar ? { ...prevCar, is_favorite: !prevCar.is_favorite } : null);
-    } catch (err) {
-      console.error("Favorite toggle failed", err);
-    } finally {
-      setUpdatingFavorite(false);
-    }
-  };
+  );
 
   if (loading || !car) return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -354,32 +262,6 @@ export default function CarDetailPage() {
 
   const prevSimilarCarsPage = () => {
     setSimilarCarsPage(prev => Math.max(prev - 1, 0));
-  };
-
-  const getRatingColor = (rating: string | undefined) => {
-    switch (rating?.toUpperCase()) {
-      case "S": return "bg-green-700 text-white";
-      case "A": return "bg-lime-600 text-white";
-      case "B": return "bg-emerald-500 text-white";
-      case "C": return "bg-yellow-400 text-black";
-      case "D": return "bg-orange-500 text-white";
-      case "E": return "bg-rose-500 text-white";
-      case "F": return "bg-red-700 text-white";
-      default: return "bg-gray-400 text-white";
-    }
-  };
-
-  const getRatingText = (rating: string | undefined) => {
-    switch (rating?.toUpperCase()) {
-      case "S": return "Exceptional Price";
-      case "A": return "Very Good Price";
-      case "B": return "Good Price";
-      case "C": return "Fair Price";
-      case "D": return "Expensive";
-      case "E": return "Very Expensive";
-      case "F": return "Overpriced";
-      default: return "Unrated";
-    }
   };
 
   const MainImageGallery = ({ images, currentIndex, setCurrentIndex, openImageModal }: MainImageGalleryProps) => {
@@ -603,12 +485,12 @@ export default function CarDetailPage() {
                 </div>
               </div>
               <button
-                onClick={() => toggleFavorite()}
-                className={`p-2 rounded-full ${car.is_favorite ? "bg-red-50" : "bg-gray-50"} ${updatingFavorite ? "opacity-50 cursor-not-allowed" : ""
+                onClick={() => car && toggleFavorite(car as any)}
+                className={`p-2 rounded-full ${car.is_favorite ? "bg-red-50" : "bg-gray-50"} ${isUpdatingFavorite(car.id) ? "opacity-50 cursor-not-allowed" : ""
                   }`}
-                disabled={updatingFavorite}
+                disabled={isUpdatingFavorite(car.id)}
               >
-                {updatingFavorite ? (
+                {isUpdatingFavorite(car.id) ? (
                   <div className="w-6 h-6 animate-spin border-2 border-gray-300 border-t-blue-600 rounded-full"></div>
                 ) : (
                   <span className="text-2xl">{car.is_favorite ? "❤️" : "🤍"}</span>
