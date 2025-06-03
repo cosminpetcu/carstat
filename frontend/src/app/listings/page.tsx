@@ -8,6 +8,9 @@ import Footer from "@/components/Footer";
 import SidebarFilters from "@/components/SidebarFilters";
 import { EngineIcon, GaugeIcon, CalendarIcon, FuelIcon, TransmissionIcon, SpeedometerIcon, ChevronLeftIcon, ChevronRightIcon } from "@/components/Icons";
 import { PendingActionsManager, getCurrentUrlForReturn } from '@/utils/pendingActions';
+import { parseImages } from "@/utils/carUtils";
+import { RatingBadge } from "@/components/ui/RatingBadge";
+import { QualityScore } from "@/components/ui/QualityScore";
 
 type Car = {
   id: number;
@@ -57,15 +60,6 @@ export default function ListingsPage() {
   const [toastType, setToastType] = useState<"success" | "error" | "">("");
   const [viewMode, setViewMode] = useState("grid");
   const [sortBy, setSortBy] = useState("");
-
-  const getQualityScoreColor = (quality_score: number | undefined) => {
-    if (!quality_score) return "bg-gray-300";
-    if (quality_score >= 80) return "bg-green-500";
-    if (quality_score >= 60) return "bg-green-400";
-    if (quality_score >= 40) return "bg-yellow-400";
-    if (quality_score >= 20) return "bg-orange-400";
-    return "bg-red-500";
-  };
 
   useEffect(() => {
     if (toastMessage) {
@@ -235,36 +229,6 @@ export default function ListingsPage() {
     router.push(`/listings?${params.toString()}`);
   };
 
-  const parseImages = (images: string[] | string): string[] => {
-    try {
-      const parsed = typeof images === "string" ? JSON.parse(images) : images;
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return [];
-    }
-  };
-
-  const getRatingBar = (rating: string | undefined) => {
-    switch (rating?.toUpperCase()) {
-      case "S":
-        return { label: "Exceptional Price", color: "bg-green-700", textColor: "text-white" };
-      case "A":
-        return { label: "Very Good Price", color: "bg-lime-600", textColor: "text-white" };
-      case "B":
-        return { label: "Good Price", color: "bg-emerald-500", textColor: "text-white" };
-      case "C":
-        return { label: "Fair Price", color: "bg-yellow-400", textColor: "text-black" };
-      case "D":
-        return { label: "Expensive", color: "bg-orange-500", textColor: "text-white" };
-      case "E":
-        return { label: "Very Expensive", color: "bg-rose-500", textColor: "text-white" };
-      case "F":
-        return { label: "Overpriced", color: "bg-red-700", textColor: "text-white" };
-      default:
-        return null;
-    }
-  };
-
   const totalPages = Math.ceil(total / limit);
   const getDisplayedPages = () => {
     const pages = [];
@@ -300,7 +264,6 @@ export default function ListingsPage() {
     const imgs = parseImages(car.images);
     const current = imageIndex[car.id] || 0;
     const imageUrl = imgs[current] || "/default-car.webp";
-    const rating = getRatingBar(car.deal_rating);
 
     return (
       <div key={car.id} className="group bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
@@ -439,11 +402,7 @@ export default function ListingsPage() {
                 )}
               </div>
 
-              {rating && (
-                <div className={`mt-3 w-full py-1.5 text-center text-xs font-semibold rounded-md ${rating.color} ${rating.textColor}`}>
-                  {rating.label}
-                </div>
-              )}
+              <RatingBadge rating={car.deal_rating} className="mt-3 w-full py-1.5 text-center" />
 
               {car.suspicious_price && (
                 <div className="mt-2 flex items-center text-red-500">
@@ -464,7 +423,6 @@ export default function ListingsPage() {
     const imgs = parseImages(car.images);
     const current = imageIndex[car.id] || 0;
     const imageUrl = imgs[current] || "/default-car.webp";
-    const rating = getRatingBar(car.deal_rating);
 
     return (
       <div key={car.id} className="group bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300">
@@ -587,22 +545,8 @@ export default function ListingsPage() {
             </div>
 
             <div className="flex items-center justify-between">
-              {rating && (
-                <div className={`w-auto md:w-48 py-1.5 text-center text-xs font-semibold rounded-md ${rating.color} ${rating.textColor}`}>
-                  {rating.label}
-                </div>
-              )}
-
-              {car.quality_score !== undefined && (
-                <div className="relative">
-                  <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium text-white cursor-pointer ${getQualityScoreColor(car.quality_score)}`}
-                    title="Quality Score"
-                  >
-                    {car.quality_score}
-                  </div>
-                </div>
-              )}
+              <RatingBadge rating={car.deal_rating} className="mt-3 w-full py-1.5 text-center" />
+              <QualityScore score={car.quality_score} size="md" />
             </div>
 
             {car.suspicious_price && (

@@ -8,6 +8,8 @@ import Footer from "@/components/Footer";
 import BrandsSection from "@/components/BrandsSection";
 import { useRouter } from "next/navigation";
 import { PendingActionsManager } from '@/utils/pendingActions';
+import { getFirstImage } from "@/utils/carUtils";
+import { RatingBadge } from "@/components/ui/RatingBadge";
 
 type Car = {
   id: number;
@@ -54,7 +56,7 @@ export default function Home() {
           />
           <div className="absolute inset-0 bg-gradient-to-b from-blue-900/30 to-black/60 z-10" />
         </div>
-        
+
         {/* Content container with better spacing */}
         <div className="relative z-20 flex flex-col items-center justify-center px-6 pt-24 pb-16 md:pt-32 md:pb-24 min-h-[750px] max-w-7xl mx-auto">
           {/* Title and subtitle with more space */}
@@ -63,16 +65,16 @@ export default function Home() {
               Find Your Perfect Car
             </h1>
             <p className="text-blue-100 text-lg md:text-xl max-w-2xl mx-auto">
-              Browse thousands of vehicles from Romania with detailed specifications 
+              Browse thousands of vehicles from Romania with detailed specifications
               and market analysis. Your next car is just a search away.
             </p>
           </div>
-          
+
           {/* Search box container */}
           <div className="w-full md:w-2/3 max-w-2xl mb-12 md:mb-20">
             <SearchBox />
           </div>
-          
+
           {/* Quick stats container with increased margin from search box */}
           <div className="grid grid-cols-3 gap-8 mt-4 text-white text-center">
             <div className="space-y-1">
@@ -89,7 +91,7 @@ export default function Home() {
             </div>
           </div>
         </div>
-        
+
         {/* Scroll indicator moved lower and with more space from stats */}
         <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-20 mt-12">
           <div className="animate-bounce bg-white/10 p-2 rounded-full backdrop-blur-sm">
@@ -111,11 +113,11 @@ export default function Home() {
           <div className="text-center mb-12">
             <h2 className="text-3xl font-bold mb-4">Explore Top Vehicles</h2>
             <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-              Discover vehicles with exceptional value based on our market analysis. 
+              Discover vehicles with exceptional value based on our market analysis.
               All listings are scraped live from OLX and Autovit platforms.
             </p>
           </div>
-          
+
           <div className="flex justify-between items-center mb-8">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-green-500 rounded-full flex items-center justify-center">
@@ -148,11 +150,11 @@ export default function Home() {
           <div className="text-center mb-16">
             <h2 className="text-3xl font-bold mb-4">CarStat Features</h2>
             <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-              Our platform aggregates and analyzes car listings to provide you with 
+              Our platform aggregates and analyzes car listings to provide you with
               valuable insights for making informed decisions.
             </p>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {[
               {
@@ -214,7 +216,7 @@ export default function Home() {
         <div className="max-w-4xl mx-auto px-6 text-center">
           <h2 className="text-3xl font-bold mb-4">Ready to Find Your Next Car?</h2>
           <p className="text-blue-100 text-lg mb-8 max-w-2xl mx-auto">
-            Start exploring thousands of cars from across Romania with detailed market analysis 
+            Start exploring thousands of cars from across Romania with detailed market analysis
             and price comparisons. Make an informed decision with CarStat.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -239,27 +241,6 @@ export default function Home() {
   );
 }
 
-const getRatingBar = (rating: string | undefined) => {
-  switch (rating?.toUpperCase()) {
-    case "S":
-      return { label: "Exceptional Price", color: "bg-green-700", textColor: "text-white" };
-    case "A":
-      return { label: "Very Good Price", color: "bg-lime-600", textColor: "text-white" };
-    case "B":
-      return { label: "Good Price", color: "bg-emerald-500", textColor: "text-white" };
-    case "C":
-      return { label: "Fair Price", color: "bg-yellow-400", textColor: "text-black" };
-    case "D":
-      return { label: "Expensive", color: "bg-orange-500", textColor: "text-white" };
-    case "E":
-      return { label: "Very Expensive", color: "bg-rose-500", textColor: "text-white" };
-    case "F":
-      return { label: "Overpriced", color: "bg-red-700", textColor: "text-white" };
-    default:
-      return null;
-  }
-};
-
 function HomeListings() {
   const [cars, setCars] = useState<Car[]>([]);
   const [loading, setLoading] = useState(true);
@@ -280,15 +261,6 @@ function HomeListings() {
         setLoading(false);
       });
   }, []);
-
-  const parseImage = (images: string[] | string) => {
-    try {
-      const parsed = typeof images === "string" ? JSON.parse(images) : images;
-      return parsed?.[0] || "/default-car.webp";
-    } catch {
-      return "/default-car.webp";
-    }
-  };
 
   if (loading) {
     return (
@@ -316,33 +288,25 @@ function HomeListings() {
           <div className="relative">
             <div className="aspect-w-16 aspect-h-10 overflow-hidden">
               <Image
-                src={parseImage(car.images)}
+                src={getFirstImage(car.images)}
                 alt={car.title}
                 width={300}
                 height={200}
                 className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-300"
               />
             </div>
-            {car.deal_rating && (() => {
-              const rating = getRatingBar(car.deal_rating);
-              if (!rating) return null;
-              return (
-                <div className={`absolute top-3 right-3 px-3 py-1 rounded-full text-xs font-semibold ${rating.color} ${rating.textColor} shadow-lg`}>
-                  {rating.label}
-                </div>
-              );
-            })()}
+            <RatingBadge rating={car.deal_rating} className="absolute top-3 right-3 shadow-lg" />
           </div>
-          
+
           <div className="p-5">
             <h3 className="font-bold text-lg text-gray-800 mb-2 line-clamp-1">{car.title}</h3>
-            
+
             <div className="flex flex-wrap gap-2 text-xs text-gray-500 mb-3">
               <span className="px-2 py-1 bg-gray-100 rounded">{car.year}</span>
               <span className="px-2 py-1 bg-gray-100 rounded">{car.fuel_type}</span>
               <span className="px-2 py-1 bg-gray-100 rounded">{car.transmission}</span>
             </div>
-            
+
             {car.mileage && car.engine_power && (
               <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 mb-3">
                 <div className="flex items-center gap-1">
@@ -372,7 +336,7 @@ function HomeListings() {
                   </div>
                 )}
               </div>
-              
+
               {car.estimated_price && car.price < car.estimated_price && (
                 <div className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-1 rounded">
                   -{Math.round(((car.estimated_price - car.price) / car.estimated_price) * 100)}%

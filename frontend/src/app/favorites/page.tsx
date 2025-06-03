@@ -6,6 +6,8 @@ import Navbar from "@/components/Navbar";
 import { useRouter } from "next/navigation";
 import Footer from "@/components/Footer";
 import { motion, AnimatePresence } from "framer-motion";
+import { parseImages } from "@/utils/carUtils";
+import { RatingBadge } from "@/components/ui/RatingBadge";
 
 type Car = {
   id: number;
@@ -51,14 +53,14 @@ const ConfirmationModal = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
-      <div 
+      <div
         className="bg-white rounded-xl shadow-xl max-w-md w-full overflow-hidden transform transition-all"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
           <p className="text-gray-600">{message}</p>
-          
+
           <div className="mt-6 flex gap-3 justify-end">
             <button
               onClick={onCancel}
@@ -107,8 +109,8 @@ export default function FavoritesPage() {
   const [updatingFavorites, setUpdatingFavorites] = useState<number[]>([]);
   const [activeTab, setActiveTab] = useState<"favorites" | "saved-searches">("favorites");
   const [error, setError] = useState<string | null>(null);
-  const [confirmDelete, setConfirmDelete] = useState<{ show: boolean; id: number | null; type: 'favorite' | 'search' }>({ 
-    show: false, id: null, type: 'favorite' 
+  const [confirmDelete, setConfirmDelete] = useState<{ show: boolean; id: number | null; type: 'favorite' | 'search' }>({
+    show: false, id: null, type: 'favorite'
   });
   const [actionLoading, setActionLoading] = useState(false);
   const [notification, setNotification] = useState<{ show: boolean; message: string; type: 'success' | 'error' }>({
@@ -181,7 +183,7 @@ export default function FavoritesPage() {
 
   const confirmDeleteSearch = async () => {
     if (!confirmDelete.id) return;
-    
+
     setActionLoading(true);
     const token = localStorage.getItem("token");
     if (!token) return router.push("/login");
@@ -213,7 +215,7 @@ export default function FavoritesPage() {
 
   const confirmDeleteFavorite = async () => {
     if (!confirmDelete.id) return;
-    
+
     const token = localStorage.getItem("token");
     const userRaw = localStorage.getItem("user");
     if (!token || !userRaw) return router.push("/login");
@@ -246,35 +248,25 @@ export default function FavoritesPage() {
   const handleImageNavigation = (carId: number, direction: 'prev' | 'next') => {
     const car = cars.find(c => c.id === carId);
     if (!car) return;
-    
+
     const imgs = parseImages(car.images);
     const currentIndex = imageIndex[carId] || 0;
     let newIndex: number;
-    
+
     if (direction === 'next') {
       newIndex = (currentIndex + 1) % imgs.length;
     } else {
       newIndex = (currentIndex - 1 + imgs.length) % imgs.length;
     }
-    
+
     setImageIndex({
       ...imageIndex,
       [carId]: newIndex
     });
   };
-
-  const parseImages = (images: string[] | string): string[] => {
-    try {
-      const parsed = typeof images === "string" ? JSON.parse(images) : images;
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return [];
-    }
-  };
-
   const formatSearchTags = (query: string) => {
     const params = new URLSearchParams(query);
-    const tags: {label: string, value: string}[] = [];
+    const tags: { label: string, value: string }[] = [];
 
     if (params.get("search")) {
       tags.push({
@@ -282,23 +274,21 @@ export default function FavoritesPage() {
         value: params.get("search")!
       });
     }
-  
-    // Brand & Model
+
     if (params.get("brand")) {
       tags.push({
         label: "Brand",
         value: params.get("brand")!
       });
     }
-    
+
     if (params.get("model")) {
       tags.push({
         label: "Model",
         value: params.get("model")!
       });
     }
-    
-    // Year range
+
     if (params.get("year_min") || params.get("year_max")) {
       let yearValue = "";
       if (params.get("year_min") && params.get("year_max")) {
@@ -308,14 +298,13 @@ export default function FavoritesPage() {
       } else if (params.get("year_max")) {
         yearValue = `Until ${params.get("year_max")}`;
       }
-      
+
       tags.push({
         label: "Year",
         value: yearValue
       });
     }
-    
-    // Price range
+
     if (params.get("min_price") || params.get("max_price")) {
       let priceValue = "";
       if (params.get("min_price") && params.get("max_price")) {
@@ -325,38 +314,34 @@ export default function FavoritesPage() {
       } else if (params.get("max_price")) {
         priceValue = `Up to €${parseInt(params.get("max_price")!).toLocaleString()}`;
       }
-      
+
       tags.push({
         label: "Price",
         value: priceValue
       });
     }
-    
-    // Fuel type
+
     if (params.get("fuel_type")) {
       tags.push({
         label: "Fuel",
         value: params.get("fuel_type")!
       });
     }
-    
-    // Transmission
+
     if (params.get("transmission")) {
       tags.push({
         label: "Transmission",
         value: params.get("transmission")!
       });
     }
-    
-    // Vehicle status (new/used)
+
     if (params.get("is_new")) {
       tags.push({
         label: "Status",
         value: params.get("is_new") === "true" ? "New" : "Used"
       });
     }
-    
-    // Mileage range
+
     if (params.get("mileage_min") || params.get("mileage_max")) {
       let mileageValue = "";
       if (params.get("mileage_min") && params.get("mileage_max")) {
@@ -366,14 +351,13 @@ export default function FavoritesPage() {
       } else if (params.get("mileage_max")) {
         mileageValue = `Max ${parseInt(params.get("mileage_max")!).toLocaleString()} km`;
       }
-      
+
       tags.push({
         label: "Mileage",
         value: mileageValue
       });
     }
-    
-    // Engine power
+
     if (params.get("engine_power_min") || params.get("engine_power_max")) {
       let powerValue = "";
       if (params.get("engine_power_min") && params.get("engine_power_max")) {
@@ -383,14 +367,13 @@ export default function FavoritesPage() {
       } else if (params.get("engine_power_max")) {
         powerValue = `Max ${params.get("engine_power_max")} hp`;
       }
-      
+
       tags.push({
         label: "Power",
         value: powerValue
       });
     }
-    
-    // Engine capacity 
+
     if (params.get("engine_capacity_min") || params.get("engine_capacity_max")) {
       let capacityValue = "";
       if (params.get("engine_capacity_min") && params.get("engine_capacity_max")) {
@@ -400,36 +383,34 @@ export default function FavoritesPage() {
       } else if (params.get("engine_capacity_max")) {
         capacityValue = `Max ${params.get("engine_capacity_max")} cc`;
       }
-      
+
       tags.push({
         label: "Engine",
         value: capacityValue
       });
     }
-    
-    // Seller type
+
     if (params.get("seller_type")) {
       tags.push({
         label: "Seller",
         value: params.get("seller_type")!
       });
     }
-    
-    // Deal rating
+
     if (params.get("deal_rating")) {
-      const ratingMap: {[key: string]: string} = {
+      const ratingMap: { [key: string]: string } = {
         "S": "Exceptional",
         "A": "Very Good",
         "B": "Good",
         "C": "Fair"
       };
-      
+
       tags.push({
         label: "Deal",
         value: ratingMap[params.get("deal_rating")!] || params.get("deal_rating")!
       });
     }
-    
+
     return (
       <div className="flex flex-wrap gap-2">
         {tags.map((tag, idx) => (
@@ -447,33 +428,12 @@ export default function FavoritesPage() {
     if (notificationTimeout.current) {
       clearTimeout(notificationTimeout.current);
     }
-    
+
     setNotification({ show: true, message, type });
-    
+
     notificationTimeout.current = setTimeout(() => {
       setNotification(prev => ({ ...prev, show: false }));
     }, 3000);
-  };
-
-  const getRatingBar = (rating: string | undefined) => {
-    switch (rating?.toUpperCase()) {
-      case "S":
-        return { label: "Exceptional Price", color: "bg-green-600", textColor: "text-white" };
-      case "A":
-        return { label: "Very Good Price", color: "bg-green-500", textColor: "text-white" };
-      case "B":
-        return { label: "Good Price", color: "bg-lime-500", textColor: "text-white" };
-      case "C":
-        return { label: "Fair Price", color: "bg-yellow-400", textColor: "text-black" };
-      case "D":
-        return { label: "Expensive", color: "bg-orange-500", textColor: "text-white" };
-      case "E":
-        return { label: "Very Expensive", color: "bg-red-500", textColor: "text-white" };
-      case "F":
-        return { label: "Overpriced", color: "bg-red-700", textColor: "text-white" };
-      default:
-        return null;
-    }
   };
 
   const renderSkeletons = () => (
@@ -505,13 +465,12 @@ export default function FavoritesPage() {
         {/* Notification */}
         <AnimatePresence>
           {notification.show && (
-            <motion.div 
+            <motion.div
               initial={{ opacity: 0, y: -50 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -50 }}
-              className={`fixed top-20 right-4 z-50 px-6 py-3 rounded-lg shadow-lg ${
-                notification.type === 'success' ? 'bg-green-500' : 'bg-red-500'
-              } text-white`}
+              className={`fixed top-20 right-4 z-50 px-6 py-3 rounded-lg shadow-lg ${notification.type === 'success' ? 'bg-green-500' : 'bg-red-500'
+                } text-white`}
             >
               <div className="flex items-center gap-2">
                 {notification.type === 'success' ? (
@@ -534,11 +493,10 @@ export default function FavoritesPage() {
           <div className="bg-white rounded-full shadow-md p-1.5 inline-flex">
             <button
               onClick={() => setActiveTab("favorites")}
-              className={`px-6 py-2.5 rounded-full font-medium transition-all ${
-                activeTab === "favorites" 
-                  ? "bg-blue-600 text-white shadow" 
-                  : "bg-transparent text-gray-600 hover:bg-gray-100"
-              }`}
+              className={`px-6 py-2.5 rounded-full font-medium transition-all ${activeTab === "favorites"
+                ? "bg-blue-600 text-white shadow"
+                : "bg-transparent text-gray-600 hover:bg-gray-100"
+                }`}
             >
               <div className="flex items-center gap-2">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -549,11 +507,10 @@ export default function FavoritesPage() {
             </button>
             <button
               onClick={() => setActiveTab("saved-searches")}
-              className={`px-6 py-2.5 rounded-full font-medium transition-all ${
-                activeTab === "saved-searches" 
-                  ? "bg-blue-600 text-white shadow" 
-                  : "bg-transparent text-gray-600 hover:bg-gray-100"
-              }`}
+              className={`px-6 py-2.5 rounded-full font-medium transition-all ${activeTab === "saved-searches"
+                ? "bg-blue-600 text-white shadow"
+                : "bg-transparent text-gray-600 hover:bg-gray-100"
+                }`}
             >
               <div className="flex items-center gap-2">
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -572,7 +529,7 @@ export default function FavoritesPage() {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
             <p className="text-lg font-semibold text-red-600">{error}</p>
-            <button 
+            <button
               onClick={() => {
                 const token = localStorage.getItem("token");
                 const userRaw = localStorage.getItem("user");
@@ -618,7 +575,6 @@ export default function FavoritesPage() {
                   const imgs = parseImages(car.images);
                   const current = imageIndex[car.id] || 0;
                   const imageUrl = imgs[current] || "/default-car.webp";
-                  const ratingBadge = getRatingBar(car.deal_rating);
 
                   return (
                     <div
@@ -634,11 +590,11 @@ export default function FavoritesPage() {
                             fill
                             className="object-cover group-hover:scale-105 transition-transform duration-300"
                           />
-                          
+
                           {/* Image navigation buttons */}
                           {imgs.length > 1 && (
                             <>
-                              <button 
+                              <button
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
@@ -650,7 +606,7 @@ export default function FavoritesPage() {
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" />
                                 </svg>
                               </button>
-                              <button 
+                              <button
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
@@ -664,14 +620,14 @@ export default function FavoritesPage() {
                               </button>
                             </>
                           )}
-                          
+
                           {/* Image counter */}
                           {imgs.length > 1 && (
                             <div className="absolute bottom-2 right-2 bg-black/40 text-white text-xs px-2 py-1 rounded-full backdrop-blur-sm">
                               {current + 1}/{imgs.length}
                             </div>
                           )}
-                          
+
                           {/* Favorite button */}
                           <button
                             onClick={(e) => {
@@ -693,17 +649,12 @@ export default function FavoritesPage() {
                               </svg>
                             )}
                           </button>
-                          
-                          {/* Deal rating badge */}
-                          {ratingBadge && (
-                            <div className={`absolute top-2 left-2 px-2 py-1 rounded-lg text-xs font-semibold ${ratingBadge.color} ${ratingBadge.textColor}`}>
-                              {ratingBadge.label}
-                            </div>
-                          )}
+
+                          <RatingBadge rating={car.deal_rating} className="absolute top-2 left-2" />
                         </div>
                       </div>
-                      
-                      <a 
+
+                      <a
                         href={`/listings/${car.id}`}
                         className="p-4 flex-grow flex flex-col justify-between cursor-pointer"
                       >
@@ -720,7 +671,7 @@ export default function FavoritesPage() {
                             )}
                           </div>
                         </div>
-                        
+
                         <div className="mt-4 flex items-end">
                           <div className="text-xl font-bold text-blue-600">
                             €{car.price.toLocaleString()}
@@ -787,7 +738,7 @@ export default function FavoritesPage() {
                     </p>
                   </div>
                 </motion.div>
-                
+
                 {savedSearches.map((search) => (
                   <motion.div
                     key={search.id}
@@ -842,8 +793,8 @@ export default function FavoritesPage() {
         <ConfirmationModal
           isOpen={confirmDelete.show}
           title={confirmDelete.type === 'favorite' ? "Remove Favorite" : "Delete Saved Search"}
-          message={confirmDelete.type === 'favorite' 
-            ? "Are you sure you want to remove this car from your favorites?" 
+          message={confirmDelete.type === 'favorite'
+            ? "Are you sure you want to remove this car from your favorites?"
             : "Are you sure you want to delete this saved search?"
           }
           confirmText={confirmDelete.type === 'favorite' ? "Remove" : "Delete"}
