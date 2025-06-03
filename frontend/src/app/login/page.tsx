@@ -12,7 +12,7 @@ export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { executePendingAction, hasPendingAction } = usePendingActions();
-  
+
   const [tab, setTab] = useState<"signin" | "register">("signin");
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
@@ -38,7 +38,7 @@ export default function LoginPage() {
         };
         localStorage.setItem("user", JSON.stringify(user));
       }
-      
+
       handleSuccessfulLogin();
     }
   }, [searchParams]);
@@ -93,7 +93,7 @@ export default function LoginPage() {
       const data = await res.json();
       localStorage.setItem("token", data.access_token);
       localStorage.setItem("user", JSON.stringify(data.user));
-      
+
       await handleSuccessfulLogin();
     } catch (err) {
       console.error(err);
@@ -113,7 +113,7 @@ export default function LoginPage() {
           <div className="absolute top-0 left-0 w-64 h-64 bg-blue-400 rounded-full filter blur-3xl transform -translate-x-1/2 -translate-y-1/2"></div>
           <div className="absolute bottom-0 right-0 w-80 h-80 bg-indigo-400 rounded-full filter blur-3xl transform translate-x-1/3 translate-y-1/4"></div>
         </div>
-        
+
         {/* Auth Box */}
         <div className="w-full max-w-md relative z-10">
           <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-100">
@@ -128,13 +128,13 @@ export default function LoginPage() {
               const pendingAction = PendingActionsManager.getPendingAction();
               const messages = {
                 'add_favorite': 'Complete your login to add this car to favorites',
-                'remove_favorite': 'Complete your login to remove this car from favorites', 
+                'remove_favorite': 'Complete your login to remove this car from favorites',
                 'save_search': 'Complete your login to save your search',
                 'navigation': 'Complete your login to continue'
               };
-              
+
               const message = pendingAction ? messages[pendingAction.type] || 'Complete your login to continue with your action' : 'Complete your login to continue with your action';
-              
+
               return (
                 <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
                   <div className="flex items-center gap-2">
@@ -146,28 +146,26 @@ export default function LoginPage() {
                 </div>
               );
             })()}
-            
+
             {/* Tabs */}
             <div className="flex justify-center mb-6">
               <div className="bg-gray-100 p-1 rounded-lg w-full max-w-xs">
                 <div className="grid grid-cols-2 gap-1">
                   <button
                     onClick={() => setTab("signin")}
-                    className={`py-2 text-sm font-medium rounded-md transition-all duration-200 ${
-                      tab === "signin" 
-                        ? "bg-white text-blue-600 shadow-sm" 
+                    className={`py-2 text-sm font-medium rounded-md transition-all duration-200 ${tab === "signin"
+                        ? "bg-white text-blue-600 shadow-sm"
                         : "text-gray-500 hover:text-gray-700"
-                    }`}
+                      }`}
                   >
                     Sign in
                   </button>
                   <button
                     onClick={() => setTab("register")}
-                    className={`py-2 text-sm font-medium rounded-md transition-all duration-200 ${
-                      tab === "register" 
-                        ? "bg-white text-blue-600 shadow-sm" 
+                    className={`py-2 text-sm font-medium rounded-md transition-all duration-200 ${tab === "register"
+                        ? "bg-white text-blue-600 shadow-sm"
                         : "text-gray-500 hover:text-gray-700"
-                    }`}
+                      }`}
                   >
                     Register
                   </button>
@@ -202,7 +200,7 @@ export default function LoginPage() {
                     required
                   />
                 </div>
-                
+
                 <div>
                   <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
                   <div className="relative">
@@ -273,7 +271,7 @@ export default function LoginPage() {
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
                   />
                 </div>
-                
+
                 <div>
                   <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                   <input
@@ -286,7 +284,7 @@ export default function LoginPage() {
                     required
                   />
                 </div>
-                
+
                 <div>
                   <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
                   <div className="relative">
@@ -318,7 +316,7 @@ export default function LoginPage() {
                     </button>
                   </div>
                 </div>
-                
+
                 <div>
                   <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-1">Confirm Password</label>
                   <input
@@ -375,7 +373,7 @@ export default function LoginPage() {
               </button>
             </div>
           </div>
-          
+
           {/* Security message */}
           <div className="mt-6 text-center text-xs text-gray-500 flex justify-center items-center">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1 text-gray-400" viewBox="0 0 20 20" fill="currentColor">

@@ -1,37 +1,12 @@
 "use client";
 
-import Image from "next/image";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import SidebarFilters from "@/components/SidebarFilters";
-import { EngineIcon, GaugeIcon, CalendarIcon, FuelIcon, TransmissionIcon, SpeedometerIcon, ChevronLeftIcon, ChevronRightIcon } from "@/components/Icons";
 import { PendingActionsManager, getCurrentUrlForReturn } from '@/utils/pendingActions';
-import { parseImages } from "@/utils/carUtils";
-import { RatingBadge } from "@/components/ui/RatingBadge";
-import { QualityScore } from "@/components/ui/QualityScore";
-
-type Car = {
-  id: number;
-  title: string;
-  brand: string;
-  model: string;
-  price: number;
-  year: number;
-  fuel_type: string;
-  mileage: number;
-  transmission: string;
-  images: string[] | string;
-  engine_capacity?: number;
-  sold?: boolean;
-  is_favorite?: boolean;
-  deal_rating?: string;
-  estimated_price?: number;
-  engine_power?: number;
-  quality_score?: number;
-  suspicious_price?: boolean;
-};
+import { CarCard, type CarData } from "@/components/ui/CarCard";
 
 const sortOptions = [
   { value: "", label: "Default Order", sort_by: "", order: "asc" },
@@ -49,7 +24,7 @@ export default function ListingsPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const [cars, setCars] = useState<Car[]>([]);
+  const [cars, setCars] = useState<CarData[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(9);
@@ -120,7 +95,7 @@ export default function ListingsPage() {
         setTotal(data.total);
 
         const initIndex: { [carId: number]: number } = {};
-        data.items.forEach((car: Car) => {
+        data.items.forEach((car: CarData) => {
           initIndex[car.id] = 0;
         });
         setImageIndex(initIndex);
@@ -150,16 +125,14 @@ export default function ListingsPage() {
     router.push(`/listings?${params.toString()}`);
   };
 
-  const toggleFavorite = async (car: Car) => {
+  const handleFavoriteToggle = async (car: CarData) => {
     const token = localStorage.getItem("token");
     const userRaw = localStorage.getItem("user");
 
     if (!token || !userRaw) {
       const currentUrl = getCurrentUrlForReturn();
       const actionType = car.is_favorite ? 'remove' : 'add';
-
       PendingActionsManager.saveFavoriteAction(car.id, actionType, currentUrl);
-
       window.location.href = '/login';
       return;
     }
@@ -170,10 +143,8 @@ export default function ListingsPage() {
       if (!user.id) throw new Error("Invalid user object");
     } catch (err) {
       console.error("User object invalid:", err);
-
       const currentUrl = getCurrentUrlForReturn();
       const actionType = car.is_favorite ? 'remove' : 'add';
-
       PendingActionsManager.saveFavoriteAction(car.id, actionType, currentUrl);
       window.location.href = '/login';
       return;
@@ -185,9 +156,7 @@ export default function ListingsPage() {
       if (car.is_favorite) {
         await fetch(`http://localhost:8000/favorites/${car.id}`, {
           method: "DELETE",
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          headers: { Authorization: `Bearer ${token}` },
         });
       } else {
         await fetch("http://localhost:8000/favorites", {
@@ -258,309 +227,6 @@ export default function ListingsPage() {
         </div>
       </div>
     ));
-  };
-
-  const renderGridCard = (car: Car) => {
-    const imgs = parseImages(car.images);
-    const current = imageIndex[car.id] || 0;
-    const imageUrl = imgs[current] || "/default-car.webp";
-
-    return (
-      <div key={car.id} className="group bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
-        <a href={`/listings/${car.id}`} className="block">
-          <div className="relative">
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                toggleFavorite(car);
-              }}
-              className={`absolute top-3 right-3 z-10 w-10 h-10 flex items-center justify-center rounded-full ${car.is_favorite ? "bg-red-50" : "bg-gray-50"} backdrop-blur-sm shadow-md transition-all duration-300 ${updatingFavorites.includes(car.id) ? "opacity-50" : "opacity-100"
-                }`}
-              disabled={updatingFavorites.includes(car.id)}
-            >
-              <span className="text-2xl">{car.is_favorite ? "❤️" : "🤍"}</span>
-            </button>
-
-            <div className="relative h-[220px] w-full">
-              <Image
-                src={imageUrl}
-                alt={car.title}
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, 50vw"
-              />
-
-              {imgs.length > 1 && (
-                <>
-                  <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-md">
-                    {current + 1} / {imgs.length}
-                  </div>
-
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setImageIndex((prev) => ({
-                        ...prev,
-                        [car.id]: Math.max((prev[car.id] || 0) - 1, 0),
-                      }));
-                    }}
-                    disabled={current === 0}
-                    className="absolute left-2 top-1/2 transform -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                  >
-                    <ChevronLeftIcon />
-                  </button>
-
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setImageIndex((prev) => ({
-                        ...prev,
-                        [car.id]: Math.min((prev[car.id] || 0) + 1, imgs.length - 1),
-                      }));
-                    }}
-                    disabled={current === imgs.length - 1}
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                  >
-                    <ChevronRightIcon />
-                  </button>
-                </>
-              )}
-
-              {car.sold && (
-                <div className="absolute top-3 left-3 bg-red-600 text-white text-xs px-3 py-1 rounded-md font-medium">
-                  Sold
-                </div>
-              )}
-            </div>
-
-            <div className="p-5">
-              <h3 className="font-bold text-lg text-gray-800 mb-1 line-clamp-1">{car.title}</h3>
-
-              <div className="grid grid-cols-2 gap-y-2 text-sm text-gray-600 mb-3">
-                <div className="flex items-center">
-                  <CalendarIcon className="w-4 h-4 mr-1.5" />
-                  <span>{car.year}</span>
-                </div>
-                <div className="flex items-center">
-                  <FuelIcon className="w-4 h-4 mr-1.5" />
-                  <span>{car.fuel_type}</span>
-                </div>
-                <div className="flex items-center">
-                  <GaugeIcon className="w-4 h-4 mr-1.5" />
-                  <span>{car.mileage?.toLocaleString()} km</span>
-                </div>
-                <div className="flex items-center">
-                  <TransmissionIcon className="w-4 h-4 mr-1.5" />
-                  <span>{car.transmission}</span>
-                </div>
-                {car.engine_capacity && (
-                  <div className="flex items-center">
-                    <EngineIcon className="w-4 h-4 mr-1.5" />
-                    <span>{car.engine_capacity} cm³</span>
-                  </div>
-                )}
-                {car.engine_power && (
-                  <div className="flex items-center">
-                    <SpeedometerIcon className="w-4 h-4 mr-1.5" />
-                    <span>{car.engine_power} hp</span>
-                  </div>
-                )}
-              </div>
-
-              <div className="flex justify-between items-start">
-                <div className="flex flex-col">
-                  <div className="text-xl font-bold text-blue-600">
-                    {car.price !== null
-                      ? `€${car.price.toLocaleString()}`
-                      : "Price on request"}
-                  </div>
-
-                  {car.estimated_price && (
-                    <div className="text-sm text-gray-500">
-                      Est. Value: €{car.estimated_price.toLocaleString()}
-                    </div>
-                  )}
-                </div>
-
-                {car.quality_score !== undefined && (
-                  <div className="relative">
-                    <div
-                      className={`w-10 h-10 rounded-full flex items-center justify-center text-sm font-medium text-white cursor-pointer ${car.quality_score >= 80 ? "bg-green-500" :
-                        car.quality_score >= 60 ? "bg-green-400" :
-                          car.quality_score >= 40 ? "bg-yellow-400" :
-                            car.quality_score >= 20 ? "bg-orange-500" :
-                              "bg-red-500"
-                        }`}
-                      title="Quality Score"
-                    >
-                      {car.quality_score}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <RatingBadge rating={car.deal_rating} className="mt-3 w-full py-1.5 text-center" />
-
-              {car.suspicious_price && (
-                <div className="mt-2 flex items-center text-red-500">
-                  <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                  </svg>
-                  <span className="text-xs">Suspicious Price</span>
-                </div>
-              )}
-            </div>
-          </div>
-        </a>
-      </div>
-    );
-  };
-
-  const renderListCard = (car: Car) => {
-    const imgs = parseImages(car.images);
-    const current = imageIndex[car.id] || 0;
-    const imageUrl = imgs[current] || "/default-car.webp";
-
-    return (
-      <div key={car.id} className="group bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300">
-        <a href={`/listings/${car.id}`} className="flex flex-col md:flex-row">
-          <div className="relative w-full md:w-1/3 h-[220px] md:h-auto">
-            <Image
-              src={imageUrl}
-              alt={car.title}
-              fill
-              className="object-cover"
-              sizes="(max-width: 768px) 100vw, 33vw"
-            />
-
-            <button
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                toggleFavorite(car);
-              }}
-              className={`absolute top-3 right-3 z-10 w-10 h-10 flex items-center justify-center rounded-full ${car.is_favorite ? "bg-red-50" : "bg-gray-50"} backdrop-blur-sm shadow-md transition-all duration-300 ${updatingFavorites.includes(car.id) ? "opacity-50" : "opacity-100"
-                }`}
-              disabled={updatingFavorites.includes(car.id)}
-            >
-              <span className="text-2xl">{car.is_favorite ? "❤️" : "🤍"}</span>
-            </button>
-
-            {imgs.length > 1 && (
-              <>
-                <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-md">
-                  {current + 1} / {imgs.length}
-                </div>
-
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setImageIndex((prev) => ({
-                      ...prev,
-                      [car.id]: Math.max((prev[car.id] || 0) - 1, 0),
-                    }));
-                  }}
-                  disabled={current === 0}
-                  className="absolute left-2 top-1/2 transform -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                >
-                  <ChevronLeftIcon />
-                </button>
-
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    setImageIndex((prev) => ({
-                      ...prev,
-                      [car.id]: Math.min((prev[car.id] || 0) + 1, imgs.length - 1),
-                    }));
-                  }}
-                  disabled={current === imgs.length - 1}
-                  className="absolute right-2 top-1/2 transform -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                >
-                  <ChevronRightIcon />
-                </button>
-              </>
-            )}
-
-            {car.sold && (
-              <div className="absolute top-3 left-3 bg-red-600 text-white text-xs px-3 py-1 rounded-md font-medium">
-                Sold
-              </div>
-            )}
-          </div>
-
-          <div className="w-full md:w-2/3 p-5">
-            <div className="flex justify-between items-start">
-              <div>
-                <h3 className="font-bold text-lg text-gray-800 mb-1">{car.title}</h3>
-                <p className="text-sm text-gray-500">{car.brand} {car.model}</p>
-              </div>
-
-              <div className="text-right">
-                <div className="text-xl font-bold text-blue-600">
-                  {car.price !== null ? `€${car.price.toLocaleString()}` : "Price on request"}
-                </div>
-                {car.estimated_price && (
-                  <div className="text-sm text-gray-500">
-                    Est. Value: €{car.estimated_price.toLocaleString()}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-y-2 text-sm text-gray-600 my-4">
-              <div className="flex items-center">
-                <CalendarIcon className="w-4 h-4 mr-1.5" />
-                <span>{car.year}</span>
-              </div>
-              <div className="flex items-center">
-                <FuelIcon className="w-4 h-4 mr-1.5" />
-                <span>{car.fuel_type}</span>
-              </div>
-              <div className="flex items-center">
-                <GaugeIcon className="w-4 h-4 mr-1.5" />
-                <span>{car.mileage?.toLocaleString()} km</span>
-              </div>
-              <div className="flex items-center">
-                <TransmissionIcon className="w-4 h-4 mr-1.5" />
-                <span>{car.transmission}</span>
-              </div>
-              {car.engine_capacity && (
-                <div className="flex items-center">
-                  <EngineIcon className="w-4 h-4 mr-1.5" />
-                  <span>{car.engine_capacity} cm³</span>
-                </div>
-              )}
-              {car.engine_power && (
-                <div className="flex items-center">
-                  <SpeedometerIcon className="w-4 h-4 mr-1.5" />
-                  <span>{car.engine_power} hp</span>
-                </div>
-              )}
-            </div>
-
-            <div className="flex items-center justify-between">
-              <RatingBadge rating={car.deal_rating} className="mt-3 w-full py-1.5 text-center" />
-              <QualityScore score={car.quality_score} size="md" />
-            </div>
-
-            {car.suspicious_price && (
-              <div className="mt-2 flex items-center text-red-500">
-                <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                </svg>
-                <span className="text-xs">Suspicious Price</span>
-              </div>
-            )}
-          </div>
-        </a>
-      </div>
-    );
   };
 
   return (
@@ -654,7 +320,18 @@ export default function ListingsPage() {
               {loading
                 ? renderLoadingSkeleton()
                 : cars.length > 0
-                  ? cars.map((car) => viewMode === "grid" ? renderGridCard(car) : renderListCard(car))
+                  ? cars.map((car) => (
+                    <CarCard
+                      key={car.id}
+                      car={car}
+                      variant={viewMode}
+                      onFavoriteToggle={handleFavoriteToggle}
+                      isUpdatingFavorite={updatingFavorites.includes(car.id)}
+                      showImageNavigation={true}
+                      showQualityScore={true}
+                      showEstimatedPrice={true}
+                    />
+                  ))
                   : (
                     <div className="col-span-full text-center py-16">
                       <div className="text-gray-400 text-5xl mb-4">🔍</div>

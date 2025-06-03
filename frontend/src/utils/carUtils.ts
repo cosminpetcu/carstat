@@ -7,6 +7,10 @@ export const parseImages = (images: string[] | string): string[] => {
     }
 };
 
+export const formatNumber = (num: number): string => {
+    return new Intl.NumberFormat('ro-RO').format(num);
+};
+
 export const getFirstImage = (images: string[] | string): string => {
     const parsed = parseImages(images);
     return parsed[0] || "/default-car.webp";

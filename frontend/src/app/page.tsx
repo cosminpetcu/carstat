@@ -8,8 +8,7 @@ import Footer from "@/components/Footer";
 import BrandsSection from "@/components/BrandsSection";
 import { useRouter } from "next/navigation";
 import { PendingActionsManager } from '@/utils/pendingActions';
-import { getFirstImage } from "@/utils/carUtils";
-import { RatingBadge } from "@/components/ui/RatingBadge";
+import { CarCard, type CarData } from "@/components/ui/CarCard";
 
 type Car = {
   id: number;
@@ -242,7 +241,7 @@ export default function Home() {
 }
 
 function HomeListings() {
-  const [cars, setCars] = useState<Car[]>([]);
+  const [cars, setCars] = useState<CarData[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -280,71 +279,14 @@ function HomeListings() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
       {cars.map((car) => (
-        <a
+        <CarCard
           key={car.id}
-          href={`/listings/${car.id}`}
-          className="group bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden"
-        >
-          <div className="relative">
-            <div className="aspect-w-16 aspect-h-10 overflow-hidden">
-              <Image
-                src={getFirstImage(car.images)}
-                alt={car.title}
-                width={300}
-                height={200}
-                className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-300"
-              />
-            </div>
-            <RatingBadge rating={car.deal_rating} className="absolute top-3 right-3 shadow-lg" />
-          </div>
-
-          <div className="p-5">
-            <h3 className="font-bold text-lg text-gray-800 mb-2 line-clamp-1">{car.title}</h3>
-
-            <div className="flex flex-wrap gap-2 text-xs text-gray-500 mb-3">
-              <span className="px-2 py-1 bg-gray-100 rounded">{car.year}</span>
-              <span className="px-2 py-1 bg-gray-100 rounded">{car.fuel_type}</span>
-              <span className="px-2 py-1 bg-gray-100 rounded">{car.transmission}</span>
-            </div>
-
-            {car.mileage && car.engine_power && (
-              <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 mb-3">
-                <div className="flex items-center gap-1">
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="M12 6v6l4 2" />
-                  </svg>
-                  {car.mileage.toLocaleString()} km
-                </div>
-                <div className="flex items-center gap-1">
-                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
-                  </svg>
-                  {car.engine_power} hp
-                </div>
-              </div>
-            )}
-
-            <div className="flex items-baseline justify-between">
-              <div>
-                <div className="text-xl font-bold text-blue-600">
-                  €{car.price.toLocaleString()}
-                </div>
-                {car.estimated_price && (
-                  <div className="text-xs text-gray-500 line-through">
-                    €{car.estimated_price.toLocaleString()}
-                  </div>
-                )}
-              </div>
-
-              {car.estimated_price && car.price < car.estimated_price && (
-                <div className="text-xs font-semibold text-green-600 bg-green-50 px-2 py-1 rounded">
-                  -{Math.round(((car.estimated_price - car.price) / car.estimated_price) * 100)}%
-                </div>
-              )}
-            </div>
-          </div>
-        </a>
+          car={car}
+          variant="home"
+          showImageNavigation={true}
+          showQualityScore={false}
+          showEstimatedPrice={true}
+        />
       ))}
     </div>
   );

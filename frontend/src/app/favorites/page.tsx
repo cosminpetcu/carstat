@@ -1,27 +1,12 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
-import Image from "next/image";
 import Navbar from "@/components/Navbar";
 import { useRouter } from "next/navigation";
 import Footer from "@/components/Footer";
 import { motion, AnimatePresence } from "framer-motion";
 import { parseImages } from "@/utils/carUtils";
-import { RatingBadge } from "@/components/ui/RatingBadge";
-
-type Car = {
-  id: number;
-  title: string;
-  price: number;
-  year: number;
-  fuel_type: string;
-  transmission: string;
-  images: string[] | string;
-  is_favorite?: boolean;
-  deal_rating?: string;
-  mileage?: number;
-  engine_power?: number;
-};
+import { CarCard, type CarData } from "@/components/ui/CarCard";
 
 type SavedSearch = {
   id: number;
@@ -102,7 +87,7 @@ const SkeletonCard = () => (
 
 export default function FavoritesPage() {
   const router = useRouter();
-  const [cars, setCars] = useState<Car[]>([]);
+  const [cars, setCars] = useState<CarData[]>([]);
   const [savedSearches, setSavedSearches] = useState<SavedSearch[]>([]);
   const [loading, setLoading] = useState(true);
   const [imageIndex, setImageIndex] = useState<{ [carId: number]: number }>({});
@@ -148,7 +133,7 @@ export default function FavoritesPage() {
           const carsOnly = data.map((fav: any) => fav.car);
           setCars(carsOnly);
           const indices: { [carId: number]: number } = {};
-          carsOnly.forEach((c: Car) => (indices[c.id] = 0));
+          carsOnly.forEach((c: CarData) => (indices[c.id] = 0));
           setImageIndex(indices);
         } else {
           console.error("Unexpected response:", data);
@@ -209,7 +194,7 @@ export default function FavoritesPage() {
     }
   };
 
-  const toggleFavorite = async (car: Car) => {
+  const handleFavoriteToggle = async (car: CarData) => {
     setConfirmDelete({ show: true, id: car.id, type: 'favorite' });
   };
 
@@ -571,116 +556,18 @@ export default function FavoritesPage() {
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {cars.map((car) => {
-                  const imgs = parseImages(car.images);
-                  const current = imageIndex[car.id] || 0;
-                  const imageUrl = imgs[current] || "/default-car.webp";
-
-                  return (
-                    <div
-                      key={car.id}
-                      className="bg-white rounded-xl shadow-md hover:shadow-lg transition overflow-hidden group h-full flex flex-col"
-                    >
-                      <div className="relative overflow-hidden">
-                        {/* Image */}
-                        <div className="relative h-48 w-full">
-                          <Image
-                            src={imageUrl}
-                            alt={car.title}
-                            fill
-                            className="object-cover group-hover:scale-105 transition-transform duration-300"
-                          />
-
-                          {/* Image navigation buttons */}
-                          {imgs.length > 1 && (
-                            <>
-                              <button
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  handleImageNavigation(car.id, 'prev');
-                                }}
-                                className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-black/30 hover:bg-black/60 text-white p-1.5 rounded-full backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity"
-                              >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15 19l-7-7 7-7" />
-                                </svg>
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.preventDefault();
-                                  e.stopPropagation();
-                                  handleImageNavigation(car.id, 'next');
-                                }}
-                                className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-black/30 hover:bg-black/60 text-white p-1.5 rounded-full backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity"
-                              >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M9 5l7 7-7 7" />
-                                </svg>
-                              </button>
-                            </>
-                          )}
-
-                          {/* Image counter */}
-                          {imgs.length > 1 && (
-                            <div className="absolute bottom-2 right-2 bg-black/40 text-white text-xs px-2 py-1 rounded-full backdrop-blur-sm">
-                              {current + 1}/{imgs.length}
-                            </div>
-                          )}
-
-                          {/* Favorite button */}
-                          <button
-                            onClick={(e) => {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              toggleFavorite(car);
-                            }}
-                            className="absolute top-2 right-2 bg-black/30 hover:bg-black/60 text-white p-2 rounded-full backdrop-blur-sm transition-colors"
-                            disabled={updatingFavorites.includes(car.id)}
-                          >
-                            {updatingFavorites.includes(car.id) ? (
-                              <svg className="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                              </svg>
-                            ) : (
-                              <svg className="w-5 h-5 text-red-500 fill-current" viewBox="0 0 24 24">
-                                <path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                              </svg>
-                            )}
-                          </button>
-
-                          <RatingBadge rating={car.deal_rating} className="absolute top-2 left-2" />
-                        </div>
-                      </div>
-
-                      <a
-                        href={`/listings/${car.id}`}
-                        className="p-4 flex-grow flex flex-col justify-between cursor-pointer"
-                      >
-                        <div>
-                          <h3 className="font-semibold text-lg line-clamp-2">{car.title}</h3>
-                          <div className="flex flex-wrap gap-2 mt-2">
-                            <span className="px-2 py-1 bg-gray-100 rounded-md text-xs text-gray-600">{car.year}</span>
-                            <span className="px-2 py-1 bg-gray-100 rounded-md text-xs text-gray-600">{car.fuel_type}</span>
-                            <span className="px-2 py-1 bg-gray-100 rounded-md text-xs text-gray-600">{car.transmission}</span>
-                            {car.mileage && (
-                              <span className="px-2 py-1 bg-gray-100 rounded-md text-xs text-gray-600">
-                                {car.mileage.toLocaleString()} km
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="mt-4 flex items-end">
-                          <div className="text-xl font-bold text-blue-600">
-                            €{car.price.toLocaleString()}
-                          </div>
-                        </div>
-                      </a>
-                    </div>
-                  );
-                })}
+                {cars.map((car) => (
+                  <CarCard
+                    key={car.id}
+                    car={car}
+                    variant="grid"
+                    onFavoriteToggle={handleFavoriteToggle}
+                    isUpdatingFavorite={updatingFavorites.includes(car.id)}
+                    showImageNavigation={true}
+                    showQualityScore={true}
+                    showEstimatedPrice={true}
+                  />
+                ))}
               </div>
             )}
           </div>
