@@ -5,7 +5,8 @@ import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import SidebarFilters from "@/components/SidebarFilters";
-import { PendingActionsManager, getCurrentUrlForReturn } from '@/utils/pendingActions';
+import { useToast } from '@/hooks/useToast';
+import { ToastContainer } from '@/components/ui/ToastContainer';
 import { CarCard, type CarData } from "@/components/ui/CarCard";
 import { useFavorites } from '@/hooks/useFavorites';
 
@@ -31,21 +32,9 @@ export default function ListingsPage() {
   const [limit, setLimit] = useState(9);
   const [total, setTotal] = useState(0);
   const [imageIndex, setImageIndex] = useState<{ [carId: number]: number }>({});
-  const [toastMessage, setToastMessage] = useState("");
-  const [toastType, setToastType] = useState<"success" | "error" | "">("");
+  const { toasts, removeToast, showSuccess, showError } = useToast();
   const [viewMode, setViewMode] = useState("grid");
   const [sortBy, setSortBy] = useState("");
-
-  useEffect(() => {
-    if (toastMessage) {
-      const timeout = setTimeout(() => {
-        setToastMessage("");
-        setToastType("");
-      }, 10000);
-
-      return () => clearTimeout(timeout);
-    }
-  }, [toastMessage]);
 
   useEffect(() => {
     const handleUrlChange = () => {
@@ -132,10 +121,10 @@ export default function ListingsPage() {
           c.id === carId ? { ...c, is_favorite: newState } : c
         )
       );
+      showSuccess(newState ? "Added to favorites!" : "Removed from favorites!");
     },
     (error) => {
-      setToastMessage(`Error: ${error}`);
-      setToastType("error");
+      showError(`Error: ${error}`);
     }
   );
 
@@ -198,7 +187,10 @@ export default function ListingsPage() {
       <section className="max-w-7xl mx-auto px-6 py-8">
         <div className="flex flex-col lg:flex-row gap-8">
           <div className="w-full lg:w-1/4 lg:top-8 lg:self-start">
-            <SidebarFilters setToastMessage={setToastMessage} setToastType={setToastType} />
+            <SidebarFilters
+              showSuccess={showSuccess}
+              showError={showError}
+            />
           </div>
 
           <div className="w-full lg:w-3/4">
@@ -342,16 +334,7 @@ export default function ListingsPage() {
       </section>
 
       <Footer />
-
-      {toastMessage && (
-        <div
-          className={`fixed bottom-6 right-6 px-6 py-3 rounded-lg shadow-lg transition-all z-50 flex items-center ${toastType === "success" ? "bg-green-500 text-white" : "bg-red-500 text-white"
-            }`}
-        >
-          <span className="mr-2">{toastType === "success" ? "✓" : "✕"}</span>
-          {toastMessage}
-        </div>
-      )}
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
     </main>
   );
 }

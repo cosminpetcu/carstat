@@ -5,9 +5,10 @@ import Navbar from "@/components/Navbar";
 import { useRouter } from "next/navigation";
 import Footer from "@/components/Footer";
 import { motion, AnimatePresence } from "framer-motion";
-import { parseImages } from "@/utils/carUtils";
 import { CarCard, type CarData } from "@/components/ui/CarCard";
 import { useFavorites } from '@/hooks/useFavorites';
+import { useToast } from '@/hooks/useToast';
+import { ToastContainer } from '@/components/ui/ToastContainer';
 
 type SavedSearch = {
   id: number;
@@ -98,10 +99,7 @@ export default function FavoritesPage() {
     show: false, id: null, type: 'favorite'
   });
   const [actionLoading, setActionLoading] = useState(false);
-  const [notification, setNotification] = useState<{ show: boolean; message: string; type: 'success' | 'error' }>({
-    show: false, message: '', type: 'success'
-  });
-  const notificationTimeout = useRef<NodeJS.Timeout | null>(null);
+  const { toasts, removeToast, showSuccess, showError } = useToast();
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -184,13 +182,13 @@ export default function FavoritesPage() {
 
       if (res.ok) {
         setSavedSearches((prev) => prev.filter((s) => s.id !== confirmDelete.id));
-        showNotification("Search deleted successfully", "success");
+        showSuccess("Search deleted successfully");
       } else {
-        showNotification("Failed to delete saved search", "error");
+        showError("Failed to delete saved search");
       }
     } catch (error) {
       console.error("Error deleting saved search:", error);
-      showNotification("Error deleting saved search", "error");
+      showError("Failed to delete saved search");
     } finally {
       setActionLoading(false);
       setConfirmDelete({ show: false, id: null, type: 'search' });
@@ -201,11 +199,11 @@ export default function FavoritesPage() {
     (carId, newState) => {
       if (!newState) {
         setCars((prev) => prev.filter((c) => c.id !== carId));
-        showNotification("Car removed from favorites", "success");
+        showSuccess("Car removed from favorites");
       }
     },
     (error) => {
-      showNotification(`Error: ${error}`, "error");
+      showError(`Error: ${error}`);
     }
   );
 
@@ -384,18 +382,6 @@ export default function FavoritesPage() {
     );
   };
 
-  const showNotification = (message: string, type: 'success' | 'error') => {
-    if (notificationTimeout.current) {
-      clearTimeout(notificationTimeout.current);
-    }
-
-    setNotification({ show: true, message, type });
-
-    notificationTimeout.current = setTimeout(() => {
-      setNotification(prev => ({ ...prev, show: false }));
-    }, 3000);
-  };
-
   const renderSkeletons = () => (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
       {[...Array(8)].map((_, index) => (
@@ -422,31 +408,7 @@ export default function FavoritesPage() {
           </button>
         </div>
 
-        {/* Notification */}
-        <AnimatePresence>
-          {notification.show && (
-            <motion.div
-              initial={{ opacity: 0, y: -50 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -50 }}
-              className={`fixed top-20 right-4 z-50 px-6 py-3 rounded-lg shadow-lg ${notification.type === 'success' ? 'bg-green-500' : 'bg-red-500'
-                } text-white`}
-            >
-              <div className="flex items-center gap-2">
-                {notification.type === 'success' ? (
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                  </svg>
-                ) : (
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                )}
-                <span>{notification.message}</span>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <ToastContainer toasts={toasts} onRemove={removeToast} />
 
         {/* Tabs */}
         <div className="flex justify-center mb-10">

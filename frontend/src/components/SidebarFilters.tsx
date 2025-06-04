@@ -56,7 +56,13 @@ const doorsOptions = [2, 3, 4, 5, 6];
 const engineCapacityOptions = [1000, 1200, 1400, 1600, 1800, 2000, 2500, 3000, 4000, 5000];
 const enginePowerOptions = [50, 75, 100, 150, 200, 250, 300, 400, 500];
 
-export default function SidebarFilters({ setToastMessage, setToastType }: { setToastMessage: (msg: string) => void, setToastType: (type: "success" | "error" | "") => void }) {
+export default function SidebarFilters({
+  showSuccess,
+  showError
+}: {
+  showSuccess: (msg: string) => void;
+  showError: (msg: string) => void;
+}) {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -180,12 +186,10 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
       if (!response.ok) {
         throw new Error("Failed to save search");
       }
-      setToastMessage("Search saved successfully!");
-      setToastType("success");
+      showSuccess("Search saved successfully!");
     } catch (error) {
       console.error("Error saving search:", error);
-      setToastMessage("Failed to save search.");
-      setToastType("error");
+      showError("Failed to save search.");
     }
   };
 
