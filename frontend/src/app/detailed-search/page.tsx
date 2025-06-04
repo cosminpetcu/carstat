@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { useBrandsModels } from '@/hooks/useBrandsModels';
 
 const fuelTypes = ["Petrol", "Diesel", "Electric", "Hybrid", "LPG", "CNG", "Plug-in Hybrid"];
 const sellerTypes = ["Private", "Dealer"];
@@ -64,14 +65,11 @@ export default function DetailedSearchPage() {
   const [qualityScoreMax, setQualityScoreMax] = useState("");
   const [dealRating, setDealRating] = useState("");
   const [carsCount, setCarsCount] = useState<number | null>(null);
-  const [availableBrands, setAvailableBrands] = useState<string[]>([]);
-  const [availableModels, setAvailableModels] = useState<string[]>([]);
-  const [isLoadingBrands, setIsLoadingBrands] = useState(true);
-  const [isLoadingModels, setIsLoadingModels] = useState(false);
   const [isLoadingCount, setIsLoadingCount] = useState(false);
   const [activeTab, setActiveTab] = useState<"basic" | "advanced" | "condition">("basic");
   const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
   const [searchName, setSearchName] = useState("");
+  const { brands, models, isLoadingBrands, isLoadingModels, fetchModels, clearModels } = useBrandsModels();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -79,10 +77,10 @@ export default function DetailedSearchPage() {
   }, []);
   useEffect(() => {
     setIsLoadingCount(true);
-    
+
     const debounceTimer = setTimeout(() => {
       const params = buildSearchParams();
-      
+
       fetch(`http://localhost:8000/cars/count?${params.toString()}`)
         .then((res) => res.json())
         .then((data) => {
@@ -97,7 +95,7 @@ export default function DetailedSearchPage() {
 
     return () => clearTimeout(debounceTimer);
   }, [
-    brand, model, fuelType, yearMin, yearMax, priceMin, priceMax, mileageMin, mileageMax, 
+    brand, model, fuelType, yearMin, yearMax, priceMin, priceMax, mileageMin, mileageMax,
     enginePowerMin, enginePowerMax, engineCapacityMin, engineCapacityMax, isNew, sellerType,
     driveType, transmission, color, doors, emissionStandard, originCountry, rightHandDrive,
     damaged, firstOwner, noAccident, serviceBook, registered, qualityScoreMin, qualityScoreMax,
@@ -137,7 +135,7 @@ export default function DetailedSearchPage() {
     if (qualityScoreMin) params.append("quality_score_min", qualityScoreMin);
     if (qualityScoreMax) params.append("quality_score_max", qualityScoreMax);
     if (dealRating) params.append("deal_rating", dealRating);
-    
+
     return params;
   };
 
@@ -224,55 +222,17 @@ export default function DetailedSearchPage() {
   };
 
   useEffect(() => {
-    const fetchBrands = async () => {
-      setIsLoadingBrands(true);
-      try {
-        const response = await fetch('http://localhost:8000/analytics/available-brands');
-        if (response.ok) {
-          const brands = await response.json();
-          setAvailableBrands(brands);
-        } else {
-          console.error('Failed to fetch brands');
-        }
-      } catch (error) {
-        console.error('Error fetching brands:', error);
-      } finally {
-        setIsLoadingBrands(false);
-      }
-    };
-
-    fetchBrands();
-  }, []);
-
-  useEffect(() => {
-    if (!brand) {
-      setAvailableModels([]);
-      return;
+    if (brand) {
+      fetchModels(brand);
+      setModel("");
+    } else {
+      clearModels();
     }
-
-    const fetchModels = async () => {
-      setIsLoadingModels(true);
-      try {
-        const response = await fetch(`http://localhost:8000/analytics/available-models/${brand}`);
-        if (response.ok) {
-          const models = await response.json();
-          setAvailableModels(models);
-        } else {
-          console.error('Failed to fetch models');
-        }
-      } catch (error) {
-        console.error('Error fetching models:', error);
-      } finally {
-        setIsLoadingModels(false);
-      }
-    };
-
-    fetchModels();
-  }, [brand]);
+  }, [brand, fetchModels, clearModels]);
 
   useEffect(() => {
     const params = new URLSearchParams(searchParams.toString());
-    
+
     if (params.get("brand")) setBrand(params.get("brand")!);
     if (params.get("model")) setModel(params.get("model")!);
     if (params.get("fuel_type")) setFuelType(params.get("fuel_type")!);
@@ -298,26 +258,26 @@ export default function DetailedSearchPage() {
 
         {/* Tabs navigation */}
         <div className="flex justify-center mb-8 border-b border-gray-200">
-          <button 
-            onClick={() => setActiveTab("basic")} 
-            className={`px-4 py-2 text-sm font-medium ${activeTab === "basic" ? 
-              "text-blue-600 border-b-2 border-blue-600" : 
+          <button
+            onClick={() => setActiveTab("basic")}
+            className={`px-4 py-2 text-sm font-medium ${activeTab === "basic" ?
+              "text-blue-600 border-b-2 border-blue-600" :
               "text-gray-500 hover:text-gray-700 hover:border-gray-300"}`}
           >
             Basic Filters
           </button>
-          <button 
-            onClick={() => setActiveTab("advanced")} 
-            className={`px-4 py-2 text-sm font-medium ${activeTab === "advanced" ? 
-              "text-blue-600 border-b-2 border-blue-600" : 
+          <button
+            onClick={() => setActiveTab("advanced")}
+            className={`px-4 py-2 text-sm font-medium ${activeTab === "advanced" ?
+              "text-blue-600 border-b-2 border-blue-600" :
               "text-gray-500 hover:text-gray-700 hover:border-gray-300"}`}
           >
             Advanced Filters
           </button>
-          <button 
-            onClick={() => setActiveTab("condition")} 
-            className={`px-4 py-2 text-sm font-medium ${activeTab === "condition" ? 
-              "text-blue-600 border-b-2 border-blue-600" : 
+          <button
+            onClick={() => setActiveTab("condition")}
+            className={`px-4 py-2 text-sm font-medium ${activeTab === "condition" ?
+              "text-blue-600 border-b-2 border-blue-600" :
               "text-gray-500 hover:text-gray-700 hover:border-gray-300"}`}
           >
             Vehicle Condition
@@ -332,12 +292,12 @@ export default function DetailedSearchPage() {
                 <div className="col-span-1">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Brand</label>
                   <div className="relative">
-                    <select 
-                      value={brand} 
+                    <select
+                      value={brand}
                       onChange={(e) => {
                         setBrand(e.target.value);
                         setModel("");
-                      }} 
+                      }}
                       className={`block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500 ${isLoadingBrands ? 'opacity-50' : ''}`}
                       disabled={isLoadingBrands}
                     >
@@ -345,7 +305,7 @@ export default function DetailedSearchPage() {
                       {isLoadingBrands ? (
                         <option value="" disabled>Loading brands...</option>
                       ) : (
-                        availableBrands.map((b) => (
+                        brands.map((b) => (
                           <option key={b} value={b}>{b}</option>
                         ))
                       )}
@@ -362,9 +322,9 @@ export default function DetailedSearchPage() {
                 <div className="col-span-1">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Model</label>
                   <div className="relative">
-                    <select 
-                      value={model} 
-                      onChange={(e) => setModel(e.target.value)} 
+                    <select
+                      value={model}
+                      onChange={(e) => setModel(e.target.value)}
                       className={`block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500 ${isLoadingModels || !brand ? 'opacity-50' : ''}`}
                       disabled={isLoadingModels || !brand}
                     >
@@ -372,7 +332,7 @@ export default function DetailedSearchPage() {
                       {isLoadingModels ? (
                         <option value="" disabled>Loading models...</option>
                       ) : (
-                        availableModels.map((m) => (
+                        models.map((m) => (
                           <option key={m} value={m}>{m}</option>
                         ))
                       )}
@@ -388,9 +348,9 @@ export default function DetailedSearchPage() {
                 {/* Fuel Type */}
                 <div className="col-span-1">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Fuel Type</label>
-                  <select 
-                    value={fuelType} 
-                    onChange={(e) => setFuelType(e.target.value)} 
+                  <select
+                    value={fuelType}
+                    onChange={(e) => setFuelType(e.target.value)}
                     className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                   >
                     <option value="">All Fuel Types</option>
@@ -403,9 +363,9 @@ export default function DetailedSearchPage() {
                 {/* Vehicle Status */}
                 <div className="col-span-1">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Vehicle Status</label>
-                  <select 
-                    value={isNew} 
-                    onChange={(e) => setIsNew(e.target.value)} 
+                  <select
+                    value={isNew}
+                    onChange={(e) => setIsNew(e.target.value)}
                     className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                   >
                     {isNewOptions.map((opt) => (
@@ -418,9 +378,9 @@ export default function DetailedSearchPage() {
                 <div className="col-span-1 md:col-span-2 lg:col-span-1">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Year Range</label>
                   <div className="grid grid-cols-2 gap-2">
-                    <select 
-                      value={yearMin} 
-                      onChange={(e) => setYearMin(e.target.value)} 
+                    <select
+                      value={yearMin}
+                      onChange={(e) => setYearMin(e.target.value)}
                       className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                     >
                       <option value="">From</option>
@@ -428,9 +388,9 @@ export default function DetailedSearchPage() {
                         <option key={`min-${year}`} value={year}>{year}</option>
                       ))}
                     </select>
-                    <select 
-                      value={yearMax} 
-                      onChange={(e) => setYearMax(e.target.value)} 
+                    <select
+                      value={yearMax}
+                      onChange={(e) => setYearMax(e.target.value)}
                       className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                     >
                       <option value="">To</option>
@@ -445,9 +405,9 @@ export default function DetailedSearchPage() {
                 <div className="col-span-1 md:col-span-2 lg:col-span-1">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Price Range (€)</label>
                   <div className="grid grid-cols-2 gap-2">
-                    <select 
-                      value={priceMin} 
-                      onChange={(e) => setPriceMin(e.target.value)} 
+                    <select
+                      value={priceMin}
+                      onChange={(e) => setPriceMin(e.target.value)}
                       className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                     >
                       <option value="">From</option>
@@ -455,9 +415,9 @@ export default function DetailedSearchPage() {
                         <option key={`min-${price}`} value={price}>{Number(price).toLocaleString()}</option>
                       ))}
                     </select>
-                    <select 
-                      value={priceMax} 
-                      onChange={(e) => setPriceMax(e.target.value)} 
+                    <select
+                      value={priceMax}
+                      onChange={(e) => setPriceMax(e.target.value)}
                       className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                     >
                       <option value="">To</option>
@@ -472,9 +432,9 @@ export default function DetailedSearchPage() {
                 <div className="col-span-1 md:col-span-2 lg:col-span-1">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Mileage Range (km)</label>
                   <div className="grid grid-cols-2 gap-2">
-                    <select 
-                      value={mileageMin} 
-                      onChange={(e) => setMileageMin(e.target.value)} 
+                    <select
+                      value={mileageMin}
+                      onChange={(e) => setMileageMin(e.target.value)}
                       className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                     >
                       <option value="">From</option>
@@ -482,9 +442,9 @@ export default function DetailedSearchPage() {
                         <option key={`min-${km}`} value={km}>{Number(km).toLocaleString()}</option>
                       ))}
                     </select>
-                    <select 
-                      value={mileageMax} 
-                      onChange={(e) => setMileageMax(e.target.value)} 
+                    <select
+                      value={mileageMax}
+                      onChange={(e) => setMileageMax(e.target.value)}
                       className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                     >
                       <option value="">To</option>
@@ -499,9 +459,9 @@ export default function DetailedSearchPage() {
                 <div className="col-span-1 md:col-span-2 lg:col-span-1">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Engine Power (HP)</label>
                   <div className="grid grid-cols-2 gap-2">
-                    <select 
-                      value={enginePowerMin} 
-                      onChange={(e) => setEnginePowerMin(e.target.value)} 
+                    <select
+                      value={enginePowerMin}
+                      onChange={(e) => setEnginePowerMin(e.target.value)}
                       className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                     >
                       <option value="">From</option>
@@ -509,9 +469,9 @@ export default function DetailedSearchPage() {
                         <option key={`min-${hp}`} value={hp}>{Number(hp).toLocaleString()}</option>
                       ))}
                     </select>
-                    <select 
-                      value={enginePowerMax} 
-                      onChange={(e) => setEnginePowerMax(e.target.value)} 
+                    <select
+                      value={enginePowerMax}
+                      onChange={(e) => setEnginePowerMax(e.target.value)}
                       className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                     >
                       <option value="">To</option>
@@ -526,9 +486,9 @@ export default function DetailedSearchPage() {
                 <div className="col-span-1 md:col-span-2 lg:col-span-1">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Engine Capacity (cc)</label>
                   <div className="grid grid-cols-2 gap-2">
-                    <select 
-                      value={engineCapacityMin} 
-                      onChange={(e) => setEngineCapacityMin(e.target.value)} 
+                    <select
+                      value={engineCapacityMin}
+                      onChange={(e) => setEngineCapacityMin(e.target.value)}
                       className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                     >
                       <option value="">From</option>
@@ -536,9 +496,9 @@ export default function DetailedSearchPage() {
                         <option key={`min-${cc}`} value={cc}>{Number(cc).toLocaleString()}</option>
                       ))}
                     </select>
-                    <select 
-                      value={engineCapacityMax} 
-                      onChange={(e) => setEngineCapacityMax(e.target.value)} 
+                    <select
+                      value={engineCapacityMax}
+                      onChange={(e) => setEngineCapacityMax(e.target.value)}
                       className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                     >
                       <option value="">To</option>
@@ -552,9 +512,9 @@ export default function DetailedSearchPage() {
                 {/* Seller Type */}
                 <div className="col-span-1">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Seller Type</label>
-                  <select 
-                    value={sellerType} 
-                    onChange={(e) => setSellerType(e.target.value)} 
+                  <select
+                    value={sellerType}
+                    onChange={(e) => setSellerType(e.target.value)}
                     className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                   >
                     <option value="">All Sellers</option>
@@ -567,9 +527,9 @@ export default function DetailedSearchPage() {
                 {/* Deal Rating */}
                 <div className="col-span-1">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Deal Rating</label>
-                  <select 
-                    value={dealRating} 
-                    onChange={(e) => setDealRating(e.target.value)} 
+                  <select
+                    value={dealRating}
+                    onChange={(e) => setDealRating(e.target.value)}
                     className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                   >
                     <option value="">Any Deal</option>
@@ -587,9 +547,9 @@ export default function DetailedSearchPage() {
                 {/* Body Type */}
                 <div className="col-span-1">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Body Type</label>
-                  <select 
-                    value={driveType} 
-                    onChange={(e) => setDriveType(e.target.value)} 
+                  <select
+                    value={driveType}
+                    onChange={(e) => setDriveType(e.target.value)}
                     className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                   >
                     <option value="">All Body Types</option>
@@ -602,9 +562,9 @@ export default function DetailedSearchPage() {
                 {/* Transmission */}
                 <div className="col-span-1">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Transmission</label>
-                  <select 
-                    value={transmission} 
-                    onChange={(e) => setTransmission(e.target.value)} 
+                  <select
+                    value={transmission}
+                    onChange={(e) => setTransmission(e.target.value)}
                     className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                   >
                     <option value="">All Transmissions</option>
@@ -617,9 +577,9 @@ export default function DetailedSearchPage() {
                 {/* Color */}
                 <div className="col-span-1">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Color</label>
-                  <select 
-                    value={color} 
-                    onChange={(e) => setColor(e.target.value)} 
+                  <select
+                    value={color}
+                    onChange={(e) => setColor(e.target.value)}
                     className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                   >
                     <option value="">All Colors</option>
@@ -632,9 +592,9 @@ export default function DetailedSearchPage() {
                 {/* Doors */}
                 <div className="col-span-1">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Number of Doors</label>
-                  <select 
-                    value={doors} 
-                    onChange={(e) => setDoors(e.target.value)} 
+                  <select
+                    value={doors}
+                    onChange={(e) => setDoors(e.target.value)}
                     className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                   >
                     <option value="">Any</option>
@@ -647,9 +607,9 @@ export default function DetailedSearchPage() {
                 {/* Emission Standard */}
                 <div className="col-span-1">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Emission Standard</label>
-                  <select 
-                    value={emissionStandard} 
-                    onChange={(e) => setEmissionStandard(e.target.value)} 
+                  <select
+                    value={emissionStandard}
+                    onChange={(e) => setEmissionStandard(e.target.value)}
                     className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                   >
                     <option value="">All Standards</option>
@@ -662,9 +622,9 @@ export default function DetailedSearchPage() {
                 {/* Country of Origin */}
                 <div className="col-span-1">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Country of Origin</label>
-                  <select 
-                    value={originCountry} 
-                    onChange={(e) => setOriginCountry(e.target.value)} 
+                  <select
+                    value={originCountry}
+                    onChange={(e) => setOriginCountry(e.target.value)}
                     className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                   >
                     <option value="">All Countries</option>
@@ -678,9 +638,9 @@ export default function DetailedSearchPage() {
                 <div className="col-span-1 lg:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Quality Score Range</label>
                   <div className="grid grid-cols-2 gap-2">
-                    <select 
-                      value={qualityScoreMin} 
-                      onChange={(e) => setQualityScoreMin(e.target.value)} 
+                    <select
+                      value={qualityScoreMin}
+                      onChange={(e) => setQualityScoreMin(e.target.value)}
                       className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                     >
                       <option value="">Minimum</option>
@@ -688,9 +648,9 @@ export default function DetailedSearchPage() {
                         <option key={`min-${score}`} value={score}>{score}</option>
                       ))}
                     </select>
-                    <select 
-                      value={qualityScoreMax} 
-                      onChange={(e) => setQualityScoreMax(e.target.value)} 
+                    <select
+                      value={qualityScoreMax}
+                      onChange={(e) => setQualityScoreMax(e.target.value)}
                       className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                     >
                       <option value="">Maximum</option>
@@ -709,9 +669,9 @@ export default function DetailedSearchPage() {
                 {/* Right Hand Drive */}
                 <div className="col-span-1">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Right Hand Drive</label>
-                  <select 
-                    value={rightHandDrive} 
-                    onChange={(e) => setRightHandDrive(e.target.value)} 
+                  <select
+                    value={rightHandDrive}
+                    onChange={(e) => setRightHandDrive(e.target.value)}
                     className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                   >
                     {booleanOptions.map((opt) => (
@@ -723,9 +683,9 @@ export default function DetailedSearchPage() {
                 {/* Damaged */}
                 <div className="col-span-1">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Damaged</label>
-                  <select 
-                    value={damaged} 
-                    onChange={(e) => setDamaged(e.target.value)} 
+                  <select
+                    value={damaged}
+                    onChange={(e) => setDamaged(e.target.value)}
                     className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                   >
                     {booleanOptions.map((opt) => (
@@ -737,9 +697,9 @@ export default function DetailedSearchPage() {
                 {/* First Owner */}
                 <div className="col-span-1">
                   <label className="block text-sm font-medium text-gray-700 mb-1">First Owner</label>
-                  <select 
-                    value={firstOwner} 
-                    onChange={(e) => setFirstOwner(e.target.value)} 
+                  <select
+                    value={firstOwner}
+                    onChange={(e) => setFirstOwner(e.target.value)}
                     className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                   >
                     {booleanOptions.map((opt) => (
@@ -751,9 +711,9 @@ export default function DetailedSearchPage() {
                 {/* No Accident */}
                 <div className="col-span-1">
                   <label className="block text-sm font-medium text-gray-700 mb-1">No Accident History</label>
-                  <select 
-                    value={noAccident} 
-                    onChange={(e) => setNoAccident(e.target.value)} 
+                  <select
+                    value={noAccident}
+                    onChange={(e) => setNoAccident(e.target.value)}
                     className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                   >
                     {booleanOptions.map((opt) => (
@@ -765,9 +725,9 @@ export default function DetailedSearchPage() {
                 {/* Service Book */}
                 <div className="col-span-1">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Service Book</label>
-                  <select 
-                    value={serviceBook} 
-                    onChange={(e) => setServiceBook(e.target.value)} 
+                  <select
+                    value={serviceBook}
+                    onChange={(e) => setServiceBook(e.target.value)}
                     className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                   >
                     {booleanOptions.map((opt) => (
@@ -779,9 +739,9 @@ export default function DetailedSearchPage() {
                 {/* Registered */}
                 <div className="col-span-1">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Registered</label>
-                  <select 
-                    value={registered} 
-                    onChange={(e) => setRegistered(e.target.value)} 
+                  <select
+                    value={registered}
+                    onChange={(e) => setRegistered(e.target.value)}
                     className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                   >
                     {booleanOptions.map((opt) => (
@@ -798,18 +758,18 @@ export default function DetailedSearchPage() {
                 {isLoadingCount ? (
                   <div className="flex items-center">
                     <svg className="animate-spin h-5 w-5 mr-2 text-blue-600" viewBox="0 0 24 24">
-                      <circle 
-                        className="opacity-25" 
-                        cx="12" 
-                        cy="12" 
-                        r="10" 
-                        stroke="currentColor" 
+                      <circle
+                        className="opacity-25"
+                        cx="12"
+                        cy="12"
+                        r="10"
+                        stroke="currentColor"
                         strokeWidth="4"
                         fill="none"
                       />
-                      <path 
-                        className="opacity-75" 
-                        fill="currentColor" 
+                      <path
+                        className="opacity-75"
+                        fill="currentColor"
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                       />
                     </svg>
@@ -836,7 +796,7 @@ export default function DetailedSearchPage() {
                   Show Results
                 </span>
               </button>
-              
+
               <button
                 type="button"
                 onClick={() => setIsSaveDialogOpen(true)}
@@ -850,7 +810,7 @@ export default function DetailedSearchPage() {
                   Save Search
                 </span>
               </button>
-              
+
               <button
                 type="button"
                 onClick={clearFilters}
@@ -872,12 +832,12 @@ export default function DetailedSearchPage() {
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-8 max-w-md w-full">
               <h3 className="text-lg font-bold mb-4">Save Your Search</h3>
-              
+
               {!isLoggedIn ? (
                 <div>
                   <p className="mb-4">Please log in to save your search criteria.</p>
                   <div className="flex justify-end gap-2">
-                    <button 
+                    <button
                       onClick={() => setIsSaveDialogOpen(false)}
                       className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md"
                     >
@@ -894,9 +854,9 @@ export default function DetailedSearchPage() {
               ) : (
                 <>
                   <p className="mb-4">Save your current search criteria to easily access it later.</p>
-                  
+
                   <div className="flex justify-end gap-2 mt-6">
-                    <button 
+                    <button
                       onClick={() => setIsSaveDialogOpen(false)}
                       className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md"
                     >

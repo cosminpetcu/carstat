@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { CarCard, type CarData } from "@/components/ui/CarCard";
+import { useBrandsModels } from '@/hooks/useBrandsModels';
 
 type EstimationCarData = {
     brand: string;
@@ -86,9 +87,7 @@ export default function CleanEstimationPage() {
         transmission: "",
         engine_capacity: 0,
     });
-
-    const [brands, setBrands] = useState<string[]>([]);
-    const [models, setModels] = useState<string[]>([]);
+    const { brands, models, isLoadingBrands, isLoadingModels, fetchModels } = useBrandsModels();
     const [modelSpecs, setModelSpecs] = useState<ModelSpecs | null>(null);
     const [estimationResult, setEstimationResult] = useState<EstimationResult | null>(null);
     const [loading, setLoading] = useState(false);
@@ -339,22 +338,13 @@ export default function CleanEstimationPage() {
 
     const loadHistoryParameters = async (historyCarData: EstimationCarData) => {
         try {
+            // Set brand first
             setCarData(prev => ({ ...prev, brand: historyCarData.brand }));
 
-            const modelsResponse = await fetch(`http://localhost:8000/estimation/models/${historyCarData.brand}`);
-            if (modelsResponse.ok) {
-                const modelsData = await modelsResponse.json();
-                setModels(modelsData);
+            // Fetch models for the brand
+            await fetchModels(historyCarData.brand);
 
-                if (modelsData.includes(historyCarData.model)) {
-                    const specsResponse = await fetch(`http://localhost:8000/estimation/specs/${historyCarData.brand}/${historyCarData.model}`);
-                    if (specsResponse.ok) {
-                        const specsData = await specsResponse.json();
-                        setModelSpecs(specsData);
-                    }
-                }
-            }
-
+            // Then set all the data including model
             setCarData(historyCarData);
             setEstimationResult(null);
             setSelectedHistoryItem(null);
@@ -367,23 +357,11 @@ export default function CleanEstimationPage() {
     };
 
     useEffect(() => {
-        fetch("http://localhost:8000/estimation/brands")
-            .then((res) => res.json())
-            .then((data) => setBrands(data))
-            .catch((err) => console.error("Error fetching brands:", err));
-    }, []);
-
-    useEffect(() => {
         if (carData.brand) {
-            fetch(`http://localhost:8000/estimation/models/${carData.brand}`)
-                .then((res) => res.json())
-                .then((data) => {
-                    setModels(data);
-                    setCarData(prev => ({ ...prev, model: "" }));
-                })
-                .catch((err) => console.error("Error fetching models:", err));
+            fetchModels(carData.brand);
+            setCarData(prev => ({ ...prev, model: "" }));
         }
-    }, [carData.brand]);
+    }, [carData.brand, fetchModels]);
 
     useEffect(() => {
         if (carData.brand && carData.model) {
@@ -538,16 +516,26 @@ export default function CleanEstimationPage() {
                                                 </label>
                                                 <select
                                                     value={carData.brand}
-                                                    onChange={(e) => handleInputChange("brand", e.target.value)}
-                                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                    onChange={(e) => {
+                                                        const newBrand = e.target.value;
+                                                        setCarData(prev => ({
+                                                            ...prev,
+                                                            brand: newBrand,
+                                                            model: ""
+                                                        }));
+                                                    }}
+                                                    className={`block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:border-blue-500 ${isLoadingBrands ? 'opacity-50' : ''}`}
+                                                    disabled={isLoadingBrands}
                                                     required
                                                 >
                                                     <option value="">Select Brand</option>
-                                                    {brands.map((brand) => (
-                                                        <option key={brand} value={brand}>
-                                                            {brand}
-                                                        </option>
-                                                    ))}
+                                                    {isLoadingBrands ? (
+                                                        <option value="" disabled>Loading brands...</option>
+                                                    ) : (
+                                                        brands.map((brand) => (
+                                                            <option key={brand} value={brand}>{brand}</option>
+                                                        ))
+                                                    )}
                                                 </select>
                                             </div>
 
@@ -557,17 +545,19 @@ export default function CleanEstimationPage() {
                                                 </label>
                                                 <select
                                                     value={carData.model}
-                                                    onChange={(e) => handleInputChange("model", e.target.value)}
-                                                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                    onChange={(e) => setCarData(prev => ({ ...prev, model: e.target.value }))}
+                                                    className={`block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:border-blue-500 ${isLoadingModels || !carData.brand ? 'opacity-50' : ''}`}
+                                                    disabled={isLoadingModels || !carData.brand}
                                                     required
-                                                    disabled={!carData.brand}
                                                 >
                                                     <option value="">Select Model</option>
-                                                    {models.map((model) => (
-                                                        <option key={model} value={model}>
-                                                            {model}
-                                                        </option>
-                                                    ))}
+                                                    {isLoadingModels ? (
+                                                        <option value="" disabled>Loading models...</option>
+                                                    ) : (
+                                                        models.map((model) => (
+                                                            <option key={model} value={model}>{model}</option>
+                                                        ))
+                                                    )}
                                                 </select>
                                             </div>
                                         </div>

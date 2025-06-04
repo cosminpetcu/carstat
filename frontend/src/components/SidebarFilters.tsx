@@ -3,19 +3,16 @@
 import { useSearchParams, useRouter } from "next/navigation";
 import { PendingActionsManager, getCurrentUrlForReturn } from '@/utils/pendingActions';
 import { useEffect, useState } from "react";
-import { 
-  CarIcon, 
-  FuelIcon, 
-  CalendarIcon, 
-  GaugeIcon,
+import {
+  CarIcon,
+  FuelIcon,
   TransmissionIcon,
-  EngineIcon, 
-  TireIcon, 
-  BatteryIcon, 
-  SpeedometerIcon,
+  EngineIcon,
+  BatteryIcon,
   ParkingIcon,
   GPSIcon
 } from "@/components/Icons";
+import { useBrandsModels } from '@/hooks/useBrandsModels';
 
 const vehicleConditionMap = {
   "New": "New",
@@ -115,15 +112,12 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
     }));
   };
 
-  const [availableBrands, setAvailableBrands] = useState<string[]>([]);
-  const [availableModels, setAvailableModels] = useState<string[]>([]);
-  const [isLoadingBrands, setIsLoadingBrands] = useState(true);
-  const [isLoadingModels, setIsLoadingModels] = useState(false);
+  const { brands, models, isLoadingBrands, isLoadingModels, fetchModels, clearModels } = useBrandsModels();
 
   useEffect(() => {
     const params = new URLSearchParams(searchParams.toString());
     const newFilters = { ...filters };
-    
+
     Object.keys(newFilters).forEach((key) => {
       const paramValue = params.get(key);
       if (paramValue !== null) {
@@ -132,7 +126,7 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
         newFilters[key as keyof typeof filters] = "";
       }
     });
-    
+
     setFilters(newFilters);
 
     const searchParam = params.get("search");
@@ -146,9 +140,9 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
     if (!token || !userRaw) {
       const currentUrl = getCurrentUrlForReturn();
       const query = searchParams.toString();
-      
+
       PendingActionsManager.saveSearchAction(query, currentUrl);
-      
+
       window.location.href = '/login';
       return;
     }
@@ -159,10 +153,10 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
       if (!user.id) throw new Error("Invalid user object");
     } catch (err) {
       console.error("User object invalid:", err);
-      
+
       const currentUrl = getCurrentUrlForReturn();
       const query = searchParams.toString();
-      
+
       PendingActionsManager.saveSearchAction(query, currentUrl);
       window.location.href = '/login';
       return;
@@ -198,44 +192,44 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
   const updateFilter = (key: string, value: string) => {
     const updatedFilters = { ...filters, [key]: value };
     setFilters(updatedFilters);
-    
+
     const params = new URLSearchParams();
-    
+
     const currentSearchParam = searchParams.get("search");
     if (currentSearchParam) {
       params.set("search", currentSearchParam);
     }
-    
+
     Object.entries(updatedFilters).forEach(([key, value]) => {
       if (value) {
         params.set(key, value);
       }
     });
-    
+
     params.set("page", "1");
-    
+
     router.push(`/listings?${params.toString()}`);
   };
 
   const updateMultipleFilters = (updates: Record<string, string>) => {
     const updatedFilters = { ...filters, ...updates };
     setFilters(updatedFilters);
-    
+
     const params = new URLSearchParams();
-    
+
     const currentSearchParam = searchParams.get("search");
     if (currentSearchParam) {
       params.set("search", currentSearchParam);
     }
-    
+
     Object.entries(updatedFilters).forEach(([key, value]) => {
       if (value) {
         params.set(key, value);
       }
     });
-    
+
     params.set("page", "1");
-    
+
     router.push(`/listings?${params.toString()}`);
   };
 
@@ -275,59 +269,12 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
   };
 
   useEffect(() => {
-    const fetchBrands = async () => {
-      setIsLoadingBrands(true);
-      try {
-        const response = await fetch('http://localhost:8000/analytics/available-brands');
-        if (response.ok) {
-          const brands = await response.json();
-          setAvailableBrands(brands);
-        } else {
-          console.error('Failed to fetch brands');
-          setToastMessage('Failed to load brands from server');
-          setToastType('error');
-        }
-      } catch (error) {
-        console.error('Error fetching brands:', error);
-        setToastMessage('Error connecting to server');
-        setToastType('error');
-      } finally {
-        setIsLoadingBrands(false);
-      }
-    };
-
-    fetchBrands();
-  }, []);
-
-  useEffect(() => {
-    if (!filters.brand) {
-      setAvailableModels([]);
-      return;
+    if (filters.brand) {
+      fetchModels(filters.brand);
+    } else {
+      clearModels();
     }
-
-    const fetchModels = async () => {
-      setIsLoadingModels(true);
-      try {
-        const response = await fetch(`http://localhost:8000/analytics/available-models/${filters.brand}`);
-        if (response.ok) {
-          const models = await response.json();
-          setAvailableModels(models);
-        } else {
-          console.error('Failed to fetch models');
-          setToastMessage('Failed to load models from server');
-          setToastType('error');
-        }
-      } catch (error) {
-        console.error('Error fetching models:', error);
-        setToastMessage('Error connecting to server');
-        setToastType('error');
-      } finally {
-        setIsLoadingModels(false);
-      }
-    };
-
-    fetchModels();
-  }, [filters.brand]);
+  }, [filters.brand, fetchModels, clearModels]);
 
   return (
     <aside className="bg-gradient-to-b from-gray-900 to-gray-800 text-white p-5 rounded-xl w-full max-w-[320px] shadow-xl">
@@ -336,7 +283,7 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
           <GPSIcon className="w-6 h-6 mr-2" />
           Filters
         </h2>
-        <button 
+        <button
           onClick={clearAllFilters}
           className="text-xs text-gray-400 hover:text-white underline"
         >
@@ -382,7 +329,7 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
 
       <div className="space-y-6">
         <div className="border-b border-gray-700 pb-4">
-          <button 
+          <button
             className="flex justify-between items-center w-full text-left mb-3 font-semibold text-lg"
             onClick={() => toggleSection('basic')}
           >
@@ -392,14 +339,14 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
             </span>
             <span>{isCollapsed.basic ? '▼' : '▲'}</span>
           </button>
-          
+
           {!isCollapsed.basic && (
             <div className="space-y-3 pl-2">
               <div className="mb-3">
                 <label className="block text-xs text-gray-400 mb-1">Brand</label>
                 <div className="relative">
-                  <select 
-                    value={filters.brand} 
+                  <select
+                    value={filters.brand}
                     onChange={(e) => {
                       if (e.target.value !== filters.brand) {
                         updateMultipleFilters({
@@ -417,7 +364,7 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
                     {isLoadingBrands ? (
                       <option value="" disabled>Loading brands...</option>
                     ) : (
-                      availableBrands.map((brand) => (
+                      brands.map((brand) => (
                         <option key={brand} value={brand}>{brand}</option>
                       ))
                     )}
@@ -436,9 +383,9 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
               <div className="mb-3">
                 <label className="block text-xs text-gray-400 mb-1">Model</label>
                 <div className="relative">
-                  <select 
-                    value={filters.model} 
-                    onChange={(e) => updateFilter("model", e.target.value)} 
+                  <select
+                    value={filters.model}
+                    onChange={(e) => updateFilter("model", e.target.value)}
                     className={`w-full rounded-lg p-2.5 pl-10 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none ${isLoadingModels || !filters.brand ? 'opacity-50' : ''}`}
                     disabled={isLoadingModels || !filters.brand}
                   >
@@ -446,7 +393,7 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
                     {isLoadingModels ? (
                       <option value="" disabled>Loading models...</option>
                     ) : (
-                      availableModels.map((model) => (
+                      models.map((model) => (
                         <option key={model} value={model}>{model}</option>
                       ))
                     )}
@@ -461,13 +408,13 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
                   )}
                 </div>
               </div>
-              
+
               <div className="mb-3">
                 <label className="block text-xs text-gray-400 mb-1">Vehicle Condition</label>
                 <div className="relative">
-                  <select 
-                    value={filters.vehicle_condition} 
-                    onChange={(e) => updateFilter("vehicle_condition", e.target.value)} 
+                  <select
+                    value={filters.vehicle_condition}
+                    onChange={(e) => updateFilter("vehicle_condition", e.target.value)}
                     className="w-full rounded-lg p-2.5 pl-10 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none"
                   >
                     <option value="">All Conditions</option>
@@ -486,9 +433,9 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
               <div className="mb-3">
                 <label className="block text-xs text-gray-400 mb-1">Fuel Type</label>
                 <div className="relative">
-                  <select 
-                    value={filters.fuel_type} 
-                    onChange={(e) => updateFilter("fuel_type", e.target.value)} 
+                  <select
+                    value={filters.fuel_type}
+                    onChange={(e) => updateFilter("fuel_type", e.target.value)}
                     className="w-full rounded-lg p-2.5 pl-10 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none"
                   >
                     <option value="">All Fuel Types</option>
@@ -505,9 +452,9 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
               <div className="mb-3">
                 <label className="block text-xs text-gray-400 mb-1">Transmission</label>
                 <div className="relative">
-                  <select 
-                    value={filters.transmission} 
-                    onChange={(e) => updateFilter("transmission", e.target.value)} 
+                  <select
+                    value={filters.transmission}
+                    onChange={(e) => updateFilter("transmission", e.target.value)}
                     className="w-full rounded-lg p-2.5 pl-10 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none"
                   >
                     <option value="">All Transmissions</option>
@@ -525,7 +472,7 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
         </div>
 
         <div className="border-b border-gray-700 pb-4">
-          <button 
+          <button
             className="flex justify-between items-center w-full text-left mb-3 font-semibold text-lg"
             onClick={() => toggleSection('availability')}
           >
@@ -538,15 +485,15 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
             </span>
             <span>{isCollapsed.availability ? '▼' : '▲'}</span>
           </button>
-          
+
           {!isCollapsed.availability && (
             <div className="space-y-3 pl-2">
               <div className="mb-3">
                 <label className="block text-xs text-gray-400 mb-1">Seller Type</label>
                 <div className="relative">
-                  <select 
-                    value={filters.seller_type} 
-                    onChange={(e) => updateFilter("seller_type", e.target.value)} 
+                  <select
+                    value={filters.seller_type}
+                    onChange={(e) => updateFilter("seller_type", e.target.value)}
                     className="w-full rounded-lg p-2.5 pl-10 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none"
                   >
                     <option value="">All Seller Types</option>
@@ -563,9 +510,9 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
               <div className="mb-3">
                 <label className="block text-xs text-gray-400 mb-1">Availability</label>
                 <div className="relative">
-                  <select 
-                    value={filters.sold} 
-                    onChange={(e) => updateFilter("sold", e.target.value)} 
+                  <select
+                    value={filters.sold}
+                    onChange={(e) => updateFilter("sold", e.target.value)}
                     className="w-full rounded-lg p-2.5 pl-10 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none"
                   >
                     <option value="">All Cars</option>
@@ -583,9 +530,9 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
               <div className="mb-3">
                 <label className="block text-xs text-gray-400 mb-1">Deal Rating</label>
                 <div className="relative">
-                  <select 
-                    value={filters.deal_rating} 
-                    onChange={(e) => updateFilter("deal_rating", e.target.value)} 
+                  <select
+                    value={filters.deal_rating}
+                    onChange={(e) => updateFilter("deal_rating", e.target.value)}
                     className="w-full rounded-lg p-2.5 pl-10 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none"
                   >
                     {dealRatings.map((rating) => (
@@ -605,7 +552,7 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
               <div className="mb-3">
                 <label className="block text-xs text-gray-400 mb-1">Quality Score</label>
                 <div className="relative">
-                  <select 
+                  <select
                     value={qualityScoreRanges.find(
                       range => range.min === filters.quality_score_min && range.max === filters.quality_score_max
                     )?.value || "any"}
@@ -617,7 +564,7 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
                           quality_score_max: selectedRange.max
                         });
                       }
-                    }} 
+                    }}
                     className="w-full rounded-lg p-2.5 pl-10 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none"
                   >
                     {qualityScoreRanges.map((range) => (
@@ -636,7 +583,7 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
         </div>
 
         <div className="border-b border-gray-700 pb-4">
-          <button 
+          <button
             className="flex justify-between items-center w-full text-left mb-3 font-semibold text-lg"
             onClick={() => toggleSection('vehicle')}
           >
@@ -651,15 +598,15 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
             </span>
             <span>{isCollapsed.vehicle ? '▼' : '▲'}</span>
           </button>
-          
+
           {!isCollapsed.vehicle && (
             <div className="space-y-3 pl-2">
               <div className="mb-3">
                 <label className="block text-xs text-gray-400 mb-1">Body Type</label>
                 <div className="relative">
-                  <select 
-                    value={filters.drive_type} 
-                    onChange={(e) => updateFilter("drive_type", e.target.value)} 
+                  <select
+                    value={filters.drive_type}
+                    onChange={(e) => updateFilter("drive_type", e.target.value)}
                     className="w-full rounded-lg p-2.5 pl-10 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none"
                   >
                     <option value="">All Body Types</option>
@@ -676,9 +623,9 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
               <div className="mb-3">
                 <label className="block text-xs text-gray-400 mb-1">Doors</label>
                 <div className="relative">
-                  <select 
-                    value={filters.doors} 
-                    onChange={(e) => updateFilter("doors", e.target.value)} 
+                  <select
+                    value={filters.doors}
+                    onChange={(e) => updateFilter("doors", e.target.value)}
                     className="w-full rounded-lg p-2.5 pl-10 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none"
                   >
                     <option value="">Any Number</option>
@@ -699,9 +646,9 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
               <div className="mb-3">
                 <label className="block text-xs text-gray-400 mb-1">Color</label>
                 <div className="relative">
-                  <select 
-                    value={filters.color} 
-                    onChange={(e) => updateFilter("color", e.target.value)} 
+                  <select
+                    value={filters.color}
+                    onChange={(e) => updateFilter("color", e.target.value)}
                     className="w-full rounded-lg p-2.5 pl-10 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none"
                   >
                     <option value="">Any Color</option>
@@ -722,9 +669,9 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
                 <label className="block text-xs text-gray-400 mb-1">Year Range</label>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="relative">
-                    <select 
-                      value={filters.year_min} 
-                      onChange={(e) => updateFilter("year_min", e.target.value)} 
+                    <select
+                      value={filters.year_min}
+                      onChange={(e) => updateFilter("year_min", e.target.value)}
                       className="w-full rounded-lg p-2.5 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none text-sm"
                     >
                       <option value="">From</option>
@@ -734,9 +681,9 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
                     </select>
                   </div>
                   <div className="relative">
-                    <select 
-                      value={filters.year_max} 
-                      onChange={(e) => updateFilter("year_max", e.target.value)} 
+                    <select
+                      value={filters.year_max}
+                      onChange={(e) => updateFilter("year_max", e.target.value)}
                       className="w-full rounded-lg p-2.5 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none text-sm"
                     >
                       <option value="">To</option>
@@ -752,9 +699,9 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
                 <label className="block text-xs text-gray-400 mb-1">Mileage Range (km)</label>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="relative">
-                    <select 
-                      value={filters.mileage_min} 
-                      onChange={(e) => updateFilter("mileage_min", e.target.value)} 
+                    <select
+                      value={filters.mileage_min}
+                      onChange={(e) => updateFilter("mileage_min", e.target.value)}
                       className="w-full rounded-lg p-2.5 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none text-sm"
                     >
                       <option value="">From</option>
@@ -764,9 +711,9 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
                     </select>
                   </div>
                   <div className="relative">
-                    <select 
-                      value={filters.mileage_max} 
-                      onChange={(e) => updateFilter("mileage_max", e.target.value)} 
+                    <select
+                      value={filters.mileage_max}
+                      onChange={(e) => updateFilter("mileage_max", e.target.value)}
                       className="w-full rounded-lg p-2.5 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none text-sm"
                     >
                       <option value="">To</option>
@@ -782,7 +729,7 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
         </div>
 
         <div className="border-b border-gray-700 pb-4">
-          <button 
+          <button
             className="flex justify-between items-center w-full text-left mb-3 font-semibold text-lg"
             onClick={() => toggleSection('engine')}
           >
@@ -792,16 +739,16 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
             </span>
             <span>{isCollapsed.engine ? '▼' : '▲'}</span>
           </button>
-          
+
           {!isCollapsed.engine && (
             <div className="space-y-3 pl-2">
               <div className="mb-3">
                 <label className="block text-xs text-gray-400 mb-1">Engine Power (hp)</label>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="relative">
-                    <select 
-                      value={filters.engine_power_min} 
-                      onChange={(e) => updateFilter("engine_power_min", e.target.value)} 
+                    <select
+                      value={filters.engine_power_min}
+                      onChange={(e) => updateFilter("engine_power_min", e.target.value)}
                       className="w-full rounded-lg p-2.5 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none text-sm"
                     >
                       <option value="">From</option>
@@ -811,9 +758,9 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
                     </select>
                   </div>
                   <div className="relative">
-                    <select 
-                      value={filters.engine_power_max} 
-                      onChange={(e) => updateFilter("engine_power_max", e.target.value)} 
+                    <select
+                      value={filters.engine_power_max}
+                      onChange={(e) => updateFilter("engine_power_max", e.target.value)}
                       className="w-full rounded-lg p-2.5 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none text-sm"
                     >
                       <option value="">To</option>
@@ -829,9 +776,9 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
                 <label className="block text-xs text-gray-400 mb-1">Engine Capacity (cc)</label>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="relative">
-                    <select 
-                      value={filters.engine_capacity_min} 
-                      onChange={(e) => updateFilter("engine_capacity_min", e.target.value)} 
+                    <select
+                      value={filters.engine_capacity_min}
+                      onChange={(e) => updateFilter("engine_capacity_min", e.target.value)}
                       className="w-full rounded-lg p-2.5 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none text-sm"
                     >
                       <option value="">From</option>
@@ -841,9 +788,9 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
                     </select>
                   </div>
                   <div className="relative">
-                    <select 
-                      value={filters.engine_capacity_max} 
-                      onChange={(e) => updateFilter("engine_capacity_max", e.target.value)} 
+                    <select
+                      value={filters.engine_capacity_max}
+                      onChange={(e) => updateFilter("engine_capacity_max", e.target.value)}
                       className="w-full rounded-lg p-2.5 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none text-sm"
                     >
                       <option value="">To</option>
@@ -859,7 +806,7 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
         </div>
 
         <div className="border-b border-gray-700 pb-4">
-          <button 
+          <button
             className="flex justify-between items-center w-full text-left mb-3 font-semibold text-lg"
             onClick={() => toggleSection('pricing')}
           >
@@ -871,16 +818,16 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
             </span>
             <span>{isCollapsed.pricing ? '▼' : '▲'}</span>
           </button>
-          
+
           {!isCollapsed.pricing && (
             <div className="space-y-3 pl-2">
               <div className="mb-3">
                 <label className="block text-xs text-gray-400 mb-1">Price Range (€)</label>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="relative">
-                    <select 
-                      value={filters.min_price} 
-                      onChange={(e) => updateFilter("min_price", e.target.value)} 
+                    <select
+                      value={filters.min_price}
+                      onChange={(e) => updateFilter("min_price", e.target.value)}
                       className="w-full rounded-lg p-2.5 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none text-sm"
                     >
                       <option value="">Min Price</option>
@@ -890,9 +837,9 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
                     </select>
                   </div>
                   <div className="relative">
-                    <select 
-                      value={filters.max_price} 
-                      onChange={(e) => updateFilter("max_price", e.target.value)} 
+                    <select
+                      value={filters.max_price}
+                      onChange={(e) => updateFilter("max_price", e.target.value)}
                       className="w-full rounded-lg p-2.5 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none text-sm"
                     >
                       <option value="">Max Price</option>
@@ -903,7 +850,7 @@ export default function SidebarFilters({ setToastMessage, setToastType }: { setT
                   </div>
                 </div>
               </div>
-              
+
               <div className="mb-3">
                 <label className="block text-xs text-gray-400 mb-1">Quick Ranges</label>
                 <div className="grid grid-cols-2 gap-2">

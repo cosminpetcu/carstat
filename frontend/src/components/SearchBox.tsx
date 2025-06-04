@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useBrandsModels } from '@/hooks/useBrandsModels';
 
 const fuelTypes = ["Petrol", "Diesel", "Electric", "Hybrid", "LPG", "CNG", "Plug-in Hybrid"];
 const vehicleConditions = [
@@ -33,15 +34,11 @@ const SearchBox = () => {
   const [totalCars, setTotalCars] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const [availableBrands, setAvailableBrands] = useState<string[]>([]);
-  const [availableModels, setAvailableModels] = useState<string[]>([]);
-  const [isLoadingBrands, setIsLoadingBrands] = useState(true);
-  const [isLoadingModels, setIsLoadingModels] = useState(false);
+  const { brands, models, isLoadingBrands, isLoadingModels, fetchModels } = useBrandsModels();
 
-  // Debounce effect to prevent too many API calls
   useEffect(() => {
     setIsLoading(true);
-    
+
     const debounceTimer = setTimeout(() => {
       const params = new URLSearchParams();
 
@@ -114,54 +111,19 @@ const SearchBox = () => {
     return total.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   };
 
-  // Fetch available brands when component mounts
   useEffect(() => {
-    const fetchBrands = async () => {
-      setIsLoadingBrands(true);
-      try {
-        const response = await fetch('http://localhost:8000/analytics/available-brands');
-        if (response.ok) {
-          const brands = await response.json();
-          setAvailableBrands(brands);
-        } else {
-          console.error('Failed to fetch brands');
-        }
-      } catch (error) {
-        console.error('Error fetching brands:', error);
-      } finally {
-        setIsLoadingBrands(false);
-      }
-    };
-
-    fetchBrands();
-  }, []);
-
-  // Fetch available models when brand changes
-  useEffect(() => {
-    if (!selectedBrand) {
-      setAvailableModels([]);
-      return;
+    if (selectedBrand) {
+      fetchModels(selectedBrand);
+      setSelectedModel("");
     }
+  }, [selectedBrand, fetchModels]);
 
-    const fetchModels = async () => {
-      setIsLoadingModels(true);
-      try {
-        const response = await fetch(`http://localhost:8000/analytics/available-models/${selectedBrand}`);
-        if (response.ok) {
-          const models = await response.json();
-          setAvailableModels(models);
-        } else {
-          console.error('Failed to fetch models');
-        }
-      } catch (error) {
-        console.error('Error fetching models:', error);
-      } finally {
-        setIsLoadingModels(false);
-      }
-    };
-
-    fetchModels();
-  }, [selectedBrand]);
+  useEffect(() => {
+    if (selectedBrand) {
+      fetchModels(selectedBrand);
+      setSelectedModel("");
+    }
+  }, [selectedBrand, fetchModels]);
 
   return (
     <form onSubmit={handleSearch} className="bg-white bg-opacity-95 backdrop-blur-md p-6 sm:p-8 rounded-3xl shadow-2xl w-full max-w-2xl space-y-5 border border-gray-200">
@@ -178,11 +140,10 @@ const SearchBox = () => {
             key={condition.value}
             type="button"
             onClick={() => setSelectedCondition(condition.value)}
-            className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-              selectedCondition === condition.value
-                ? "bg-blue-600 text-white shadow"
-                : "bg-white text-gray-700 border border-gray-300 hover:border-blue-300 hover:shadow-sm"
-            }`}
+            className={`px-6 py-2 rounded-full text-sm font-medium transition-all duration-200 ${selectedCondition === condition.value
+              ? "bg-blue-600 text-white shadow"
+              : "bg-white text-gray-700 border border-gray-300 hover:border-blue-300 hover:shadow-sm"
+              }`}
           >
             {condition.label}
           </button>
@@ -204,7 +165,7 @@ const SearchBox = () => {
             {isLoadingBrands ? (
               <option value="" disabled>Loading brands...</option>
             ) : (
-              availableBrands.map((brand) => (
+              brands.map((brand) => (
                 <option key={brand} value={brand}>{brand}</option>
               ))
             )}
@@ -229,7 +190,7 @@ const SearchBox = () => {
             {isLoadingModels ? (
               <option value="" disabled>Loading models...</option>
             ) : (
-              availableModels.map((model) => (
+              models.map((model) => (
                 <option key={model} value={model}>{model}</option>
               ))
             )}
@@ -324,18 +285,18 @@ const SearchBox = () => {
           {isLoading ? (
             <div className="inline-flex items-center gap-2">
               <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24">
-                <circle 
-                  className="opacity-25" 
-                  cx="12" 
-                  cy="12" 
-                  r="10" 
-                  stroke="currentColor" 
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
                   strokeWidth="4"
                   fill="none"
                 />
-                <path 
-                  className="opacity-75" 
-                  fill="currentColor" 
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
                   d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                 />
               </svg>
@@ -351,8 +312,8 @@ const SearchBox = () => {
 
       {/* Action buttons */}
       <div className="flex flex-col sm:flex-row gap-2">
-        <button 
-          type="submit" 
+        <button
+          type="submit"
           className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-3 rounded-lg font-semibold hover:from-blue-700 hover:to-blue-800 transition-all shadow"
         >
           <span className="flex items-center justify-center gap-2">
@@ -362,12 +323,12 @@ const SearchBox = () => {
             Search Cars
           </span>
         </button>
-        
+
         <button
           type="button"
           onClick={() => {
             const params = new URLSearchParams();
-            
+
             if (selectedBrand) params.append("brand", selectedBrand);
             if (selectedModel) params.append("model", selectedModel);
             if (selectedFuel) params.append("fuel_type", selectedFuel);
@@ -376,7 +337,7 @@ const SearchBox = () => {
             if (yearFrom) params.append("year_min", yearFrom);
             if (maxMileage) params.append("mileage_max", maxMileage);
             if (maxPrice) params.append("max_price", maxPrice);
-            
+
             const queryString = params.toString();
             if (queryString) {
               router.push(`/detailed-search?${queryString}`);
@@ -388,7 +349,7 @@ const SearchBox = () => {
         >
           Advanced Search
         </button>
-        
+
         <button
           type="button"
           onClick={clearFilters}
