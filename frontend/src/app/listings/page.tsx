@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/useToast';
 import { ToastContainer } from '@/components/ui/ToastContainer';
 import { CarCard, type CarData } from "@/components/ui/CarCard";
 import { useFavorites } from '@/hooks/useFavorites';
+import { CarCardSkeleton } from '@/components/ui/LoadingSkeleton';
 
 const sortOptions = [
   { value: "", label: "Default Order", sort_by: "", order: "asc" },
@@ -161,15 +162,7 @@ export default function ListingsPage() {
 
   const renderLoadingSkeleton = () => {
     return Array(limit).fill(0).map((_, idx) => (
-      <div key={idx} className="bg-white rounded-xl shadow-md overflow-hidden animate-pulse">
-        <div className="h-[220px] bg-gray-200"></div>
-        <div className="p-5 space-y-3">
-          <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-          <div className="h-3 bg-gray-200 rounded w-2/3"></div>
-          <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-          <div className="h-5 bg-gray-200 rounded w-1/3"></div>
-        </div>
-      </div>
+      <CarCardSkeleton key={idx} variant={viewMode as "grid" | "list"} />
     ));
   };
 

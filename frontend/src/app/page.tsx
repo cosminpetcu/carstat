@@ -9,6 +9,7 @@ import BrandsSection from "@/components/BrandsSection";
 import { useRouter } from "next/navigation";
 import { PendingActionsManager } from '@/utils/pendingActions';
 import { CarCard, type CarData } from "@/components/ui/CarCard";
+import { CarCardSkeleton } from '@/components/ui/LoadingSkeleton';
 
 type Car = {
   id: number;
@@ -264,13 +265,8 @@ function HomeListings() {
   if (loading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6">
-        {[...Array(5)].map((_, i) => (
-          <div key={i} className="bg-white p-4 rounded-xl shadow-md animate-pulse">
-            <div className="h-48 bg-gray-200 rounded-lg mb-4"></div>
-            <div className="h-4 bg-gray-200 rounded mb-2"></div>
-            <div className="h-3 bg-gray-200 rounded mb-2"></div>
-            <div className="h-4 bg-gray-200 rounded w-1/2"></div>
-          </div>
+        {Array.from({ length: 5 }, (_, i) => (
+          <CarCardSkeleton key={i} variant="compact" />
         ))}
       </div>
     );

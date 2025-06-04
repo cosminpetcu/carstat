@@ -19,9 +19,9 @@ import {
   Cell
 } from "recharts";
 import { CarCard, type CarData } from "@/components/ui/CarCard";
-import { PendingActionsManager, getCurrentUrlForReturn } from '@/utils/pendingActions';
 import { getQualityScoreColor, getQualityScoreLabel } from '@/utils/ratingUtils'
 import { useFavorites } from '@/hooks/useFavorites';
+import { PageLoadingSkeleton } from '@/components/ui/LoadingSkeleton';
 
 type Car = {
   id: number;
@@ -237,11 +237,7 @@ export default function CarDetailPage() {
     }
   );
 
-  if (loading || !car) return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-      <div className="animate-pulse text-gray-600 text-lg">Loading...</div>
-    </div>
-  );
+  if (loading || !car) return <PageLoadingSkeleton />;
 
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return "N/A";

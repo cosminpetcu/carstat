@@ -1,14 +1,15 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
 import { useRouter } from "next/navigation";
 import Footer from "@/components/Footer";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { CarCard, type CarData } from "@/components/ui/CarCard";
 import { useFavorites } from '@/hooks/useFavorites';
 import { useToast } from '@/hooks/useToast';
 import { ToastContainer } from '@/components/ui/ToastContainer';
+import { CarCardSkeleton } from '@/components/ui/LoadingSkeleton';
 
 type SavedSearch = {
   id: number;
@@ -75,17 +76,6 @@ const ConfirmationModal = ({
     </div>
   );
 };
-
-const SkeletonCard = () => (
-  <div className="bg-white p-4 rounded-xl shadow-md animate-pulse flex flex-col h-full">
-    <div className="bg-gray-200 h-[180px] w-full rounded-lg mb-4"></div>
-    <div className="space-y-2 flex-grow">
-      <div className="h-4 bg-gray-200 rounded w-3/4"></div>
-      <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-      <div className="h-5 bg-gray-200 rounded w-1/3 mt-2"></div>
-    </div>
-  </div>
-);
 
 export default function FavoritesPage() {
   const router = useRouter();
@@ -382,14 +372,6 @@ export default function FavoritesPage() {
     );
   };
 
-  const renderSkeletons = () => (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      {[...Array(8)].map((_, index) => (
-        <SkeletonCard key={index} />
-      ))}
-    </div>
-  );
-
   return (
     <main className="min-h-screen bg-gray-50 text-black">
       <Navbar />
@@ -471,25 +453,10 @@ export default function FavoritesPage() {
         {!error && activeTab === "favorites" && (
           <div>
             {loading ? (
-              renderSkeletons()
-            ) : cars.length === 0 ? (
-              <div className="text-center py-16 bg-white rounded-xl shadow-sm">
-                <div className="max-w-md mx-auto">
-                  <svg className="w-16 h-16 mx-auto text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                  </svg>
-                  <h2 className="text-2xl font-bold text-gray-800 mb-2">No Favorite Cars Yet</h2>
-                  <p className="text-gray-600 mb-6">Start exploring and add cars to your favorites to keep track of vehicles you're interested in.</p>
-                  <button
-                    onClick={() => router.push("/listings")}
-                    className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors shadow-md flex items-center gap-2 mx-auto"
-                  >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-                    </svg>
-                    Browse Listings
-                  </button>
-                </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {Array.from({ length: 8 }, (_, index) => (
+                  <CarCardSkeleton key={index} variant="grid" />
+                ))}
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
