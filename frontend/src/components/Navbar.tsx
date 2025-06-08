@@ -12,7 +12,7 @@ export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  
+
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const isHome = pathname === "/";
@@ -25,7 +25,7 @@ export default function Navbar() {
   useEffect(() => {
     const token = localStorage.getItem("token");
     const storedUser = localStorage.getItem("user");
-  
+
     setIsLoggedIn(!!token);
     if (storedUser) {
       try {
@@ -60,7 +60,7 @@ export default function Navbar() {
 
   useEffect(() => {
     setMobileMenuOpen(false);
-    
+
     if (searchOpen && searchInputRef.current) {
       searchInputRef.current.focus();
     }
@@ -104,12 +104,11 @@ export default function Navbar() {
   };
 
   return (
-    <header 
-      className={`w-full z-30 ${
-        isHome 
-          ? "absolute top-0 text-white" 
+    <header
+      className={`w-full z-30 ${isHome
+          ? "absolute top-0 text-white"
           : "bg-gray-900 text-white shadow-md"
-      }`}
+        }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 md:h-20">
@@ -125,38 +124,35 @@ export default function Navbar() {
             <NavLink href="/listings" label="Listings" active={pathname === "/listings" || pathname.startsWith("/listings/")} />
             <button
               onClick={() => handleProtectedNavigation('/favorites')}
-              className={`px-3 py-2 text-sm font-medium transition-colors duration-200 cursor-pointer ${
-                pathname === "/favorites"
-                  ? "text-white bg-gray-700/50 rounded-md" 
+              className={`px-3 py-2 text-sm font-medium transition-colors duration-200 cursor-pointer ${pathname === "/favorites"
+                  ? "text-white bg-gray-700/50 rounded-md"
                   : "text-gray-300 hover:text-white"
-              }`}
+                }`}
             >
               Favorites
             </button>
             <button
               onClick={() => handleProtectedNavigation('/dashboard')}
-              className={`px-3 py-2 text-sm font-medium transition-colors duration-200 cursor-pointer ${
-                pathname === "/dashboard"
-                  ? "text-white bg-gray-700/50 rounded-md" 
+              className={`px-3 py-2 text-sm font-medium transition-colors duration-200 cursor-pointer ${pathname === "/dashboard"
+                  ? "text-white bg-gray-700/50 rounded-md"
                   : "text-gray-300 hover:text-white"
-              }`}
+                }`}
             >
               Dashboard
             </button>
             <button
               onClick={() => handleProtectedNavigation('/get-estimation')}
-              className={`px-3 py-2 text-sm font-medium transition-colors duration-200 cursor-pointer ${
-                pathname === "/get-estimation"
-                  ? "text-white bg-gray-700/50 rounded-md" 
+              className={`px-3 py-2 text-sm font-medium transition-colors duration-200 cursor-pointer ${pathname === "/get-estimation"
+                  ? "text-white bg-gray-700/50 rounded-md"
                   : "text-gray-300 hover:text-white"
-              }`}
+                }`}
             >
               Get Estimation
             </button>
             <NavLink href="/detailed-search" label="Advanced Search" active={pathname === "/detailed-search"} />
-            
+
             {(!searchOpen) && (
-              <button 
+              <button
                 onClick={() => setSearchOpen(!searchOpen)}
                 className="p-2 rounded-full text-gray-300 hover:text-white focus:outline-none transition-all duration-200"
                 aria-label="Search"
@@ -171,11 +167,10 @@ export default function Navbar() {
           <div className="flex items-center gap-2">
             {!isLoggedIn ? (
               <Link href="/login">
-                <button className={`hidden md:flex items-center px-6 py-2.5 ${
-                  isHome 
-                    ? "text-white border border-white/80 hover:bg-white hover:text-gray-900" 
+                <button className={`hidden md:flex items-center px-6 py-2.5 ${isHome
+                    ? "text-white border border-white/80 hover:bg-white hover:text-gray-900"
                     : "text-blue-400 border border-blue-400 hover:bg-blue-500 hover:text-white"
-                } transition duration-200 text-sm font-medium rounded-md`}>
+                  } transition duration-200 text-sm font-medium rounded-md`}>
                   Sign In
                 </button>
               </Link>
@@ -205,9 +200,6 @@ export default function Navbar() {
                     </Link>
                     <Link href="/dashboard" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                       Dashboard
-                    </Link>
-                    <Link href="/get-estimation" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                      Get Estimation
                     </Link>
                     <button
                       onClick={handleLogout}
@@ -247,36 +239,33 @@ export default function Navbar() {
             <MobileNavLink href="/listings" label="Listings" active={pathname === "/listings" || pathname.startsWith("/listings/")} />
             <button
               onClick={() => handleProtectedNavigation('/favorites')}
-              className={`block px-3 py-2 text-base font-medium w-full text-left transition-colors ${
-                pathname === "/favorites"
-                  ? "bg-gray-800 text-white rounded-md" 
+              className={`block px-3 py-2 text-base font-medium w-full text-left transition-colors ${pathname === "/favorites"
+                  ? "bg-gray-800 text-white rounded-md"
                   : "text-gray-300 hover:bg-gray-700 hover:text-white hover:rounded-md"
-              }`}
+                }`}
             >
               Favorites
             </button>
             <button
               onClick={() => handleProtectedNavigation('/dashboard')}
-              className={`block px-3 py-2 text-base font-medium w-full text-left transition-colors ${
-                pathname === "/dashboard"
-                  ? "bg-gray-800 text-white rounded-md" 
+              className={`block px-3 py-2 text-base font-medium w-full text-left transition-colors ${pathname === "/dashboard"
+                  ? "bg-gray-800 text-white rounded-md"
                   : "text-gray-300 hover:bg-gray-700 hover:text-white hover:rounded-md"
-              }`}
+                }`}
             >
               Dashboard
             </button>
             <button
               onClick={() => handleProtectedNavigation('/get-estimation')}
-              className={`block px-3 py-2 text-base font-medium w-full text-left transition-colors ${
-                pathname === "/get-estimation"
-                  ? "bg-gray-800 text-white rounded-md" 
+              className={`block px-3 py-2 text-base font-medium w-full text-left transition-colors ${pathname === "/get-estimation"
+                  ? "bg-gray-800 text-white rounded-md"
                   : "text-gray-300 hover:bg-gray-700 hover:text-white hover:rounded-md"
-              }`}
+                }`}
             >
               Get Estimation
             </button>
             <MobileNavLink href="/detailed-search" label="Advanced Search" active={pathname === "/detailed-search"} />
-            
+
             <div className="pt-2">
               <form onSubmit={handleSearch} className="flex">
                 <input
@@ -286,8 +275,8 @@ export default function Navbar() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-full bg-blue-900/20 border border-blue-500/30 text-white px-3 py-2"
                 />
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   className="bg-blue-600 text-white px-4 ml-2"
                 >
                   Search
@@ -309,29 +298,17 @@ export default function Navbar() {
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <Link 
-                    href="/favorites" 
+                  <Link
+                    href="/favorites"
                     className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700"
                   >
                     Favorites
                   </Link>
-                  <Link 
-                    href="/dashboard" 
+                  <Link
+                    href="/dashboard"
                     className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700"
                   >
                     Dashboard
-                  </Link>
-                  <Link 
-                    href="/get-estimation" 
-                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700"
-                  >
-                    Get Estimation
-                  </Link>
-                  <Link 
-                    href="/saved-searches" 
-                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700"
-                  >
-                    Saved Searches
                   </Link>
                   <button
                     onClick={handleLogout}
@@ -343,8 +320,8 @@ export default function Navbar() {
               </div>
             ) : (
               <div className="px-4 py-2">
-                <Link 
-                  href="/login" 
+                <Link
+                  href="/login"
                   className="block w-full text-center px-6 py-2.5 text-white bg-blue-600 rounded-md hover:bg-blue-700 font-medium"
                 >
                   Sign In
@@ -367,14 +344,14 @@ export default function Navbar() {
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full bg-blue-900/20 border border-blue-500/30 text-white px-4 py-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-              <button 
-                type="submit" 
+              <button
+                type="submit"
                 className="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors ml-2"
               >
                 Search
               </button>
-              <button 
-                type="button" 
+              <button
+                type="button"
                 onClick={handleClearSearch}
                 className="ml-2 p-3 text-gray-400 hover:text-gray-200 rounded-md hover:bg-gray-700 transition-colors"
                 title="Close search"
@@ -392,11 +369,11 @@ export default function Navbar() {
 }
 
 const NavLink = ({ href, label, active }: { href: string; label: string; active: boolean }) => (
-  <Link 
+  <Link
     href={href}
     className={`px-3 py-2 text-sm font-medium transition-colors duration-200
-      ${active 
-        ? "text-white bg-gray-700/50 rounded-md" 
+      ${active
+        ? "text-white bg-gray-700/50 rounded-md"
         : "text-gray-300 hover:text-white"
       }`}
   >
@@ -405,11 +382,11 @@ const NavLink = ({ href, label, active }: { href: string; label: string; active:
 );
 
 const MobileNavLink = ({ href, label, active }: { href: string; label: string; active: boolean }) => (
-  <Link 
+  <Link
     href={href}
     className={`block px-3 py-2 text-base font-medium
-      ${active 
-        ? "bg-gray-800 text-white rounded-md" 
+      ${active
+        ? "bg-gray-800 text-white rounded-md"
         : "text-gray-300 hover:bg-gray-700 hover:text-white hover:rounded-md"
       }`}
   >

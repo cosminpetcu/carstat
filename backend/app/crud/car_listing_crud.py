@@ -151,7 +151,7 @@ def get_all_car_listings(
     listings = query.offset((page - 1) * limit).limit(limit).all()
 
     if not user_id:
-        results = [CarListingOut.from_orm(car) for car in listings]
+        results = [CarListingOut.model_validate(car) for car in listings]
         return {
             "items": results,
             "total": total_count
@@ -163,7 +163,7 @@ def get_all_car_listings(
 
     results = []
     for car in listings:
-        car_out = CarListingOut.from_orm(car)
+        car_out = CarListingOut.model_validate(car)
         car_out.is_favorite = car.id in favorite_ids
         results.append(car_out)
 
@@ -210,7 +210,7 @@ def get_car_by_id(db: Session, car_id: int, user_id: Optional[int] = None):
     if not car:
         return None
 
-    car_out = CarListingOut.from_orm(car)
+    car_out = CarListingOut.model_validate(car)
 
     if user_id:
         favorite = db.query(Favorite).filter(Favorite.user_id == user_id, Favorite.car_id == car_id).first()
