@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from app.database import SessionLocal
+from app.dependencies import get_db
 from app.schemas.estimation_history_schema import EstimationHistoryCreate, EstimationHistoryOut, EstimationHistoryUpdate
 from app.crud import estimation_history_crud
 from app.auth.utils import get_current_user
@@ -8,13 +8,6 @@ from app.models.models import User, EstimationHistory
 from typing import List
 
 router = APIRouter(prefix="/estimation-history", tags=["Estimation History"])
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 @router.post("/", response_model=EstimationHistoryOut)
 def save_estimation_to_history(

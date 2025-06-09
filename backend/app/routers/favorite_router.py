@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from app.database import SessionLocal
+from app.dependencies import get_db
 from app.schemas.favorite_schema import FavoriteCreate, FavoriteOut
 from app.crud.favorite_crud import create_favorite, get_favorites_by_user, delete_favorite_by_user_and_car
 from typing import List
@@ -9,13 +9,6 @@ from app.auth.utils import get_current_user
 from app.models.models import User
 
 router = APIRouter()
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 @router.post("/favorites", response_model=FavoriteOut)
 def add_favorite(favorite_data: FavoriteCreate, db: Session = Depends(get_db)):

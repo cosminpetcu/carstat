@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from app.database import SessionLocal
+from app.dependencies import get_db
 from app.models.models import SavedSearch
 from app.schemas.saved_search_schema import SavedSearchCreate, SavedSearchOut
 from app.crud import saved_search_crud
@@ -11,13 +11,6 @@ router = APIRouter(
     prefix="/saved-searches",
     tags=["Saved Searches"],
 )
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 @router.post("/", response_model=SavedSearchOut)
 def create_search(search: SavedSearchCreate, db: Session = Depends(get_db)):

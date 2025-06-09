@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Depends, status
 from sqlalchemy.orm import Session
-from app.database import SessionLocal
+from app.dependencies import get_db
 from app.models.models import User
 from app.auth.schemas import LoginRequest, RegisterRequest, TokenResponse, UserOut
 from app.auth.utils import (
@@ -10,13 +10,6 @@ from app.auth.utils import (
 )
 
 router = APIRouter(prefix="/auth", tags=["auth"])
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 @router.post("/login", response_model=TokenResponse)
 def login_user(login: LoginRequest, db: Session = Depends(get_db)):

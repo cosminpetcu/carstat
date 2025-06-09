@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
-from app.database import SessionLocal
+from app.dependencies import get_db
 from app.schemas.car_listing_schema import CarListingOut, CarListingCreate
 from app.models.models import CarListing
 from app.crud.car_listing_crud import (
@@ -13,13 +13,6 @@ from datetime import datetime
 from sqlalchemy import func
 
 router = APIRouter()
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 @router.get("/cars", response_model=Dict[str, Any])
 def read_all_cars(

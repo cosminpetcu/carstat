@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Request, Depends, HTTPException
 from starlette.responses import RedirectResponse
 from authlib.integrations.starlette_client import OAuth
-from app.database import SessionLocal
+from app.dependencies import get_db
 from app.models.models import User
 from app.auth.utils import create_access_token
 from dotenv import load_dotenv
@@ -26,13 +26,6 @@ oauth.register(
         "scope": "openid email profile"
     }
 )
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 @router.get("/login")
 async def login(request: Request):

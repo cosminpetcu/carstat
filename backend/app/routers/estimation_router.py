@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from app.database import SessionLocal
+from app.dependencies import get_db
 from app.models.models import CarListing
 from pydantic import BaseModel
 from typing import Optional, List, Dict, Any
@@ -11,13 +11,6 @@ from app.crud import estimation_history_crud
 from app.schemas.estimation_history_schema import EstimationHistoryCreate
 
 router = APIRouter(prefix="/estimation", tags=["Price Estimation"])
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
 
 class CarEstimationRequest(BaseModel):
     brand: str
@@ -192,25 +185,6 @@ def estimate_car_price(
             print(f"Failed to save estimation to history: {e}")
     
     return estimation_response
-
-@router.get("/brands")
-def get_available_brands_for_estimation(db: Session = Depends(get_db)):
-    brands = db.query(CarListing.brand).filter(
-        CarListing.brand.isnot(None),
-        (CarListing.suspicious_price != True) | (CarListing.suspicious_price == None)
-    ).distinct().order_by(CarListing.brand).all()
-    
-    return [brand[0] for brand in brands if brand[0]]
-
-@router.get("/models/{brand}")
-def get_available_models_for_estimation(brand: str, db: Session = Depends(get_db)):
-    models = db.query(CarListing.model).filter(
-        CarListing.brand == brand,
-        CarListing.model.isnot(None),
-        (CarListing.suspicious_price != True) | (CarListing.suspicious_price == None)
-    ).distinct().order_by(CarListing.model).all()
-    
-    return [model[0] for model in models if model[0]]
 
 @router.get("/specs/{brand}/{model}")
 def get_model_specifications(brand: str, model: str, db: Session = Depends(get_db)):

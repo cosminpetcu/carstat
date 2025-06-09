@@ -106,7 +106,6 @@ const SearchBox = () => {
     return "text-green-600";
   };
 
-  // Format total cars with dots for thousand separators
   const formatTotalCars = (total: number) => {
     return total.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   };

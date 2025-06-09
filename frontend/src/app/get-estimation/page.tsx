@@ -338,13 +338,10 @@ export default function CleanEstimationPage() {
 
     const loadHistoryParameters = async (historyCarData: EstimationCarData) => {
         try {
-            // Set brand first
             setCarData(prev => ({ ...prev, brand: historyCarData.brand }));
 
-            // Fetch models for the brand
             await fetchModels(historyCarData.brand);
 
-            // Then set all the data including model
             setCarData(historyCarData);
             setEstimationResult(null);
             setSelectedHistoryItem(null);
