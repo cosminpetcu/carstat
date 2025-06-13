@@ -1,11 +1,10 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from app.dependencies import get_db
-from app.schemas.car_listing_schema import CarListingOut, CarListingCreate
+from app.schemas.car_listing_schema import CarListingOut
 from app.models.models import CarListing
 from app.crud.car_listing_crud import (
     get_all_car_listings,
-    create_car_listing,
     get_car_by_id
 )
 from typing import List, Optional, Dict, Any
@@ -109,11 +108,6 @@ def read_all_cars(
         search=search,
         user_id=user_id
     )
-
-
-@router.post("/cars", response_model=CarListingOut)
-def add_car_listing(car_data: CarListingCreate, db: Session = Depends(get_db)):
-    return create_car_listing(db, car_data)
 
 @router.get("/cars/count")
 def count_cars(

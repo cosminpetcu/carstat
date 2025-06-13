@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from app.models.models import CarListing
-from app.schemas.car_listing_schema import CarListingCreate, CarListingOut
+from app.schemas.car_listing_schema import CarListingOut
 from datetime import datetime
 from typing import List, Optional
 from app.models.models import Favorite
@@ -171,39 +171,6 @@ def get_all_car_listings(
         "items": results,
         "total": total_count
     }
-
-def create_car_listing(db: Session, car_data: CarListingCreate):
-    new_car = CarListing(
-        title=car_data.title,
-        brand=car_data.brand,
-        model=car_data.model,
-        price=car_data.price,
-        year=car_data.year,
-        mileage=car_data.mileage,
-        fuel_type=car_data.fuel_type,
-        transmission=car_data.transmission,
-        engine_power=car_data.engine_power,
-        emission_standard=car_data.emission_standard,
-        doors=car_data.doors,
-        color=car_data.color,
-        drive_type=car_data.drive_type,
-        vehicle_condition=car_data.vehicle_condition,
-        previous_owners=car_data.previous_owners,
-        itp_valid_until=car_data.itp_valid_until,
-        vin=car_data.vin,
-        location=car_data.location,
-        description=car_data.description,
-        engine_capacity=car_data.engine_capacity,
-        seller_type=car_data.seller_type,
-        is_new=car_data.is_new,
-        image_url=car_data.image_url,
-        source_url=car_data.source_url,
-        created_at=datetime.utcnow()
-    )
-    db.add(new_car)
-    db.commit()
-    db.refresh(new_car)
-    return new_car
 
 def get_car_by_id(db: Session, car_id: int, user_id: Optional[int] = None):
     car = db.query(CarListing).filter(CarListing.id == car_id).first()

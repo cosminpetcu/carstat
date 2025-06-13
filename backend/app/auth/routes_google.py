@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Request, Depends, HTTPException
 from starlette.responses import RedirectResponse
+from app.database import SessionLocal
 from authlib.integrations.starlette_client import OAuth
 from app.dependencies import get_db
 from app.models.models import User

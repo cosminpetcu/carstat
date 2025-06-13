@@ -1,6 +1,5 @@
 from fastapi import FastAPI
 from app.database import Base, engine
-from app.models import models
 from app.routers import car_listing_router
 from app.routers import favorite_router
 from app.auth.routes import router as auth_router
