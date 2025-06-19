@@ -1005,7 +1005,6 @@ def get_generation_analysis(db: Session = Depends(get_db)):
     
     generation_analysis = []
     
-    # Fix: Unpack all three values from the query result
     for brand, model, generation_count in models_with_generations:
         generations = db.execute(text(f"""
             SELECT 
@@ -1033,7 +1032,7 @@ def get_generation_analysis(db: Session = Depends(get_db)):
             generation_analysis.append({
                 "brand": brand,
                 "model": model,
-                "generation_count": generation_count,  # Optional: include this in response
+                "generation_count": generation_count,
                 "generations": [
                     {
                         "generation": row[0],

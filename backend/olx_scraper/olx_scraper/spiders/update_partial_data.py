@@ -122,6 +122,25 @@ class UpdatePartialSpider(scrapy.Spider):
                 self.session.rollback()
             self.progress.update(1)
             return
+        
+        elif response.status == 410:
+            car.sold = True
+            car.sold_detected_at = datetime.now()
+            self.marked_sold += 1
+            print(f"Anunt marcat ca vandut (410 Gone): {url}")
+            
+            try:
+                self.session.commit()
+                current_id = self.load_last_processed_id()
+                if car_id > current_id:
+                    self.save_last_processed_id(car_id)
+                    print(f"Actualizat last_processed_id la {car_id}")
+            except Exception as e:
+                print(f"DB error (410): {e}")
+                self.session.rollback()
+            self.progress.update(1)
+            return
+        
         elif response.status == 403:
             self.cloudflare_blocks += 1
             print(f"Blocaj Cloudflare (403) pentru: {url}")
@@ -132,8 +151,37 @@ class UpdatePartialSpider(scrapy.Spider):
                 print(f"Actualizat last_processed_id la {car_id}")
             
             self.progress.update(1)
-            
             raise CloseSpider("Blocaj Cloudflare detectat, se opreste spider-ul")
+
+        if response.status == 200 and "olx" in url:
+            page_text = response.text.lower()
+            unavailable_indicators = [
+                "acest anunț nu mai este disponibil",
+                "acest anunt nu mai este disponibil", 
+                "anunțul nu mai este disponibil",
+                "anuntul nu mai este disponibil",
+                "it seems like a dead end"
+            ]
+            
+            is_error_page = any(indicator in page_text for indicator in unavailable_indicators)
+            
+            if is_error_page:
+                car.sold = True
+                car.sold_detected_at = datetime.now()
+                self.marked_sold += 1
+                print(f"Anunt OLX marcat ca vandut (pagina indisponibil): {url}")
+                
+                try:
+                    self.session.commit()
+                    current_id = self.load_last_processed_id()
+                    if car_id > current_id:
+                        self.save_last_processed_id(car_id)
+                        print(f"Actualizat last_processed_id la {car_id}")
+                except Exception as e:
+                    print(f"DB error (OLX unavailable): {e}")
+                    self.session.rollback()
+                self.progress.update(1)
+                return
 
         updated = False
 
@@ -191,7 +239,7 @@ class UpdatePartialSpider(scrapy.Spider):
                         print(f"Actualizat pret pentru Autovit: {url}")
                 except Exception as e:
                     print(f"Eroare la parsare pret Autovit: {e}")
-                
+                    
         try:
             if updated:
                 self.session.commit()

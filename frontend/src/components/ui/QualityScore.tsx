@@ -21,8 +21,12 @@ export const QualityScore: React.FC<QualityScoreProps> = ({
 
     return (
         <div
-            className={`${sizeClasses[size]} rounded-full flex items-center justify-center font-medium text-white ${getQualityScoreColor(score)} ${className}`}
+            className={`${sizeClasses[size]} rounded-full flex items-center justify-center font-medium text-white flex-shrink-0 aspect-square ${getQualityScoreColor(score)} ${className}`}
             title={`Quality Score: ${score}/100`}
+            style={{
+                minWidth: size === "sm" ? "32px" : size === "md" ? "40px" : "48px",
+                minHeight: size === "sm" ? "32px" : size === "md" ? "40px" : "48px"
+            }}
         >
             {score}
         </div>

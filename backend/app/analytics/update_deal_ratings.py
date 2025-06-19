@@ -180,14 +180,13 @@ def update_deal_ratings():
                 CarListing.model == car.model,
                 CarListing.fuel_type == car.fuel_type,
                 CarListing.transmission == car.transmission,
-                CarListing.engine_capacity.between(car.engine_capacity - 200, car.engine_capacity + 200) if car.engine_capacity else True,
-                CarListing.year.between(car.year - 2, car.year + 2) if car.year else True,
-                CarListing.mileage.between(car.mileage - 15000, car.mileage + 15000) if car.mileage else True,
-                CarListing.drive_type == car.drive_type if car.drive_type else True,
+                CarListing.engine_capacity.between(car.engine_capacity - 50, car.engine_capacity + 50) if car.engine_capacity else True,
+                CarListing.engine_power.between(car.engine_power - 20, car.engine_power + 20) if car.engine_power else True,
+                CarListing.mileage.between(car.mileage - 10000, car.mileage + 10000) if car.mileage else True,
+                CarListing.year.between(car.year - 1, car.year + 1) if car.year else True,
                 (CarListing.damaged != True) | (CarListing.damaged == None),
                 (CarListing.suspicious_price != True) | (CarListing.suspicious_price == None),
-                CarListing.price > 1000,
-                CarListing.price < 100000
+                CarListing.price > 1000
             ]
 
             if car.right_hand_drive is not None:

@@ -5,6 +5,9 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useBrandsModels } from '@/hooks/useBrandsModels';
+import { PendingActionsManager } from '@/utils/pendingActions';
+import { useToast } from '@/hooks/useToast';
+import { ToastContainer } from '@/components/ui/ToastContainer';
 
 const fuelTypes = ["Petrol", "Diesel", "Electric", "Hybrid", "LPG", "CNG", "Plug-in Hybrid"];
 const sellerTypes = ["Private", "Dealer"];
@@ -67,8 +70,7 @@ export default function DetailedSearchPage() {
   const [carsCount, setCarsCount] = useState<number | null>(null);
   const [isLoadingCount, setIsLoadingCount] = useState(false);
   const [activeTab, setActiveTab] = useState<"basic" | "advanced" | "condition">("basic");
-  const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
-  const [searchName, setSearchName] = useState("");
+  const { toasts, removeToast, showSuccess, showError } = useToast();
   const { brands, models, isLoadingBrands, isLoadingModels, fetchModels, clearModels } = useBrandsModels();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   useEffect(() => {
@@ -146,43 +148,55 @@ export default function DetailedSearchPage() {
   };
 
   const saveSearch = async () => {
-    if (!isLoggedIn) {
-      router.push("/login");
+    const token = localStorage.getItem("token");
+    const userRaw = localStorage.getItem("user");
+
+    if (!token || !userRaw) {
+      const query = buildSearchParams().toString();
+      const currentUrl = window.location.pathname + window.location.search;
+
+      PendingActionsManager.saveSearchAction(query, currentUrl);
+      window.location.href = '/login';
       return;
     }
 
+    let user;
     try {
-      const token = localStorage.getItem("token");
-      const user = JSON.parse(localStorage.getItem("user") || "{}");
-      const params = buildSearchParams().toString();
+      user = JSON.parse(userRaw);
+      if (!user.id) throw new Error("Invalid user object");
+    } catch (err) {
+      console.error("User object invalid:", err);
+      const query = buildSearchParams().toString();
+      const currentUrl = window.location.pathname + window.location.search;
 
-      if (!user.id) {
-        alert("User information not found. Please log in again.");
-        return;
-      }
+      PendingActionsManager.saveSearchAction(query, currentUrl);
+      window.location.href = '/login';
+      return;
+    }
 
-      const response = await fetch("http://localhost:8000/saved-searches/", {
+    const query = buildSearchParams().toString();
+
+    try {
+      const response = await fetch("http://localhost:8000/saved-searches", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           user_id: user.id,
-          query: params
-        })
+          query: query,
+        }),
       });
 
-      if (response.ok) {
-        setIsSaveDialogOpen(false);
-        setSearchName("");
-        alert("Search criteria saved successfully!");
-      } else {
-        alert("Failed to save search criteria.");
+      if (!response.ok) {
+        throw new Error("Failed to save search");
       }
+
+      showSuccess("Search saved successfully!");
     } catch (error) {
       console.error("Error saving search:", error);
-      alert("An error occurred while saving your search.");
+      showError("Failed to save search.");
     }
   };
 
@@ -799,9 +813,8 @@ export default function DetailedSearchPage() {
 
               <button
                 type="button"
-                onClick={() => setIsSaveDialogOpen(true)}
+                onClick={saveSearch}
                 className="px-8 py-3 bg-white text-blue-600 font-medium rounded-md border border-blue-600 hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-                disabled={!isLoggedIn}
               >
                 <span className="flex items-center justify-center gap-2">
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -826,54 +839,6 @@ export default function DetailedSearchPage() {
             </div>
           </form>
         </div>
-
-        {/* Save Search Dialog */}
-        {isSaveDialogOpen && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-8 max-w-md w-full">
-              <h3 className="text-lg font-bold mb-4">Save Your Search</h3>
-
-              {!isLoggedIn ? (
-                <div>
-                  <p className="mb-4">Please log in to save your search criteria.</p>
-                  <div className="flex justify-end gap-2">
-                    <button
-                      onClick={() => setIsSaveDialogOpen(false)}
-                      className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={() => router.push("/login")}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md"
-                    >
-                      Go to Login
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <>
-                  <p className="mb-4">Save your current search criteria to easily access it later.</p>
-
-                  <div className="flex justify-end gap-2 mt-6">
-                    <button
-                      onClick={() => setIsSaveDialogOpen(false)}
-                      className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      onClick={saveSearch}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md"
-                    >
-                      Save Search
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          </div>
-        )}
 
         {/* Search Tips */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
@@ -907,6 +872,7 @@ export default function DetailedSearchPage() {
         </div>
       </div>
       <Footer />
+      <ToastContainer toasts={toasts} onRemove={removeToast} />
     </main>
   );
 }

@@ -99,9 +99,9 @@ class EstimationHistory(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
-    car_data = Column(JSON, nullable=False)  # Datele mașinii (brand, model, year, etc.)
-    estimation_result = Column(JSON, nullable=False)  # Rezultatul estimării
-    notes = Column(Text, nullable=True)  # Note personale
+    car_data = Column(JSON, nullable=False)
+    estimation_result = Column(JSON, nullable=False)
+    notes = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)
 
     user = relationship("User", back_populates="estimation_history")

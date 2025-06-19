@@ -10,6 +10,7 @@ import { useFavorites } from '@/hooks/useFavorites';
 import { useToast } from '@/hooks/useToast';
 import { ToastContainer } from '@/components/ui/ToastContainer';
 import { CarCardSkeleton } from '@/components/ui/LoadingSkeleton';
+import { PendingActionsManager } from '@/utils/pendingActions';
 
 type SavedSearch = {
   id: number;
@@ -90,16 +91,19 @@ export default function FavoritesPage() {
   });
   const [actionLoading, setActionLoading] = useState(false);
   const { toasts, removeToast, showSuccess, showError } = useToast();
+  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
     const userRaw = localStorage.getItem("user");
 
     if (!token || !userRaw) {
+      PendingActionsManager.saveNavigationIntent(window.location.pathname);
       router.push("/login");
       return;
     }
 
+    setIsAuthorized(true);
     const user = JSON.parse(userRaw);
     fetchData(user, token);
   }, [activeTab, router]);
@@ -306,14 +310,56 @@ export default function FavoritesPage() {
       });
     }
 
+    if (params.get("doors")) {
+      tags.push({
+        label: "Doors",
+        value: params.get("doors")! + " doors"
+      });
+    }
+
+    if (params.get("color")) {
+      tags.push({
+        label: "Color",
+        value: params.get("color")!
+      });
+    }
+
+    if (params.get("drive_type")) {
+      tags.push({
+        label: "Body Type",
+        value: params.get("drive_type")!
+      });
+    }
+
+    if (params.get("seller_type")) {
+      tags.push({
+        label: "Seller",
+        value: params.get("seller_type")!
+      });
+    }
+
+    if (params.get("emission_standard")) {
+      tags.push({
+        label: "Emission",
+        value: params.get("emission_standard")!
+      });
+    }
+
+    if (params.get("origin_country")) {
+      tags.push({
+        label: "Origin",
+        value: params.get("origin_country")!
+      });
+    }
+
     if (params.get("engine_power_min") || params.get("engine_power_max")) {
       let powerValue = "";
       if (params.get("engine_power_min") && params.get("engine_power_max")) {
-        powerValue = `${params.get("engine_power_min")} - ${params.get("engine_power_max")} hp`;
+        powerValue = `${params.get("engine_power_min")} - ${params.get("engine_power_max")} HP`;
       } else if (params.get("engine_power_min")) {
-        powerValue = `Min ${params.get("engine_power_min")} hp`;
+        powerValue = `Min ${params.get("engine_power_min")} HP`;
       } else if (params.get("engine_power_max")) {
-        powerValue = `Max ${params.get("engine_power_max")} hp`;
+        powerValue = `Max ${params.get("engine_power_max")} HP`;
       }
 
       tags.push({
@@ -338,10 +384,61 @@ export default function FavoritesPage() {
       });
     }
 
-    if (params.get("seller_type")) {
+    if (params.get("quality_score_min") || params.get("quality_score_max")) {
+      let qualityValue = "";
+      if (params.get("quality_score_min") && params.get("quality_score_max")) {
+        qualityValue = `${params.get("quality_score_min")} - ${params.get("quality_score_max")}`;
+      } else if (params.get("quality_score_min")) {
+        qualityValue = `Min ${params.get("quality_score_min")}`;
+      } else if (params.get("quality_score_max")) {
+        qualityValue = `Max ${params.get("quality_score_max")}`;
+      }
+
       tags.push({
-        label: "Seller",
-        value: params.get("seller_type")!
+        label: "Quality",
+        value: qualityValue
+      });
+    }
+
+    if (params.get("right_hand_drive") === "true") {
+      tags.push({
+        label: "Right Hand Drive",
+        value: "Yes"
+      });
+    }
+
+    if (params.get("damaged") === "true") {
+      tags.push({
+        label: "Damaged",
+        value: "Yes"
+      });
+    }
+
+    if (params.get("first_owner") === "true") {
+      tags.push({
+        label: "First Owner",
+        value: "Yes"
+      });
+    }
+
+    if (params.get("no_accident") === "true") {
+      tags.push({
+        label: "No Accident",
+        value: "Yes"
+      });
+    }
+
+    if (params.get("service_book") === "true") {
+      tags.push({
+        label: "Service Book",
+        value: "Yes"
+      });
+    }
+
+    if (params.get("registered") === "true") {
+      tags.push({
+        label: "Registered",
+        value: "Yes"
       });
     }
 
@@ -371,6 +468,10 @@ export default function FavoritesPage() {
       </div>
     );
   };
+
+  if (isAuthorized === null || isAuthorized === false) {
+    return <div></div>;
+  }
 
   return (
     <main className="min-h-screen bg-gray-50 text-black">

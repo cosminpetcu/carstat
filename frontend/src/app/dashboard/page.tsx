@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
+import { useRouter } from 'next/navigation';
+import { PendingActionsManager } from '@/utils/pendingActions';
 import {
   Pie,
   Bar,
@@ -116,6 +118,8 @@ export default function Dashboard() {
   const [selectedGenModel, setSelectedGenModel] = useState("");
   const [suspiciousListings, setSuspiciousListings] = useState<SuspiciousListingsData | null>(null);
   const { brands, models, isLoadingBrands, isLoadingModels, fetchModels } = useBrandsModels();
+  const router = useRouter();
+  const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
   const suspiciousListingsData = suspiciousListings || {
     totalSuspicious: 0,
     totalListings: 0,
@@ -193,6 +197,19 @@ export default function Dashboard() {
       return null;
     }
   };
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const userRaw = localStorage.getItem("user");
+
+    if (!token || !userRaw) {
+      PendingActionsManager.saveNavigationIntent(window.location.pathname);
+      router.push("/login");
+      return;
+    }
+
+    setIsAuthorized(true);
+  }, []);
 
   useEffect(() => {
     setLoading(true);
@@ -327,6 +344,10 @@ export default function Dashboard() {
   const formatNumber = (num: number) => {
     return new Intl.NumberFormat('ro-RO').format(num);
   };
+
+  if (isAuthorized === null || isAuthorized === false) {
+    return <div></div>;
+  }
 
   if (loading) {
     return (

@@ -5,6 +5,8 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { CarCard, type CarData } from "@/components/ui/CarCard";
 import { useBrandsModels } from '@/hooks/useBrandsModels';
+import { useRouter } from 'next/navigation';
+import { PendingActionsManager } from '@/utils/pendingActions';
 
 type EstimationCarData = {
     brand: string;
@@ -98,22 +100,31 @@ export default function CleanEstimationPage() {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [user, setUser] = useState<{ id: number; email: string; full_name: string } | null>(null);
     const [historyLoading, setHistoryLoading] = useState(false);
+    const router = useRouter();
+    const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
 
     useEffect(() => {
         const token = localStorage.getItem("token");
         const userRaw = localStorage.getItem("user");
 
-        setIsLoggedIn(!!token);
-        if (token && userRaw) {
-            try {
-                setUser(JSON.parse(userRaw));
-            } catch (e) {
-                console.error("Invalid user data");
-                setUser(null);
-                setIsLoggedIn(false);
-            }
+        if (!token || !userRaw) {
+            PendingActionsManager.saveNavigationIntent(window.location.pathname);
+            router.push("/login");
+            return;
         }
-    }, []);
+        setIsLoggedIn(true);
+        setIsAuthorized(true);
+        try {
+            setUser(JSON.parse(userRaw));
+        } catch (e) {
+            console.error("Invalid user data");
+            setUser(null);
+            setIsLoggedIn(false);
+            PendingActionsManager.saveNavigationIntent(window.location.pathname);
+            router.push("/login");
+        }
+
+    }, [router]);
 
     useEffect(() => {
         if (isLoggedIn && user) {
@@ -443,6 +454,10 @@ export default function CleanEstimationPage() {
 
     const isFormValid = carData.brand && carData.model && carData.year && carData.mileage >= 0 &&
         carData.fuel_type && carData.transmission && carData.engine_capacity > 0;
+
+    if (isAuthorized === null || isAuthorized === false) {
+        return <div></div>;
+    }
 
     return (
         <div className="min-h-screen bg-gray-50 text-gray-700">
@@ -784,7 +799,7 @@ export default function CleanEstimationPage() {
                                 )}
 
                                 <div className="bg-green-50 rounded-2xl p-6">
-                                    <h3 className="text-lg font-semibold text-green-900 mb-3">Free & Accurate</h3>
+                                    <h3 className="text-lg font-semibold text-green-900 mb-3">Accurate</h3>
                                     <p className="text-green-800 text-sm">
                                         Our estimation algorithm uses real market data from OLX and Autovit,
                                         updated daily to give you the most accurate pricing information.
