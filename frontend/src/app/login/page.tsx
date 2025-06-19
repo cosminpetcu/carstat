@@ -22,27 +22,6 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  useEffect(() => {
-    const token = searchParams.get("token");
-    const email = searchParams.get("email");
-    const full_name = searchParams.get("full_name");
-    const user_id = searchParams.get("user_id");
-
-    if (token) {
-      localStorage.setItem("token", token);
-      if (user_id && email) {
-        const user = {
-          id: Number(user_id),
-          email,
-          full_name: full_name || "",
-        };
-        localStorage.setItem("user", JSON.stringify(user));
-      }
-
-      handleSuccessfulLogin();
-    }
-  }, [searchParams]);
-
   const handleSuccessfulLogin = async () => {
     try {
       if (hasPendingAction) {
@@ -102,6 +81,27 @@ export default function LoginPage() {
     }
   };
 
+  useEffect(() => {
+    const token = searchParams.get("token");
+    const email = searchParams.get("email");
+    const full_name = searchParams.get("full_name");
+    const user_id = searchParams.get("user_id");
+
+    if (token) {
+      localStorage.setItem("token", token);
+      if (user_id && email) {
+        const user = {
+          id: Number(user_id),
+          email,
+          full_name: full_name || "",
+        };
+        localStorage.setItem("user", JSON.stringify(user));
+      }
+
+      handleSuccessfulLogin();
+    }
+  }, [searchParams, handleSuccessfulLogin]);
+
   return (
     <main className="min-h-screen flex flex-col bg-gradient-to-br from-gray-50 to-gray-100 text-black">
       <Navbar />
@@ -154,8 +154,8 @@ export default function LoginPage() {
                   <button
                     onClick={() => setTab("signin")}
                     className={`py-2 text-sm font-medium rounded-md transition-all duration-200 ${tab === "signin"
-                        ? "bg-white text-blue-600 shadow-sm"
-                        : "text-gray-500 hover:text-gray-700"
+                      ? "bg-white text-blue-600 shadow-sm"
+                      : "text-gray-500 hover:text-gray-700"
                       }`}
                   >
                     Sign in
@@ -163,8 +163,8 @@ export default function LoginPage() {
                   <button
                     onClick={() => setTab("register")}
                     className={`py-2 text-sm font-medium rounded-md transition-all duration-200 ${tab === "register"
-                        ? "bg-white text-blue-600 shadow-sm"
-                        : "text-gray-500 hover:text-gray-700"
+                      ? "bg-white text-blue-600 shadow-sm"
+                      : "text-gray-500 hover:text-gray-700"
                       }`}
                   >
                     Register

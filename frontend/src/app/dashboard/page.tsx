@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { useRouter } from 'next/navigation';
 import { PendingActionsManager } from '@/utils/pendingActions';
+import Image from 'next/image';
 import {
   Pie,
   Bar,
@@ -114,10 +115,10 @@ export default function Dashboard() {
   const [selectedBrand, setSelectedBrand] = useState("");
   const [selectedModel, setSelectedModel] = useState("");
   const [selectedGenerationModel, setSelectedGenerationModel] = useState(generationAnalysis[0] || null);
-  const [selectedGenBrand, setSelectedGenBrand] = useState("");
+  const [selectedGenBrand] = useState("");
   const [selectedGenModel, setSelectedGenModel] = useState("");
   const [suspiciousListings, setSuspiciousListings] = useState<SuspiciousListingsData | null>(null);
-  const { brands, models, isLoadingBrands, isLoadingModels, fetchModels } = useBrandsModels();
+  const { brands, models, isLoadingModels, fetchModels } = useBrandsModels();
   const router = useRouter();
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
   const suspiciousListingsData = suspiciousListings || {
@@ -209,7 +210,7 @@ export default function Dashboard() {
     }
 
     setIsAuthorized(true);
-  }, []);
+  }, [router]);
 
   useEffect(() => {
     setLoading(true);
@@ -490,7 +491,7 @@ export default function Dashboard() {
               <ul className="space-y-4">
                 {topDeals.map((car) => (
                   <li key={car.id} className="flex gap-4 items-center border-b pb-4">
-                    <img
+                    <Image
                       src={parseImage(car.images)}
                       alt={car.title}
                       className="w-24 h-16 object-cover rounded"

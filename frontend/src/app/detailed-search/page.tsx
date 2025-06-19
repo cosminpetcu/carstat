@@ -72,37 +72,6 @@ export default function DetailedSearchPage() {
   const [activeTab, setActiveTab] = useState<"basic" | "advanced" | "condition">("basic");
   const { toasts, removeToast, showSuccess, showError } = useToast();
   const { brands, models, isLoadingBrands, isLoadingModels, fetchModels, clearModels } = useBrandsModels();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    setIsLoggedIn(!!token);
-  }, []);
-  useEffect(() => {
-    setIsLoadingCount(true);
-
-    const debounceTimer = setTimeout(() => {
-      const params = buildSearchParams();
-
-      fetch(`http://localhost:8000/cars/count?${params.toString()}`)
-        .then((res) => res.json())
-        .then((data) => {
-          setCarsCount(data.total);
-          setIsLoadingCount(false);
-        })
-        .catch(() => {
-          setCarsCount(null);
-          setIsLoadingCount(false);
-        });
-    }, 500);
-
-    return () => clearTimeout(debounceTimer);
-  }, [
-    brand, model, fuelType, yearMin, yearMax, priceMin, priceMax, mileageMin, mileageMax,
-    enginePowerMin, enginePowerMax, engineCapacityMin, engineCapacityMax, isNew, sellerType,
-    driveType, transmission, color, doors, emissionStandard, originCountry, rightHandDrive,
-    damaged, firstOwner, noAccident, serviceBook, registered, qualityScoreMin, qualityScoreMax,
-    dealRating
-  ]);
 
   const buildSearchParams = () => {
     const params = new URLSearchParams();
@@ -140,6 +109,34 @@ export default function DetailedSearchPage() {
 
     return params;
   };
+
+  useEffect(() => {
+    setIsLoadingCount(true);
+
+    const debounceTimer = setTimeout(() => {
+      const params = buildSearchParams();
+
+      fetch(`http://localhost:8000/cars/count?${params.toString()}`)
+        .then((res) => res.json())
+        .then((data) => {
+          setCarsCount(data.total);
+          setIsLoadingCount(false);
+        })
+        .catch(() => {
+          setCarsCount(null);
+          setIsLoadingCount(false);
+        });
+    }, 500);
+
+    return () => clearTimeout(debounceTimer);
+  }, [
+    brand, model, fuelType, yearMin, yearMax, priceMin, priceMax, mileageMin, mileageMax,
+    enginePowerMin, enginePowerMax, engineCapacityMin, engineCapacityMax, isNew, sellerType,
+    driveType, transmission, color, doors, emissionStandard, originCountry, rightHandDrive,
+    damaged, firstOwner, noAccident, serviceBook, registered, qualityScoreMin, qualityScoreMax,
+    dealRating, buildSearchParams
+  ]);
+
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -266,7 +263,7 @@ export default function DetailedSearchPage() {
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Advanced Search</h1>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            Fine-tune your car search with our comprehensive filter options. Find exactly what you're looking for.
+            Fine-tune your car search with our comprehensive filter options. Find exactly what you&apos;re looking for.
           </p>
         </div>
 
@@ -860,7 +857,7 @@ export default function DetailedSearchPage() {
               <svg className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <span>Deal Rating shows how a car's price compares to the market. S-rated cars offer the best value.</span>
+              <span>Deal Rating shows how a car&apos;s price compares to the market. S-rated cars offer the best value.</span>
             </li>
             <li className="flex items-start gap-2">
               <svg className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

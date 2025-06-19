@@ -7,6 +7,7 @@ import { CarCard, type CarData } from "@/components/ui/CarCard";
 import { useBrandsModels } from '@/hooks/useBrandsModels';
 import { useRouter } from 'next/navigation';
 import { PendingActionsManager } from '@/utils/pendingActions';
+import Link from 'next/link';
 
 type EstimationCarData = {
     brand: string;
@@ -102,37 +103,6 @@ export default function CleanEstimationPage() {
     const [historyLoading, setHistoryLoading] = useState(false);
     const router = useRouter();
     const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
-
-    useEffect(() => {
-        const token = localStorage.getItem("token");
-        const userRaw = localStorage.getItem("user");
-
-        if (!token || !userRaw) {
-            PendingActionsManager.saveNavigationIntent(window.location.pathname);
-            router.push("/login");
-            return;
-        }
-        setIsLoggedIn(true);
-        setIsAuthorized(true);
-        try {
-            setUser(JSON.parse(userRaw));
-        } catch (e) {
-            console.error("Invalid user data");
-            setUser(null);
-            setIsLoggedIn(false);
-            PendingActionsManager.saveNavigationIntent(window.location.pathname);
-            router.push("/login");
-        }
-
-    }, [router]);
-
-    useEffect(() => {
-        if (isLoggedIn && user) {
-            loadEstimationHistory();
-        } else {
-            loadLocalHistory();
-        }
-    }, [isLoggedIn, user]);
 
     const loadEstimationHistory = async () => {
         if (!isLoggedIn) return;
@@ -363,6 +333,37 @@ export default function CleanEstimationPage() {
             setSelectedHistoryItem(null);
         }
     };
+
+    useEffect(() => {
+        const token = localStorage.getItem("token");
+        const userRaw = localStorage.getItem("user");
+
+        if (!token || !userRaw) {
+            PendingActionsManager.saveNavigationIntent(window.location.pathname);
+            router.push("/login");
+            return;
+        }
+        setIsLoggedIn(true);
+        setIsAuthorized(true);
+        try {
+            setUser(JSON.parse(userRaw));
+        } catch (e) {
+            console.error("Invalid user data");
+            setUser(null);
+            setIsLoggedIn(false);
+            PendingActionsManager.saveNavigationIntent(window.location.pathname);
+            router.push("/login");
+        }
+
+    }, [router]);
+
+    useEffect(() => {
+        if (isLoggedIn && user) {
+            loadEstimationHistory();
+        } else {
+            loadLocalHistory();
+        }
+    }, [isLoggedIn, user, estimationHistory, loadEstimationHistory]);
 
     useEffect(() => {
         if (carData.brand) {
@@ -770,7 +771,7 @@ export default function CleanEstimationPage() {
                                         </li>
                                         <li className="flex items-start">
                                             <span className="w-2 h-2 bg-blue-600 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                                            Compare your car's specs with market data
+                                            Compare your car&apos;s specs with market data
                                         </li>
                                         <li className="flex items-start">
                                             <span className="w-2 h-2 bg-blue-600 rounded-full mt-2 mr-3 flex-shrink-0"></span>
@@ -782,21 +783,6 @@ export default function CleanEstimationPage() {
                                         </li>
                                     </ul>
                                 </div>
-
-                                {!isLoggedIn && (
-                                    <div className="bg-yellow-50 rounded-2xl p-6 border border-yellow-200">
-                                        <h3 className="text-lg font-semibold text-yellow-900 mb-3">Sign in for more features</h3>
-                                        <p className="text-yellow-800 text-sm mb-4">
-                                            Create an account to save your estimation history permanently and access it from any device.
-                                        </p>
-                                        <a
-                                            href="/login"
-                                            className="inline-block bg-yellow-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-yellow-700 transition-colors"
-                                        >
-                                            Sign In / Register
-                                        </a>
-                                    </div>
-                                )}
 
                                 <div className="bg-green-50 rounded-2xl p-6">
                                     <h3 className="text-lg font-semibold text-green-900 mb-3">Accurate</h3>
@@ -1290,18 +1276,18 @@ export default function CleanEstimationPage() {
                                     Now that you have your market valuation, explore your options and make informed decisions.
                                 </p>
                                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                                    <a
+                                    <Link
                                         href="/listings"
                                         className="bg-white text-green-600 px-6 py-3 rounded-lg font-medium hover:bg-green-50 transition-colors"
                                     >
                                         Browse Similar Cars
-                                    </a>
-                                    <a
+                                    </Link>
+                                    <Link
                                         href="/detailed-search"
                                         className="bg-green-600 bg-opacity-50 backdrop-blur-sm border border-white/30 px-6 py-3 rounded-lg font-medium hover:bg-opacity-70 transition-all"
                                     >
                                         Advanced Search
-                                    </a>
+                                    </Link>
                                 </div>
                             </div>
 
@@ -1341,7 +1327,7 @@ export default function CleanEstimationPage() {
                                         </div>
                                         <h4 className="font-semibold text-gray-900 mb-2">Track Market Trends</h4>
                                         <p className="text-gray-600 text-sm">
-                                            Return periodically to track how your car's value changes with market conditions.
+                                            Return periodically to track how your car&apos;s value changes with market conditions.
                                         </p>
                                     </div>
                                 </div>

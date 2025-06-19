@@ -83,7 +83,6 @@ export default function FavoritesPage() {
   const [cars, setCars] = useState<CarData[]>([]);
   const [savedSearches, setSavedSearches] = useState<SavedSearch[]>([]);
   const [loading, setLoading] = useState(true);
-  const [imageIndex, setImageIndex] = useState<{ [carId: number]: number }>({});
   const [activeTab, setActiveTab] = useState<"favorites" | "saved-searches">("favorites");
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{ show: boolean; id: number | null; type: 'favorite' | 'search' }>({
@@ -92,21 +91,6 @@ export default function FavoritesPage() {
   const [actionLoading, setActionLoading] = useState(false);
   const { toasts, removeToast, showSuccess, showError } = useToast();
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    const userRaw = localStorage.getItem("user");
-
-    if (!token || !userRaw) {
-      PendingActionsManager.saveNavigationIntent(window.location.pathname);
-      router.push("/login");
-      return;
-    }
-
-    setIsAuthorized(true);
-    const user = JSON.parse(userRaw);
-    fetchData(user, token);
-  }, [activeTab, router]);
 
   const fetchData = async (user: any, token: string) => {
     setLoading(true);
@@ -129,7 +113,6 @@ export default function FavoritesPage() {
           setCars(carsOnly);
           const indices: { [carId: number]: number } = {};
           carsOnly.forEach((c: CarData) => (indices[c.id] = 0));
-          setImageIndex(indices);
         } else {
           console.error("Unexpected response:", data);
           setCars([]);
@@ -455,6 +438,21 @@ export default function FavoritesPage() {
         value: ratingMap[params.get("deal_rating")!] || params.get("deal_rating")!
       });
     }
+
+    useEffect(() => {
+      const token = localStorage.getItem("token");
+      const userRaw = localStorage.getItem("user");
+
+      if (!token || !userRaw) {
+        PendingActionsManager.saveNavigationIntent(window.location.pathname);
+        router.push("/login");
+        return;
+      }
+
+      setIsAuthorized(true);
+      const user = JSON.parse(userRaw);
+      fetchData(user, token);
+    }, [activeTab, router, fetchData]);
 
     return (
       <div className="flex flex-wrap gap-2">

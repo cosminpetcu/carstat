@@ -32,7 +32,6 @@ export default function ListingsPage() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(9);
   const [total, setTotal] = useState(0);
-  const [imageIndex, setImageIndex] = useState<{ [carId: number]: number }>({});
   const { toasts, removeToast, showSuccess, showError } = useToast();
   const [viewMode, setViewMode] = useState("grid");
   const [sortBy, setSortBy] = useState("");
@@ -88,7 +87,6 @@ export default function ListingsPage() {
         data.items.forEach((car: CarData) => {
           initIndex[car.id] = 0;
         });
-        setImageIndex(initIndex);
 
         setLoading(false);
       })
@@ -276,7 +274,7 @@ export default function ListingsPage() {
                     <div className="col-span-full text-center py-16">
                       <div className="text-gray-400 text-5xl mb-4">🔍</div>
                       <h3 className="text-xl font-medium mb-2">No cars found</h3>
-                      <p className="text-gray-500">Try adjusting your filters to find what you're looking for.</p>
+                      <p className="text-gray-500">Try adjusting your filters to find what you&apos;re looking for.</p>
                     </div>
                   )
               }

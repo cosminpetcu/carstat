@@ -120,25 +120,6 @@ export default function SidebarFilters({
 
   const { brands, models, isLoadingBrands, isLoadingModels, fetchModels, clearModels } = useBrandsModels();
 
-  useEffect(() => {
-    const params = new URLSearchParams(searchParams.toString());
-    const newFilters = { ...filters };
-
-    Object.keys(newFilters).forEach((key) => {
-      const paramValue = params.get(key);
-      if (paramValue !== null) {
-        newFilters[key as keyof typeof filters] = paramValue;
-      } else {
-        newFilters[key as keyof typeof filters] = "";
-      }
-    });
-
-    setFilters(newFilters);
-
-    const searchParam = params.get("search");
-    setCurrentSearch(searchParam || "");
-  }, [searchParams]);
-
   const handleSaveSearch = async () => {
     const token = localStorage.getItem("token");
     const userRaw = localStorage.getItem("user");
@@ -271,6 +252,25 @@ export default function SidebarFilters({
       router.push('/listings');
     }
   };
+
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    const newFilters = { ...filters };
+
+    Object.keys(newFilters).forEach((key) => {
+      const paramValue = params.get(key);
+      if (paramValue !== null) {
+        newFilters[key as keyof typeof filters] = paramValue;
+      } else {
+        newFilters[key as keyof typeof filters] = "";
+      }
+    });
+
+    setFilters(newFilters);
+
+    const searchParam = params.get("search");
+    setCurrentSearch(searchParam || "");
+  }, [searchParams, filters]);
 
   useEffect(() => {
     if (filters.brand) {

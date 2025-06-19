@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from 'next/link';
 import SearchBox from "@/components/SearchBox";
 import { useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
@@ -10,21 +11,6 @@ import { useRouter } from "next/navigation";
 import { PendingActionsManager } from '@/utils/pendingActions';
 import { CarCard, type CarData } from "@/components/ui/CarCard";
 import { CarCardSkeleton } from '@/components/ui/LoadingSkeleton';
-
-type Car = {
-  id: number;
-  title: string;
-  year: number;
-  fuel_type: string;
-  transmission: string;
-  price: number;
-  images: string[] | string;
-  estimated_price?: number;
-  deal_rating?: string;
-  mileage?: number;
-  engine_power?: number;
-  engine_capacity?: number;
-};
 
 export default function Home() {
   const router = useRouter();
@@ -127,7 +113,7 @@ export default function Home() {
               </div>
               <span className="text-gray-700 font-medium">Showing Exceptional Deals Only</span>
             </div>
-            <a
+            <Link
               href="/listings"
               className="group bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-lg text-sm font-medium hover:from-blue-700 hover:to-blue-800 transition-all transform hover:scale-105 shadow-lg"
             >
@@ -137,7 +123,7 @@ export default function Home() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
               </span>
-            </a>
+            </Link>
           </div>
 
           <HomeListings />
@@ -220,12 +206,12 @@ export default function Home() {
             and price comparisons. Make an informed decision with CarStat.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <a
+            <Link
               href="/listings"
               className="bg-white text-blue-600 px-8 py-4 rounded-lg font-medium hover:bg-blue-50 transition-colors transform hover:scale-105 shadow-lg"
             >
               Browse All Cars
-            </a>
+            </Link>
             <button
               onClick={() => handleProtectedNavigation('/get-estimation')}
               className="bg-blue-500 bg-opacity-50 backdrop-blur-sm border border-white/30 px-8 py-4 rounded-lg font-medium hover:bg-opacity-70 transition-all transform hover:scale-105 shadow-lg cursor-pointer"

@@ -9,6 +9,7 @@ interface UsePendingActionsReturn {
 
 export const usePendingActions = (): UsePendingActionsReturn => {
   const router = useRouter();
+  const [hasPendingAction, setHasPendingAction] = useState(false);
 
   const executeAction = async (action: PendingAction): Promise<boolean> => {
     const token = localStorage.getItem("token");
@@ -18,16 +19,16 @@ export const usePendingActions = (): UsePendingActionsReturn => {
       case 'add_favorite':
       case 'remove_favorite':
         if (!token || !userRaw) return false;
-        
+
         const user = JSON.parse(userRaw);
         const carId = action.data.car_id;
         if (!carId) return false;
 
         try {
-          const url = action.type === 'add_favorite' 
+          const url = action.type === 'add_favorite'
             ? "http://localhost:8000/favorites"
             : `http://localhost:8000/favorites/${carId}`;
-          
+
           const options: RequestInit = {
             method: action.type === 'add_favorite' ? "POST" : "DELETE",
             headers: {
@@ -51,7 +52,7 @@ export const usePendingActions = (): UsePendingActionsReturn => {
 
       case 'save_search':
         if (!token || !userRaw) return false;
-        
+
         const userForSearch = JSON.parse(userRaw);
         const searchQuery = action.data.search_query;
         if (!searchQuery) return false;
@@ -99,7 +100,7 @@ export const usePendingActions = (): UsePendingActionsReturn => {
 
   const executePendingAction = useCallback(async (): Promise<void> => {
     const pendingAction = PendingActionsManager.getPendingAction();
-    
+
     if (!pendingAction) {
       return;
     }
@@ -108,7 +109,7 @@ export const usePendingActions = (): UsePendingActionsReturn => {
 
     try {
       const success = await executeAction(pendingAction);
-      
+
       if (success) {
         const actionNames = {
           'add_favorite': 'Car added to favorites',
@@ -116,7 +117,7 @@ export const usePendingActions = (): UsePendingActionsReturn => {
           'save_search': 'Search saved successfully',
           'navigation': 'Navigation completed'
         };
-        
+
         console.log(actionNames[pendingAction.type] || 'Action completed');
 
         if (pendingAction.type === 'navigation') {
@@ -130,20 +131,18 @@ export const usePendingActions = (): UsePendingActionsReturn => {
           }, 100);
         }
       }
-      
+
       PendingActionsManager.clearPendingAction();
-      
+
     } catch (error) {
       console.error('Error executing pending action:', error);
       PendingActionsManager.clearPendingAction();
     }
-  }, [router]);
-
-  const [hasPendingAction, setHasPendingAction] = useState(false);
+  }, [router, executeAction]);
 
   useEffect(() => {
     setHasPendingAction(PendingActionsManager.hasPendingAction());
-    }, []);
+  }, []);
 
   return {
     executePendingAction,

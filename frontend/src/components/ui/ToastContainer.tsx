@@ -1,6 +1,6 @@
 "use client";
 
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence } from 'framer-motion';
 import { Toast, type ToastMessage } from './Toast';
 
 interface ToastContainerProps {

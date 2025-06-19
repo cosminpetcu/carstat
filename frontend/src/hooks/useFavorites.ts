@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import { PendingActionsManager, getCurrentUrlForReturn } from '@/utils/pendingActions';
 import type { CarData } from '@/components/ui/CarCard';
 
@@ -15,7 +14,6 @@ export const useFavorites = (
     onSuccess?: (carId: number, newState: boolean) => void,
     onError?: (error: string) => void
 ): UseFavoritesReturn => {
-    const router = useRouter();
     const [updatingFavorites, setUpdatingFavorites] = useState<number[]>([]);
 
     const toggleFavorite = useCallback(async (car: CarData) => {

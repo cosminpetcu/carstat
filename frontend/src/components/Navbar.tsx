@@ -22,50 +22,6 @@ export default function Navbar() {
 
   const router = useRouter();
 
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    const storedUser = localStorage.getItem("user");
-
-    setIsLoggedIn(!!token);
-    if (storedUser) {
-      try {
-        setUser(JSON.parse(storedUser));
-      } catch {
-        setUser(null);
-      }
-    }
-
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setDropdownOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-
-  useEffect(() => {
-    if (isListings) {
-      const searchParam = searchParams.get("search");
-      if (searchParam) {
-        setSearchQuery(searchParam);
-      }
-    } else {
-      if (!searchOpen) {
-        setSearchQuery("");
-      }
-    }
-  }, [isListings, searchParams]);
-
-  useEffect(() => {
-    setMobileMenuOpen(false);
-
-    if (searchOpen && searchInputRef.current) {
-      searchInputRef.current.focus();
-    }
-  }, [pathname, searchOpen]);
-
   const handleLogout = () => {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
@@ -103,11 +59,55 @@ export default function Navbar() {
     }
   };
 
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const storedUser = localStorage.getItem("user");
+
+    setIsLoggedIn(!!token);
+    if (storedUser) {
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch {
+        setUser(null);
+      }
+    }
+
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (isListings) {
+      const searchParam = searchParams.get("search");
+      if (searchParam) {
+        setSearchQuery(searchParam);
+      }
+    } else {
+      if (!searchOpen) {
+        setSearchQuery("");
+      }
+    }
+  }, [isListings, searchParams, searchOpen]);
+
+  useEffect(() => {
+    setMobileMenuOpen(false);
+
+    if (searchOpen && searchInputRef.current) {
+      searchInputRef.current.focus();
+    }
+  }, [pathname, searchOpen]);
+
   return (
     <header
       className={`w-full z-30 ${isHome
-          ? "absolute top-0 text-white"
-          : "bg-gray-900 text-white shadow-md"
+        ? "absolute top-0 text-white"
+        : "bg-gray-900 text-white shadow-md"
         }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -125,8 +125,8 @@ export default function Navbar() {
             <button
               onClick={() => handleProtectedNavigation('/favorites')}
               className={`px-3 py-2 text-sm font-medium transition-colors duration-200 cursor-pointer ${pathname === "/favorites"
-                  ? "text-white bg-gray-700/50 rounded-md"
-                  : "text-gray-300 hover:text-white"
+                ? "text-white bg-gray-700/50 rounded-md"
+                : "text-gray-300 hover:text-white"
                 }`}
             >
               Favorites
@@ -134,8 +134,8 @@ export default function Navbar() {
             <button
               onClick={() => handleProtectedNavigation('/dashboard')}
               className={`px-3 py-2 text-sm font-medium transition-colors duration-200 cursor-pointer ${pathname === "/dashboard"
-                  ? "text-white bg-gray-700/50 rounded-md"
-                  : "text-gray-300 hover:text-white"
+                ? "text-white bg-gray-700/50 rounded-md"
+                : "text-gray-300 hover:text-white"
                 }`}
             >
               Dashboard
@@ -143,8 +143,8 @@ export default function Navbar() {
             <button
               onClick={() => handleProtectedNavigation('/get-estimation')}
               className={`px-3 py-2 text-sm font-medium transition-colors duration-200 cursor-pointer ${pathname === "/get-estimation"
-                  ? "text-white bg-gray-700/50 rounded-md"
-                  : "text-gray-300 hover:text-white"
+                ? "text-white bg-gray-700/50 rounded-md"
+                : "text-gray-300 hover:text-white"
                 }`}
             >
               Get Estimation
@@ -168,8 +168,8 @@ export default function Navbar() {
             {!isLoggedIn ? (
               <Link href="/login">
                 <button className={`hidden md:flex items-center px-6 py-2.5 ${isHome
-                    ? "text-white border border-white/80 hover:bg-white hover:text-gray-900"
-                    : "text-blue-400 border border-blue-400 hover:bg-blue-500 hover:text-white"
+                  ? "text-white border border-white/80 hover:bg-white hover:text-gray-900"
+                  : "text-blue-400 border border-blue-400 hover:bg-blue-500 hover:text-white"
                   } transition duration-200 text-sm font-medium rounded-md`}>
                   Sign In
                 </button>
@@ -240,8 +240,8 @@ export default function Navbar() {
             <button
               onClick={() => handleProtectedNavigation('/favorites')}
               className={`block px-3 py-2 text-base font-medium w-full text-left transition-colors ${pathname === "/favorites"
-                  ? "bg-gray-800 text-white rounded-md"
-                  : "text-gray-300 hover:bg-gray-700 hover:text-white hover:rounded-md"
+                ? "bg-gray-800 text-white rounded-md"
+                : "text-gray-300 hover:bg-gray-700 hover:text-white hover:rounded-md"
                 }`}
             >
               Favorites
@@ -249,8 +249,8 @@ export default function Navbar() {
             <button
               onClick={() => handleProtectedNavigation('/dashboard')}
               className={`block px-3 py-2 text-base font-medium w-full text-left transition-colors ${pathname === "/dashboard"
-                  ? "bg-gray-800 text-white rounded-md"
-                  : "text-gray-300 hover:bg-gray-700 hover:text-white hover:rounded-md"
+                ? "bg-gray-800 text-white rounded-md"
+                : "text-gray-300 hover:bg-gray-700 hover:text-white hover:rounded-md"
                 }`}
             >
               Dashboard
@@ -258,8 +258,8 @@ export default function Navbar() {
             <button
               onClick={() => handleProtectedNavigation('/get-estimation')}
               className={`block px-3 py-2 text-base font-medium w-full text-left transition-colors ${pathname === "/get-estimation"
-                  ? "bg-gray-800 text-white rounded-md"
-                  : "text-gray-300 hover:bg-gray-700 hover:text-white hover:rounded-md"
+                ? "bg-gray-800 text-white rounded-md"
+                : "text-gray-300 hover:bg-gray-700 hover:text-white hover:rounded-md"
                 }`}
             >
               Get Estimation
