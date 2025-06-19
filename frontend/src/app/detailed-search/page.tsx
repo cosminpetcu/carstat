@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -9,33 +9,7 @@ import { PendingActionsManager } from '@/utils/pendingActions';
 import { useToast } from '@/hooks/useToast';
 import { ToastContainer } from '@/components/ui/ToastContainer';
 
-
-const fuelTypes = ["Petrol", "Diesel", "Electric", "Hybrid", "LPG", "CNG", "Plug-in Hybrid"];
-const sellerTypes = ["Private", "Dealer"];
-const driveTypes = ["Sedan", "Hatchback", "SUV", "Wagon", "Coupe", "Convertible", "MPV", "Pickup"];
-const transmissionTypes = ["Automatic", "Manual"];
-const colors = ["Black", "White", "Grey", "Silver", "Blue", "Red", "Green", "Brown", "Beige", "Yellow/Gold", "Orange", "Other"];
-const emissionStandards = ["Euro 1", "Euro 2", "Euro 3", "Euro 4", "Euro 5", "Euro 6", "Non-euro"];
-const booleanOptions = [
-  { label: "Any", value: "" },
-  { label: "Yes", value: "true" },
-  { label: "No", value: "false" },
-];
-const isNewOptions = [
-  { label: "Any", value: "any" },
-  { label: "New", value: "true" },
-  { label: "Used", value: "false" },
-];
-const priceOptions = ["1000", "2000", "3000", "4000", "5000", "6000", "7000", "8000", "9000", "10000", "12500", "15000", "17500", "20000", "25000", "30000", "40000", "50000", "60000", "70000", "80000", "90000", "100000"];
-const yearOptions = Array.from({ length: 2024 - 1990 + 1 }, (_, i) => (1990 + i).toString());
-const mileageOptions = ["0", "10000", "50000", "100000", "150000", "200000", "300000"];
-const powerOptions = ["50", "100", "150", "200", "250", "300", "400", "500", "750", "1000"];
-const capacityOptions = ["1000", "1500", "2000", "2500", "3000", "4000"];
-const doorOptions = ["2", "3", "4", "5"];
-const scoreOptions = ["20", "40", "60", "80"];
-const originCountries = ["Germany", "Romania", "Italy", "France", "Spain", "Japan", "UK", "USA", "South Korea", "Sweden"];
-
-export default function DetailedSearchPage() {
+function DetailedSearch() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [brand, setBrand] = useState("");
@@ -73,6 +47,31 @@ export default function DetailedSearchPage() {
   const [activeTab, setActiveTab] = useState<"basic" | "advanced" | "condition">("basic");
   const { toasts, removeToast, showSuccess, showError } = useToast();
   const { brands, models, isLoadingBrands, isLoadingModels, fetchModels, clearModels } = useBrandsModels();
+
+  const fuelTypes = ["Petrol", "Diesel", "Electric", "Hybrid", "LPG", "CNG", "Plug-in Hybrid"];
+  const sellerTypes = ["Private", "Dealer"];
+  const driveTypes = ["Sedan", "Hatchback", "SUV", "Wagon", "Coupe", "Convertible", "MPV", "Pickup"];
+  const transmissionTypes = ["Automatic", "Manual"];
+  const colors = ["Black", "White", "Grey", "Silver", "Blue", "Red", "Green", "Brown", "Beige", "Yellow/Gold", "Orange", "Other"];
+  const emissionStandards = ["Euro 1", "Euro 2", "Euro 3", "Euro 4", "Euro 5", "Euro 6", "Non-euro"];
+  const booleanOptions = [
+    { label: "Any", value: "" },
+    { label: "Yes", value: "true" },
+    { label: "No", value: "false" },
+  ];
+  const isNewOptions = [
+    { label: "Any", value: "any" },
+    { label: "New", value: "true" },
+    { label: "Used", value: "false" },
+  ];
+  const priceOptions = ["1000", "2000", "3000", "4000", "5000", "6000", "7000", "8000", "9000", "10000", "12500", "15000", "17500", "20000", "25000", "30000", "40000", "50000", "60000", "70000", "80000", "90000", "100000"];
+  const yearOptions = Array.from({ length: 2024 - 1990 + 1 }, (_, i) => (1990 + i).toString());
+  const mileageOptions = ["0", "10000", "50000", "100000", "150000", "200000", "300000"];
+  const powerOptions = ["50", "100", "150", "200", "250", "300", "400", "500", "750", "1000"];
+  const capacityOptions = ["1000", "1500", "2000", "2500", "3000", "4000"];
+  const doorOptions = ["2", "3", "4", "5"];
+  const scoreOptions = ["20", "40", "60", "80"];
+  const originCountries = ["Germany", "Romania", "Italy", "France", "Spain", "Japan", "UK", "USA", "South Korea", "Sweden"];
 
   const buildSearchParams = useCallback(() => {
     const params = new URLSearchParams();
@@ -878,5 +877,15 @@ export default function DetailedSearchPage() {
       <Footer />
       <ToastContainer toasts={toasts} onRemove={removeToast} />
     </main>
+  );
+}
+
+export default function DetailedSearchPage() {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Suspense fallback={"Loading..."}>
+        <DetailedSearch />
+      </Suspense>
+    </div>
   );
 }

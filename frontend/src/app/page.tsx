@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from 'next/link';
 import SearchBox from "@/components/SearchBox";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import BrandsSection from "@/components/BrandsSection";
@@ -12,7 +12,7 @@ import { PendingActionsManager } from '@/utils/pendingActions';
 import { CarCard, type CarData } from "@/components/ui/CarCard";
 import { CarCardSkeleton } from '@/components/ui/LoadingSkeleton';
 
-export default function Home() {
+function HomePage() {
   const router = useRouter();
 
   const handleProtectedNavigation = (targetPath: string) => {
@@ -270,6 +270,16 @@ function HomeListings() {
           showEstimatedPrice={true}
         />
       ))}
+    </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Suspense fallback={"Loading..."}>
+        <HomePage />
+      </Suspense>
     </div>
   );
 }

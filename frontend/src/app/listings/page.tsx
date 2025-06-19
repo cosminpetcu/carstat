@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import SidebarFilters from "@/components/SidebarFilters";
@@ -23,7 +23,7 @@ const sortOptions = [
   { value: "engine_power_desc", label: "Power: High to Low", sort_by: "engine_power", order: "desc" },
 ];
 
-export default function ListingsPage() {
+function Listings() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -35,65 +35,6 @@ export default function ListingsPage() {
   const { toasts, removeToast, showSuccess, showError } = useToast();
   const [viewMode, setViewMode] = useState("grid");
   const [sortBy, setSortBy] = useState("");
-
-  useEffect(() => {
-    const handleUrlChange = () => {
-      window.location.reload();
-    };
-
-    window.addEventListener('popstate', handleUrlChange);
-    return () => window.removeEventListener('popstate', handleUrlChange);
-  }, []);
-
-  useEffect(() => {
-    const params = new URLSearchParams(searchParams.toString());
-    const token = localStorage.getItem("token");
-    const userRaw = localStorage.getItem("user");
-    const user = userRaw ? JSON.parse(userRaw) : null;
-
-    const currentPage = parseInt(params.get("page") || "1");
-    const currentLimit = parseInt(params.get("limit") || "9");
-
-    setPage(currentPage);
-    setLimit(currentLimit);
-
-    const urlSortBy = params.get("sort_by") || "";
-    const urlSortOrder = params.get("order") || "asc";
-
-    const currentSortOption = sortOptions.find(
-      option => option.sort_by === urlSortBy && option.order === urlSortOrder
-    );
-
-    setSortBy(currentSortOption?.value || "");
-
-    params.set("page", currentPage.toString());
-    params.set("limit", currentLimit.toString());
-
-    if (user?.id && token) {
-      params.set("user_id", user.id.toString());
-    }
-
-    const url = `http://localhost:8000/cars?${params.toString()}`;
-
-    fetch(url, {
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        setCars(data.items);
-        setTotal(data.total);
-
-        const initIndex: { [carId: number]: number } = {};
-        data.items.forEach((car: CarData) => {
-          initIndex[car.id] = 0;
-        });
-
-        setLoading(false);
-      })
-      .catch(() => {
-        setLoading(false);
-      });
-  }, [searchParams]);
 
   const updateSort = (sortValue: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -163,6 +104,65 @@ export default function ListingsPage() {
       <CarCardSkeleton key={idx} variant={viewMode as "grid" | "list"} />
     ));
   };
+
+  useEffect(() => {
+    const handleUrlChange = () => {
+      window.location.reload();
+    };
+
+    window.addEventListener('popstate', handleUrlChange);
+    return () => window.removeEventListener('popstate', handleUrlChange);
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    const token = localStorage.getItem("token");
+    const userRaw = localStorage.getItem("user");
+    const user = userRaw ? JSON.parse(userRaw) : null;
+
+    const currentPage = parseInt(params.get("page") || "1");
+    const currentLimit = parseInt(params.get("limit") || "9");
+
+    setPage(currentPage);
+    setLimit(currentLimit);
+
+    const urlSortBy = params.get("sort_by") || "";
+    const urlSortOrder = params.get("order") || "asc";
+
+    const currentSortOption = sortOptions.find(
+      option => option.sort_by === urlSortBy && option.order === urlSortOrder
+    );
+
+    setSortBy(currentSortOption?.value || "");
+
+    params.set("page", currentPage.toString());
+    params.set("limit", currentLimit.toString());
+
+    if (user?.id && token) {
+      params.set("user_id", user.id.toString());
+    }
+
+    const url = `http://localhost:8000/cars?${params.toString()}`;
+
+    fetch(url, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        setCars(data.items);
+        setTotal(data.total);
+
+        const initIndex: { [carId: number]: number } = {};
+        data.items.forEach((car: CarData) => {
+          initIndex[car.id] = 0;
+        });
+
+        setLoading(false);
+      })
+      .catch(() => {
+        setLoading(false);
+      });
+  }, [searchParams]);
 
   return (
     <main className="min-h-screen bg-gray-50">
@@ -327,5 +327,15 @@ export default function ListingsPage() {
       <Footer />
       <ToastContainer toasts={toasts} onRemove={removeToast} />
     </main>
+  );
+}
+
+export default function ListingsPage() {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Suspense fallback={"Loading..."}>
+        <Listings />
+      </Suspense>
+    </div>
   );
 }

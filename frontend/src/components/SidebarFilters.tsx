@@ -255,22 +255,39 @@ export default function SidebarFilters({
 
   useEffect(() => {
     const params = new URLSearchParams(searchParams.toString());
-    const newFilters = { ...filters };
 
-    Object.keys(newFilters).forEach((key) => {
-      const paramValue = params.get(key);
-      if (paramValue !== null) {
-        newFilters[key as keyof typeof filters] = paramValue;
-      } else {
-        newFilters[key as keyof typeof filters] = "";
-      }
-    });
+    const updatedFilters: typeof filters = {
+      brand: params.get("brand") || "",
+      model: params.get("model") || "",
+      fuel_type: params.get("fuel_type") || "",
+      vehicle_condition: params.get("vehicle_condition") || "",
+      transmission: params.get("transmission") || "",
+      seller_type: params.get("seller_type") || "",
+      drive_type: params.get("drive_type") || "",
+      color: params.get("color") || "",
+      deal_rating: params.get("deal_rating") || "",
+      min_price: params.get("min_price") || "",
+      max_price: params.get("max_price") || "",
+      year_min: params.get("year_min") || "",
+      year_max: params.get("year_max") || "",
+      mileage_min: params.get("mileage_min") || "",
+      mileage_max: params.get("mileage_max") || "",
+      engine_power_min: params.get("engine_power_min") || "",
+      engine_power_max: params.get("engine_power_max") || "",
+      engine_capacity_min: params.get("engine_capacity_min") || "",
+      engine_capacity_max: params.get("engine_capacity_max") || "",
+      doors: params.get("doors") || "",
+      sold: params.get("sold") || "",
+      quality_score_min: params.get("quality_score_min") || "",
+      quality_score_max: params.get("quality_score_max") || ""
+    };
 
-    setFilters(newFilters);
+    setFilters(updatedFilters);
 
     const searchParam = params.get("search");
     setCurrentSearch(searchParam || "");
-  }, [searchParams, filters]);
+  }, [searchParams]);
+
 
   useEffect(() => {
     if (filters.brand) {

@@ -75,6 +75,18 @@ type Car = {
   estimated_price?: number;
 };
 
+interface PriceHistoryItem {
+  date: string;
+  price: number;
+}
+
+interface PriceChangeItem {
+  date: string;
+  price: number;
+  change: number;
+  changePercent: number;
+}
+
 interface ModelStats {
   totalCount: number;
   averagePrice: number;
@@ -481,7 +493,7 @@ export default function CarDetailPage() {
                 </div>
               </div>
               <button
-                onClick={() => car && toggleFavorite(car as any)}
+                onClick={() => car && car.year !== undefined && toggleFavorite(car as CarData)}
                 className={`p-2 rounded-full ${car.is_favorite ? "bg-red-50" : "bg-gray-50"} ${isUpdatingFavorite(car.id) ? "opacity-50 cursor-not-allowed" : ""
                   }`}
                 disabled={isUpdatingFavorite(car.id)}
@@ -726,7 +738,7 @@ export default function CarDetailPage() {
 
                     if (!Array.isArray(parsed)) return <p className="p-4 text-black">No price history available.</p>;
 
-                    parsed = parsed.map((p: any) => {
+                    parsed = parsed.map((p: PriceHistoryItem) => {
                       const date = new Date(p.date);
                       const formattedDate = date.toLocaleDateString('en-GB');
                       return { ...p, date: formattedDate };
@@ -734,7 +746,7 @@ export default function CarDetailPage() {
 
                     if (car.created_at && car.price) {
                       const formattedDate = new Date(car.created_at).toLocaleDateString("en-GB");
-                      if (!parsed.find((p: any) => p.date === formattedDate)) {
+                      if (!parsed.find((p: PriceHistoryItem) => p.date === formattedDate)) {
                         parsed.unshift({
                           date: formattedDate,
                           price: car.price,
@@ -744,13 +756,13 @@ export default function CarDetailPage() {
 
                     if (parsed.length === 0) return <p className="p-4 text-black">No price history available.</p>;
 
-                    parsed.sort((a: any, b: any) => {
+                    parsed.sort((a: PriceHistoryItem, b: PriceHistoryItem) => {
                       const dateA = a.date.split('/').reverse().join('');
                       const dateB = b.date.split('/').reverse().join('');
                       return dateA.localeCompare(dateB);
                     });
 
-                    const prices = parsed.map((p: any) => p.price);
+                    const prices = parsed.map((p: PriceHistoryItem) => p.price);
                     const minPrice = Math.min(...prices);
                     const maxPrice = Math.max(...prices);
 
@@ -759,7 +771,7 @@ export default function CarDetailPage() {
                     const yMin = Math.max(0, minPrice - padding);
                     const yMax = maxPrice + padding;
 
-                    const priceChanges = parsed.map((item: any, index: number) => {
+                    const priceChanges = parsed.map((item: PriceHistoryItem, index: number) => {
                       if (index === 0) return { ...item, change: 0, changePercent: 0 };
 
                       const prevPrice = parsed[index - 1].price;
@@ -778,7 +790,7 @@ export default function CarDetailPage() {
                     return (
                       <div className="p-4 space-y-6">
                         <div className="flex flex-wrap gap-2">
-                          {priceChanges.map((item: any, index: number) => {
+                          {priceChanges.map((item: PriceChangeItem, index: number) => {
                             if (index === 0) return null;
                             const isIncrease = item.change > 0;
                             const color = isIncrease ? "text-red-600" : "text-green-600";
@@ -819,7 +831,7 @@ export default function CarDetailPage() {
                               )}
                               <Tooltip
                                 labelStyle={{ fontWeight: "bold" }}
-                                formatter={(value: any) => [`€${value}`, "Price"]}
+                                formatter={(value: number) => [`€${value}`, "Price"]}
                                 contentStyle={{ backgroundColor: "white", borderRadius: "8px", padding: "8px", boxShadow: "0px 2px 8px rgba(0,0,0,0.1)" }}
                               />
                               <Line
@@ -835,7 +847,7 @@ export default function CarDetailPage() {
                         </div>
                       </div>
                     );
-                  } catch (err) {
+                  } catch {
                     return <p className="p-4 text-red-500">Failed to parse price history.</p>;
                   }
                 })()}

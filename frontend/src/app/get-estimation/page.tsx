@@ -80,6 +80,15 @@ type EstimationHistory = {
     created_at: string;
 };
 
+interface ParsedHistoryItem {
+    id: string;
+    car: EstimationCarData;
+    result: EstimationResult;
+    notes?: string;
+    timestamp: string;
+}
+
+
 export default function CleanEstimationPage() {
     const [carData, setCarData] = useState<EstimationCarData>({
         brand: "",
@@ -115,7 +124,7 @@ export default function CleanEstimationPage() {
         if (savedHistory) {
             try {
                 const parsed = JSON.parse(savedHistory);
-                const transformedHistory = parsed.map((item: any) => ({
+                const transformedHistory = parsed.map((item: ParsedHistoryItem) => ({
                     id: parseInt(item.id),
                     car_data: item.car,
                     estimation_result: item.result,
@@ -347,7 +356,7 @@ export default function CleanEstimationPage() {
         setIsAuthorized(true);
         try {
             setUser(JSON.parse(userRaw));
-        } catch (e) {
+        } catch {
             console.error("Invalid user data");
             setUser(null);
             setIsLoggedIn(false);
@@ -390,7 +399,7 @@ export default function CleanEstimationPage() {
         }
     }, [carData.brand, carData.model]);
 
-    const handleInputChange = (field: keyof EstimationCarData, value: any) => {
+    const handleInputChange = (field: keyof EstimationCarData, value: string | number | boolean | undefined) => {
         setCarData(prev => ({ ...prev, [field]: value }));
     };
 
@@ -401,7 +410,7 @@ export default function CleanEstimationPage() {
         setEstimationResult(null);
 
         try {
-            const headers: any = {
+            const headers: Record<string, string> = {
                 "Content-Type": "application/json",
             };
 
@@ -432,8 +441,8 @@ export default function CleanEstimationPage() {
                 setTimeout(loadEstimationHistory, 10000);
             }
 
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "An error occurred");
         } finally {
             setLoading(false);
         }
@@ -491,7 +500,7 @@ export default function CleanEstimationPage() {
                                 ].map((tab) => (
                                     <button
                                         key={tab.id}
-                                        onClick={() => setActiveTab(tab.id as any)}
+                                        onClick={() => setActiveTab(tab.id as "estimate" | "history")}
                                         className={`flex items-center px-4 py-2 rounded-lg font-medium transition-colors relative ${activeTab === tab.id
                                             ? "bg-blue-600 text-white"
                                             : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"

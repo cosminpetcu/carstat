@@ -1,6 +1,7 @@
 "use client";
+export const dynamic = 'force-dynamic';
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { useSearchParams } from "next/navigation";
@@ -8,7 +9,7 @@ import Footer from "@/components/Footer";
 import { usePendingActions } from "@/hooks/usePendingActions";
 import { PendingActionsManager } from '@/utils/pendingActions';
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { executePendingAction, hasPendingAction } = usePendingActions();
@@ -386,5 +387,15 @@ export default function LoginPage() {
 
       <Footer />
     </main>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Suspense fallback={"Loading..."}>
+        <LoginForm />
+      </Suspense>
+    </div>
   );
 }
