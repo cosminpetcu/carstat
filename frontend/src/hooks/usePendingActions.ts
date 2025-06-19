@@ -11,7 +11,7 @@ export const usePendingActions = (): UsePendingActionsReturn => {
   const router = useRouter();
   const [hasPendingAction, setHasPendingAction] = useState(false);
 
-  const executeAction = async (action: PendingAction): Promise<boolean> => {
+  const executeAction = useCallback(async (action: PendingAction): Promise<boolean> => {
     const token = localStorage.getItem("token");
     const userRaw = localStorage.getItem("user");
 
@@ -96,7 +96,7 @@ export const usePendingActions = (): UsePendingActionsReturn => {
         console.error('Unknown pending action type:', action.type);
         return false;
     }
-  };
+  }, [router]);
 
   const executePendingAction = useCallback(async (): Promise<void> => {
     const pendingAction = PendingActionsManager.getPendingAction();

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import Navbar from "@/components/Navbar";
 import { useRouter } from "next/navigation";
 import Footer from "@/components/Footer";
@@ -11,6 +11,16 @@ import { useToast } from '@/hooks/useToast';
 import { ToastContainer } from '@/components/ui/ToastContainer';
 import { CarCardSkeleton } from '@/components/ui/LoadingSkeleton';
 import { PendingActionsManager } from '@/utils/pendingActions';
+
+interface User {
+  id: number;
+  email: string;
+  full_name?: string;
+}
+
+interface FavoriteResponse {
+  car: CarData;
+}
 
 type SavedSearch = {
   id: number;
@@ -92,7 +102,7 @@ export default function FavoritesPage() {
   const { toasts, removeToast, showSuccess, showError } = useToast();
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
 
-  const fetchData = async (user: any, token: string) => {
+  const fetchData = useCallback(async (user: User, token: string) => {
     setLoading(true);
     setError(null);
 
@@ -106,7 +116,7 @@ export default function FavoritesPage() {
 
         const data = await res.json();
         if (Array.isArray(data)) {
-          const carsOnly = data.map((fav: any) => ({
+          const carsOnly = data.map((fav: FavoriteResponse) => ({
             ...fav.car,
             is_favorite: true
           }));
@@ -138,7 +148,7 @@ export default function FavoritesPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeTab]);
 
   const handleDeleteSearch = async (searchId: number) => {
     setConfirmDelete({ show: true, id: searchId, type: 'search' });
@@ -439,21 +449,6 @@ export default function FavoritesPage() {
       });
     }
 
-    useEffect(() => {
-      const token = localStorage.getItem("token");
-      const userRaw = localStorage.getItem("user");
-
-      if (!token || !userRaw) {
-        PendingActionsManager.saveNavigationIntent(window.location.pathname);
-        router.push("/login");
-        return;
-      }
-
-      setIsAuthorized(true);
-      const user = JSON.parse(userRaw);
-      fetchData(user, token);
-    }, [activeTab, router, fetchData]);
-
     return (
       <div className="flex flex-wrap gap-2">
         {tags.map((tag, idx) => (
@@ -466,6 +461,21 @@ export default function FavoritesPage() {
       </div>
     );
   };
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    const userRaw = localStorage.getItem("user");
+
+    if (!token || !userRaw) {
+      PendingActionsManager.saveNavigationIntent(window.location.pathname);
+      router.push("/login");
+      return;
+    }
+
+    setIsAuthorized(true);
+    const user = JSON.parse(userRaw);
+    fetchData(user, token);
+  }, [fetchData, router]);
 
   if (isAuthorized === null || isAuthorized === false) {
     return <div></div>;

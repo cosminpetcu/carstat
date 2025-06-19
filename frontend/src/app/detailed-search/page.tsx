@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
@@ -8,6 +8,7 @@ import { useBrandsModels } from '@/hooks/useBrandsModels';
 import { PendingActionsManager } from '@/utils/pendingActions';
 import { useToast } from '@/hooks/useToast';
 import { ToastContainer } from '@/components/ui/ToastContainer';
+
 
 const fuelTypes = ["Petrol", "Diesel", "Electric", "Hybrid", "LPG", "CNG", "Plug-in Hybrid"];
 const sellerTypes = ["Private", "Dealer"];
@@ -73,7 +74,7 @@ export default function DetailedSearchPage() {
   const { toasts, removeToast, showSuccess, showError } = useToast();
   const { brands, models, isLoadingBrands, isLoadingModels, fetchModels, clearModels } = useBrandsModels();
 
-  const buildSearchParams = () => {
+  const buildSearchParams = useCallback(() => {
     const params = new URLSearchParams();
 
     if (brand) params.append("brand", brand);
@@ -108,7 +109,13 @@ export default function DetailedSearchPage() {
     if (dealRating) params.append("deal_rating", dealRating);
 
     return params;
-  };
+  }, [
+    brand, model, fuelType, yearMin, yearMax, priceMin, priceMax, mileageMin, mileageMax,
+    enginePowerMin, enginePowerMax, engineCapacityMin, engineCapacityMax, isNew, sellerType,
+    driveType, transmission, color, doors, emissionStandard, originCountry, rightHandDrive,
+    damaged, firstOwner, noAccident, serviceBook, registered, qualityScoreMin, qualityScoreMax,
+    dealRating
+  ]);
 
   useEffect(() => {
     setIsLoadingCount(true);

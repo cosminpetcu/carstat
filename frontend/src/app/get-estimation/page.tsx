@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { CarCard, type CarData } from "@/components/ui/CarCard";
@@ -104,7 +104,32 @@ export default function CleanEstimationPage() {
     const router = useRouter();
     const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
 
-    const loadEstimationHistory = async () => {
+    const loadLocalHistory = useCallback(() => {
+        let historyKey = "estimation_history";
+
+        if (user) {
+            historyKey = `estimation_history_user_${user.id}`;
+        }
+
+        const savedHistory = localStorage.getItem(historyKey);
+        if (savedHistory) {
+            try {
+                const parsed = JSON.parse(savedHistory);
+                const transformedHistory = parsed.map((item: any) => ({
+                    id: parseInt(item.id),
+                    car_data: item.car,
+                    estimation_result: item.result,
+                    notes: item.notes,
+                    created_at: item.timestamp
+                }));
+                setEstimationHistory(transformedHistory);
+            } catch (e) {
+                console.error("Failed to load local estimation history:", e);
+            }
+        }
+    }, [user]);
+
+    const loadEstimationHistory = useCallback(async () => {
         if (!isLoggedIn) return;
 
         setHistoryLoading(true);
@@ -129,32 +154,7 @@ export default function CleanEstimationPage() {
         } finally {
             setHistoryLoading(false);
         }
-    };
-
-    const loadLocalHistory = () => {
-        let historyKey = "estimation_history";
-
-        if (user) {
-            historyKey = `estimation_history_user_${user.id}`;
-        }
-
-        const savedHistory = localStorage.getItem(historyKey);
-        if (savedHistory) {
-            try {
-                const parsed = JSON.parse(savedHistory);
-                const transformedHistory = parsed.map((item: any) => ({
-                    id: parseInt(item.id),
-                    car_data: item.car,
-                    estimation_result: item.result,
-                    notes: item.notes,
-                    created_at: item.timestamp
-                }));
-                setEstimationHistory(transformedHistory);
-            } catch (e) {
-                console.error("Failed to load local estimation history:", e);
-            }
-        }
-    };
+    }, [isLoggedIn, loadLocalHistory]);
 
     const saveToHistory = async (car: EstimationCarData, result: EstimationResult, notes?: string) => {
         if (isLoggedIn && user) {
@@ -363,7 +363,7 @@ export default function CleanEstimationPage() {
         } else {
             loadLocalHistory();
         }
-    }, [isLoggedIn, user, estimationHistory, loadEstimationHistory]);
+    }, [isLoggedIn, user, estimationHistory, loadEstimationHistory, loadLocalHistory]);
 
     useEffect(() => {
         if (carData.brand) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Navbar from "@/components/Navbar";
 import { useSearchParams } from "next/navigation";
@@ -22,7 +22,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSuccessfulLogin = async () => {
+  const handleSuccessfulLogin = useCallback(async () => {
     try {
       if (hasPendingAction) {
         console.log('Executing pending action after login...');
@@ -34,7 +34,7 @@ export default function LoginPage() {
       console.error('Error executing pending action:', error);
       router.push("/");
     }
-  };
+  }, [router, executePendingAction, hasPendingAction]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
