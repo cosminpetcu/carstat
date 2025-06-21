@@ -556,6 +556,34 @@ function DetailedSearch() {
                     <option value="C">Fair (C)</option>
                   </select>
                 </div>
+
+                {/* Quality Score Range */}
+                <div className="col-span-1 lg:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Quality Score Range</label>
+                  <div className="grid grid-cols-2 gap-2">
+                    <select
+                      value={qualityScoreMin}
+                      onChange={(e) => setQualityScoreMin(e.target.value)}
+                      className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
+                    >
+                      <option value="">Minimum</option>
+                      {scoreOptions.map((score) => (
+                        <option key={`min-${score}`} value={score}>{score}</option>
+                      ))}
+                    </select>
+                    <select
+                      value={qualityScoreMax}
+                      onChange={(e) => setQualityScoreMax(e.target.value)}
+                      className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
+                    >
+                      <option value="">Maximum</option>
+                      {scoreOptions.map((score) => (
+                        <option key={`max-${score}`} value={score}>{score}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500">Quality score represents overall vehicle condition from 0-100</p>
+                </div>
               </div>
             )}
 
@@ -649,34 +677,6 @@ function DetailedSearch() {
                       <option key={country} value={country}>{country}</option>
                     ))}
                   </select>
-                </div>
-
-                {/* Quality Score Range */}
-                <div className="col-span-1 lg:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Quality Score Range</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <select
-                      value={qualityScoreMin}
-                      onChange={(e) => setQualityScoreMin(e.target.value)}
-                      className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
-                    >
-                      <option value="">Minimum</option>
-                      {scoreOptions.map((score) => (
-                        <option key={`min-${score}`} value={score}>{score}</option>
-                      ))}
-                    </select>
-                    <select
-                      value={qualityScoreMax}
-                      onChange={(e) => setQualityScoreMax(e.target.value)}
-                      className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
-                    >
-                      <option value="">Maximum</option>
-                      {scoreOptions.map((score) => (
-                        <option key={`max-${score}`} value={score}>{score}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <p className="mt-1 text-xs text-gray-500">Quality score represents overall vehicle condition from 0-100</p>
                 </div>
               </div>
             )}

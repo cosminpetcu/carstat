@@ -372,7 +372,7 @@ export default function CleanEstimationPage() {
         } else {
             loadLocalHistory();
         }
-    }, [isLoggedIn, user, estimationHistory, loadEstimationHistory, loadLocalHistory]);
+    }, [isLoggedIn, user, loadEstimationHistory, loadLocalHistory]);
 
     useEffect(() => {
         if (carData.brand) {

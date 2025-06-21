@@ -396,7 +396,7 @@ export default function Dashboard() {
           </div>
 
           <div className="bg-purple-50 rounded-xl p-6 shadow-sm border border-purple-100">
-            <h3 className="text-sm text-purple-700 font-medium mb-1">Price Drops</h3>
+            <h3 className="text-sm text-purple-700 font-medium mb-1">Avg. Price Drops</h3>
             <p className="text-3xl font-bold text-purple-900">€{formatNumber(priceDropStats.averagePriceDrop)}</p>
             <p className="text-sm text-purple-600 mt-2">
               {priceDropStats.averagePercentageDrop.toFixed(1)}% average reduction
@@ -494,6 +494,8 @@ export default function Dashboard() {
                     <Image
                       src={parseImage(car.images)}
                       alt={car.title}
+                      width={96}
+                      height={64}
                       className="w-24 h-16 object-cover rounded"
                     />
                     <div className="flex-1">

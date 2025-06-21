@@ -488,140 +488,7 @@ export default function SidebarFilters({
                   </div>
                 </div>
               </div>
-            </div>
-          )}
-        </div>
 
-        <div className="border-b border-gray-700 pb-4">
-          <button
-            className="flex justify-between items-center w-full text-left mb-3 font-semibold text-lg"
-            onClick={() => toggleSection('availability')}
-          >
-            <span className="flex items-center">
-              <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="12" cy="12" r="10" />
-                <path d="M12 8v4l3 3" />
-              </svg>
-              Availability & Deal
-            </span>
-            <span>{isCollapsed.availability ? '▼' : '▲'}</span>
-          </button>
-
-          {!isCollapsed.availability && (
-            <div className="space-y-3 pl-2">
-              <div className="mb-3">
-                <label className="block text-xs text-gray-400 mb-1">Seller Type</label>
-                <div className="relative">
-                  <select
-                    value={filters.seller_type}
-                    onChange={(e) => updateFilter("seller_type", e.target.value)}
-                    className="w-full rounded-lg p-2.5 pl-10 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none"
-                  >
-                    <option value="">All Seller Types</option>
-                    {sellerTypes.map((type) => (
-                      <option key={type} value={type}>{type}</option>
-                    ))}
-                  </select>
-                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                    <BatteryIcon className="w-5 h-5 text-gray-400" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="mb-3">
-                <label className="block text-xs text-gray-400 mb-1">Availability</label>
-                <div className="relative">
-                  <select
-                    value={filters.sold}
-                    onChange={(e) => updateFilter("sold", e.target.value)}
-                    className="w-full rounded-lg p-2.5 pl-10 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none"
-                  >
-                    <option value="">All Cars</option>
-                    <option value="false">Available Only</option>
-                    <option value="true">Sold Only</option>
-                  </select>
-                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                    <svg className="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mb-3">
-                <label className="block text-xs text-gray-400 mb-1">Deal Rating</label>
-                <div className="relative">
-                  <select
-                    value={filters.deal_rating}
-                    onChange={(e) => updateFilter("deal_rating", e.target.value)}
-                    className="w-full rounded-lg p-2.5 pl-10 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none"
-                  >
-                    {dealRatings.map((rating) => (
-                      <option key={rating.value} value={rating.value}>
-                        {rating.label}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                    <svg className="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mb-3">
-                <label className="block text-xs text-gray-400 mb-1">Quality Score</label>
-                <div className="relative">
-                  <select
-                    value={qualityScoreRanges.find(
-                      range => range.min === filters.quality_score_min && range.max === filters.quality_score_max
-                    )?.value || "any"}
-                    onChange={(e) => {
-                      const selectedRange = qualityScoreRanges.find(range => range.value === e.target.value);
-                      if (selectedRange) {
-                        updateMultipleFilters({
-                          quality_score_min: selectedRange.min,
-                          quality_score_max: selectedRange.max
-                        });
-                      }
-                    }}
-                    className="w-full rounded-lg p-2.5 pl-10 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none"
-                  >
-                    {qualityScoreRanges.map((range) => (
-                      <option key={range.value} value={range.value}>{range.label}</option>
-                    ))}
-                  </select>
-                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                    <svg className="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
-                    </svg>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="border-b border-gray-700 pb-4">
-          <button
-            className="flex justify-between items-center w-full text-left mb-3 font-semibold text-lg"
-            onClick={() => toggleSection('vehicle')}
-          >
-            <span className="flex items-center">
-              <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M16 3h5v5" />
-                <path d="M21 3l-7 7" />
-                <path d="M3 8v13h13" />
-                <path d="M13 8a5 5 0 1 0-5 5" />
-              </svg>
-              Vehicle Specs
-            </span>
-            <span>{isCollapsed.vehicle ? '▼' : '▲'}</span>
-          </button>
-
-          {!isCollapsed.vehicle && (
-            <div className="space-y-3 pl-2">
               <div className="mb-3">
                 <label className="block text-xs text-gray-400 mb-1">Body Type</label>
                 <div className="relative">
@@ -745,24 +612,7 @@ export default function SidebarFilters({
                   </div>
                 </div>
               </div>
-            </div>
-          )}
-        </div>
 
-        <div className="border-b border-gray-700 pb-4">
-          <button
-            className="flex justify-between items-center w-full text-left mb-3 font-semibold text-lg"
-            onClick={() => toggleSection('engine')}
-          >
-            <span className="flex items-center">
-              <EngineIcon className="w-5 h-5 mr-2" />
-              Engine Specs
-            </span>
-            <span>{isCollapsed.engine ? '▼' : '▲'}</span>
-          </button>
-
-          {!isCollapsed.engine && (
-            <div className="space-y-3 pl-2">
               <div className="mb-3">
                 <label className="block text-xs text-gray-400 mb-1">Engine Power (hp)</label>
                 <div className="grid grid-cols-2 gap-2">
@@ -819,6 +669,117 @@ export default function SidebarFilters({
                         <option key={capacity} value={capacity.toString()}>{capacity}</option>
                       ))}
                     </select>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="border-b border-gray-700 pb-4">
+          <button
+            className="flex justify-between items-center w-full text-left mb-3 font-semibold text-lg"
+            onClick={() => toggleSection('availability')}
+          >
+            <span className="flex items-center">
+              <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 8v4l3 3" />
+              </svg>
+              Availability & Deal
+            </span>
+            <span>{isCollapsed.availability ? '▼' : '▲'}</span>
+          </button>
+
+          {!isCollapsed.availability && (
+            <div className="space-y-3 pl-2">
+              <div className="mb-3">
+                <label className="block text-xs text-gray-400 mb-1">Seller Type</label>
+                <div className="relative">
+                  <select
+                    value={filters.seller_type}
+                    onChange={(e) => updateFilter("seller_type", e.target.value)}
+                    className="w-full rounded-lg p-2.5 pl-10 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none"
+                  >
+                    <option value="">All Seller Types</option>
+                    {sellerTypes.map((type) => (
+                      <option key={type} value={type}>{type}</option>
+                    ))}
+                  </select>
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    <BatteryIcon className="w-5 h-5 text-gray-400" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="mb-3">
+                <label className="block text-xs text-gray-400 mb-1">Availability</label>
+                <div className="relative">
+                  <select
+                    value={filters.sold}
+                    onChange={(e) => updateFilter("sold", e.target.value)}
+                    className="w-full rounded-lg p-2.5 pl-10 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none"
+                  >
+                    <option value="">All Cars</option>
+                    <option value="false">Available Only</option>
+                    <option value="true">Sold Only</option>
+                  </select>
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    <svg className="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mb-3">
+                <label className="block text-xs text-gray-400 mb-1">Deal Rating</label>
+                <div className="relative">
+                  <select
+                    value={filters.deal_rating}
+                    onChange={(e) => updateFilter("deal_rating", e.target.value)}
+                    className="w-full rounded-lg p-2.5 pl-10 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none"
+                  >
+                    {dealRatings.map((rating) => (
+                      <option key={rating.value} value={rating.value}>
+                        {rating.label}
+                      </option>
+                    ))}
+                  </select>
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    <svg className="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mb-3">
+                <label className="block text-xs text-gray-400 mb-1">Quality Score</label>
+                <div className="relative">
+                  <select
+                    value={qualityScoreRanges.find(
+                      range => range.min === filters.quality_score_min && range.max === filters.quality_score_max
+                    )?.value || "any"}
+                    onChange={(e) => {
+                      const selectedRange = qualityScoreRanges.find(range => range.value === e.target.value);
+                      if (selectedRange) {
+                        updateMultipleFilters({
+                          quality_score_min: selectedRange.min,
+                          quality_score_max: selectedRange.max
+                        });
+                      }
+                    }}
+                    className="w-full rounded-lg p-2.5 pl-10 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none"
+                  >
+                    {qualityScoreRanges.map((range) => (
+                      <option key={range.value} value={range.value}>{range.label}</option>
+                    ))}
+                  </select>
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+                    <svg className="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                    </svg>
                   </div>
                 </div>
               </div>
