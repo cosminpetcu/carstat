@@ -7,7 +7,6 @@ import {
   CarIcon,
   FuelIcon,
   TransmissionIcon,
-  EngineIcon,
   BatteryIcon,
   ParkingIcon,
   GPSIcon
