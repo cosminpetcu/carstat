@@ -115,7 +115,7 @@ export default function Dashboard() {
   const [selectedBrand, setSelectedBrand] = useState("");
   const [selectedModel, setSelectedModel] = useState("");
   const [selectedGenerationModel, setSelectedGenerationModel] = useState(generationAnalysis[0] || null);
-  const [selectedGenBrand] = useState("");
+  const [selectedGenBrand, setSelectedGenBrand] = useState("");
   const [selectedGenModel, setSelectedGenModel] = useState("");
   const [suspiciousListings, setSuspiciousListings] = useState<SuspiciousListingsData | null>(null);
   const { brands, models, isLoadingModels, fetchModels } = useBrandsModels();
@@ -978,8 +978,8 @@ export default function Dashboard() {
                   value={selectedGenBrand || ""}
                   onChange={(e) => {
                     const brand = e.target.value;
-                    setSelectedBrand(brand);
-                    setSelectedModel("");
+                    setSelectedGenBrand(brand);
+                    setSelectedGenModel("");
 
                     if (brand) {
                       fetchModels(brand);

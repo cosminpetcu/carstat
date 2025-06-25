@@ -77,7 +77,7 @@ class UpdatePartialSpider(scrapy.Spider):
                 dont_filter=True,
                 meta={    
                     'car_id': car.id,
-                    'handle_httpstatus_list': [404, 403]
+                    'handle_httpstatus_list': [404, 403, 429]
                 }
             )
     
@@ -141,7 +141,7 @@ class UpdatePartialSpider(scrapy.Spider):
             self.progress.update(1)
             return
         
-        elif response.status == 403:
+        elif response.status == 403 or response.status == 429:
             self.cloudflare_blocks += 1
             print(f"Blocaj Cloudflare (403) pentru: {url}")
             

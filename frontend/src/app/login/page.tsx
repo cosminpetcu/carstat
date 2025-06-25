@@ -234,13 +234,6 @@ function LoginForm() {
                   </div>
                 </div>
 
-                <div className="flex items-center">
-                  <label className="flex items-center text-sm text-gray-600 cursor-pointer">
-                    <input type="checkbox" className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-300 focus:ring focus:ring-blue-200 focus:ring-opacity-50 mr-2" />
-                    <span>Keep me signed in</span>
-                  </label>
-                </div>
-
                 <button
                   type="submit"
                   disabled={isLoading}
