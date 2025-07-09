@@ -17,3 +17,27 @@ frontend/.env.production
 backend/.venv/
 backend/venv/
 backend/.env
+
+# Production-specific files (not needed in development)
+ecosystem.config.js
+update_spider.sh
+frontend/src/config/
+frontend/next.config.ts.backup
+
+# Production environment files
+backend/.env
+frontend/.env.local
+frontend/.env.production
+
+# Scrapy tracking files (auto-generated on server)
+backend/olx_scraper/last_updated_id.txt
+backend/olx_scraper/cloudflare_block_id.txt
+backend/olx_scraper/scrapy_output.log
+
+# Server backup and deployment files
+/home/carstat/backups/
+/home/carstat/deployments/
+backup_db.sh
+check_services.sh
+deploy_*.sh
+auto_deploy.sh
