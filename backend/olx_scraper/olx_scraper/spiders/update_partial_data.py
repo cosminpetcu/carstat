@@ -77,7 +77,7 @@ class UpdatePartialSpider(scrapy.Spider):
                 dont_filter=True,
                 meta={    
                     'car_id': car.id,
-                    'handle_httpstatus_list': [404, 403, 429]
+                    'handle_httpstatus_list': [404, 403, 410, 429]
                 }
             )
     
@@ -105,11 +105,11 @@ class UpdatePartialSpider(scrapy.Spider):
         url = car.source_url
         self.checked_cars += 1
         
-        if response.status == 404:
+        if response.status == 404 or response.status == 410:
             car.sold = True
             car.sold_detected_at = datetime.now()
             self.marked_sold += 1
-            print(f"Anunt marcat ca vandut (404): {url}")
+            print(f"Anunt marcat ca vandut (404/410): {url}")
             
             try:
                 self.session.commit()
@@ -118,25 +118,7 @@ class UpdatePartialSpider(scrapy.Spider):
                     self.save_last_processed_id(car_id)
                     print(f"Actualizat last_processed_id la {car_id}")
             except Exception as e:
-                print(f"DB error (404): {e}")
-                self.session.rollback()
-            self.progress.update(1)
-            return
-        
-        elif response.status == 410:
-            car.sold = True
-            car.sold_detected_at = datetime.now()
-            self.marked_sold += 1
-            print(f"Anunt marcat ca vandut (410 Gone): {url}")
-            
-            try:
-                self.session.commit()
-                current_id = self.load_last_processed_id()
-                if car_id > current_id:
-                    self.save_last_processed_id(car_id)
-                    print(f"Actualizat last_processed_id la {car_id}")
-            except Exception as e:
-                print(f"DB error (410): {e}")
+                print(f"DB error (404/410): {e}")
                 self.session.rollback()
             self.progress.update(1)
             return
