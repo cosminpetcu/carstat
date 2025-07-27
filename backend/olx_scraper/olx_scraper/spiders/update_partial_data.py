@@ -123,7 +123,7 @@ class UpdatePartialSpider(scrapy.Spider):
             self.progress.update(1)
             return
         
-        elif response.status == 403 or response.status == 429:
+        if response.status == 403 or response.status == 429:
             self.cloudflare_blocks += 1
             print(f"Blocaj Cloudflare (403) pentru: {url}")
             
@@ -134,6 +134,39 @@ class UpdatePartialSpider(scrapy.Spider):
             
             self.progress.update(1)
             raise CloseSpider("Blocaj Cloudflare detectat, se opreste spider-ul")
+        
+        if "autovit" in url:
+            page_text = response.text.lower()
+            unavailable_indicators = [
+                "acest anunț nu mai este disponibil",
+                "acest anunt nu mai este disponibil", 
+                "anunțul nu mai este disponibil",
+                "anuntul nu mai este disponibil",
+                "it seems like a dead end",
+                "acest anunț nu mai este valabil",
+                "acest anunt nu mai este valabil",
+                "acest anunț nu mai este valabil, dar hai să găsim împreună ceea ce cauți!"
+            ]
+            
+            is_error_page = any(indicator in page_text for indicator in unavailable_indicators)
+            
+            if is_error_page:
+                car.sold = True
+                car.sold_detected_at = datetime.now()
+                self.marked_sold += 1
+                print(f"Anunt Autovit marcat ca vandut (pagina indisponibil): {url}")
+                
+                try:
+                    self.session.commit()
+                    current_id = self.load_last_processed_id()
+                    if car_id > current_id:
+                        self.save_last_processed_id(car_id)
+                        print(f"Actualizat last_processed_id la {car_id}")
+                except Exception as e:
+                    print(f"DB error (OLX unavailable): {e}")
+                    self.session.rollback()
+                self.progress.update(1)
+                return
 
         if response.status == 200 and "olx" in url:
             page_text = response.text.lower()
