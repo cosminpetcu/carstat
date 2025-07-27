@@ -177,10 +177,26 @@ class UpdatePartialSpider(scrapy.Spider):
                 "mergi pe prima pagina"
             ])
             
-            has_price = response.css(".price, [data-cy='price'], .pricelabel").get()
-            has_contact = response.css(".contact, [data-cy='contact'], .phone").get()
+            description_meta = response.css("meta[name='description']::attr(content)").get()
+            has_price_meta = False
+            if description_meta:
+                price_match = re.search(r"([\d\s]+) €:?\s*", description_meta)
+                has_price_meta = bool(price_match)
             
-            is_error_page = has_sold_text and has_sold_button and not has_price and not has_contact
+            json_ld_raw = response.css('script[type="application/ld+json"]::text').get()
+            has_brand = False
+            if json_ld_raw:
+                try:
+                    data = json.loads(json_ld_raw)
+                    brand = data.get("brand")
+                    has_brand = bool(brand)
+                except:
+                    pass
+            
+            title = response.css("h4.css-1dcem4b::text").get()
+            has_title = bool(title and title.strip())
+            
+            is_error_page = has_sold_text and has_sold_button and not (has_price_meta and has_brand and has_title)
             
             if is_error_page:
                 car.sold = True
