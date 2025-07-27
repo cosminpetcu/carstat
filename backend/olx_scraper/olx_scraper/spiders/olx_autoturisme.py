@@ -276,7 +276,7 @@ class OlxAutoturismeSpider(scrapy.Spider):
                 print("JSON-LD parsing failed:", e)
 
         details = {}
-        detail_rows = response.css("div.css-41yf00 p.css-1los5bp::text").getall()
+        detail_rows = response.css("div.css-1g2c38u p.css-5l1a1j::text").getall()
         for row in detail_rows:
             if ":" in row:
                 key, value = row.split(":", 1)
