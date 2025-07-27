@@ -296,15 +296,6 @@ export default function SidebarFilters({
     }
   }, [filters.brand, fetchModels, clearModels]);
 
-  useEffect(() => {
-    const params = new URLSearchParams(searchParams.toString());
-
-    if (!params.has("sold")) {
-      params.set("sold", "false");
-      router.replace(`/listings?${params.toString()}`);
-    }
-  }, [searchParams, router]);
-
   return (
     <aside className="bg-gradient-to-b from-gray-900 to-gray-800 text-white p-5 rounded-xl w-full max-w-[320px] shadow-xl">
       <div className="flex justify-between items-center mb-6">

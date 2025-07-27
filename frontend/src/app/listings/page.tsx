@@ -138,6 +138,12 @@ function Listings() {
     params.set("page", currentPage.toString());
     params.set("limit", currentLimit.toString());
 
+    if (!params.has("sold")) {
+      params.set("sold", "false");
+      router.replace(`/listings?${params.toString()}`, { scroll: false });
+      return;
+    }
+
     if (user?.id && token) {
       params.set("user_id", user.id.toString());
     }
@@ -162,7 +168,7 @@ function Listings() {
       .catch(() => {
         setLoading(false);
       });
-  }, [searchParams]);
+  }, [searchParams, router]);
 
   return (
     <main className="min-h-screen bg-gray-50">
