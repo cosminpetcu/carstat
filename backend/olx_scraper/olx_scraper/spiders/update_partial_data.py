@@ -133,16 +133,12 @@ class UpdatePartialSpider(scrapy.Spider):
                 print(f"Actualizat last_processed_id la {car_id}")
             
             self.progress.update(1)
+            self.progress.close()
             raise CloseSpider("Blocaj Cloudflare detectat, se opreste spider-ul")
         
         if "autovit" in url:
             page_text = response.text.lower()
             unavailable_indicators = [
-                "acest anunț nu mai este disponibil",
-                "acest anunt nu mai este disponibil", 
-                "anunțul nu mai este disponibil",
-                "anuntul nu mai este disponibil",
-                "it seems like a dead end",
                 "acest anunț nu mai este valabil",
                 "acest anunt nu mai este valabil",
                 "acest anunț nu mai este valabil, dar hai să găsim împreună ceea ce cauți!"
@@ -170,15 +166,21 @@ class UpdatePartialSpider(scrapy.Spider):
 
         if response.status == 200 and "olx" in url:
             page_text = response.text.lower()
-            unavailable_indicators = [
-                "acest anunț nu mai este disponibil",
-                "acest anunt nu mai este disponibil", 
-                "anunțul nu mai este disponibil",
-                "anuntul nu mai este disponibil",
-                "it seems like a dead end"
-            ]
             
-            is_error_page = any(indicator in page_text for indicator in unavailable_indicators)
+            has_sold_text = any(indicator in page_text for indicator in [
+                "acest anunț nu mai este disponibil",
+                "acest anunt nu mai este disponibil"
+            ])
+            
+            has_sold_button = any(button in page_text for button in [
+                "mergi pe prima pagină",
+                "mergi pe prima pagina"
+            ])
+            
+            has_price = response.css(".price, [data-cy='price'], .pricelabel").get()
+            has_contact = response.css(".contact, [data-cy='contact'], .phone").get()
+            
+            is_error_page = has_sold_text and has_sold_button and not has_price and not has_contact
             
             if is_error_page:
                 car.sold = True
