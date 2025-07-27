@@ -95,6 +95,9 @@ DOWNLOADER_MIDDLEWARES = {
 
 HTTPERROR_ALLOWED_CODES = [403, 404, 429, 410]
 
+RETRY_ENABLED = False
+RETRY_TIMES = 0
+
 # Enable and configure HTTP caching (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html#httpcache-middleware-settings
 #HTTPCACHE_ENABLED = True
