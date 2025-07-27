@@ -93,7 +93,7 @@ DOWNLOADER_MIDDLEWARES = {
 # Enable showing throttling stats for every response received:
 #AUTOTHROTTLE_DEBUG = False
 
-HTTPERROR_ALLOWED_CODES = [403]
+HTTPERROR_ALLOWED_CODES = [403, 404, 429, 410]
 
 # Enable and configure HTTP caching (disabled by default)
 # See https://docs.scrapy.org/en/latest/topics/downloader-middleware.html#httpcache-middleware-settings
