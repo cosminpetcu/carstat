@@ -86,7 +86,7 @@ export default function SidebarFilters({
     engine_capacity_min: "",
     engine_capacity_max: "",
     doors: "",
-    sold: "",
+    sold: "false",
     quality_score_min: "",
     quality_score_max: ""
   });
@@ -276,7 +276,7 @@ export default function SidebarFilters({
       engine_capacity_min: params.get("engine_capacity_min") || "",
       engine_capacity_max: params.get("engine_capacity_max") || "",
       doors: params.get("doors") || "",
-      sold: params.get("sold") || "",
+      sold: params.get("sold") || "false",
       quality_score_min: params.get("quality_score_min") || "",
       quality_score_max: params.get("quality_score_max") || ""
     };
@@ -295,6 +295,15 @@ export default function SidebarFilters({
       clearModels();
     }
   }, [filters.brand, fetchModels, clearModels]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (!params.has("sold")) {
+      params.set("sold", "false");
+      router.replace(`/listings?${params.toString()}`);
+    }
+  }, [searchParams, router]);
 
   return (
     <aside className="bg-gradient-to-b from-gray-900 to-gray-800 text-white p-5 rounded-xl w-full max-w-[320px] shadow-xl">

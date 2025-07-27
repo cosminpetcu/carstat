@@ -32,6 +32,7 @@ const SearchBox = () => {
   const [maxMileage, setMaxMileage] = useState("");
   const [maxPrice, setMaxPrice] = useState("");
   const [totalCars, setTotalCars] = useState<number | null>(null);
+  const [availableCars, setAvailableCars] = useState<number | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   const { brands, models, isLoadingBrands, isLoadingModels, fetchModels } = useBrandsModels();
@@ -52,13 +53,23 @@ const SearchBox = () => {
       if (maxPrice) params.append("max_price", maxPrice);
 
       fetch(`http://localhost:8000/cars/count?${params.toString()}`)
-        .then((res) => res.json())
-        .then((data) => {
+        .then(res => res.json())
+        .then(data => {
           setTotalCars(data.total || 0);
+
+          const availableParams = new URLSearchParams(params);
+          availableParams.set("sold", "false");
+
+          return fetch(`http://localhost:8000/cars/count?${availableParams.toString()}`);
+        })
+        .then(res => res.json())
+        .then(data => {
+          setAvailableCars(data.total || 0);
           setIsLoading(false);
         })
         .catch(() => {
           setTotalCars(null);
+          setAvailableCars(null);
           setIsLoading(false);
         });
     }, 300);
@@ -99,15 +110,16 @@ const SearchBox = () => {
   };
 
   const getResultsColor = () => {
-    if (totalCars === null || isLoading) return "text-gray-400";
-    if (totalCars === 0) return "text-red-500";
-    if (totalCars < 10) return "text-orange-500";
-    if (totalCars < 50) return "text-yellow-600";
+    if (availableCars === null || isLoading) return "text-gray-400";
+    if (availableCars === 0) return "text-red-500";
+    if (availableCars < 10) return "text-orange-500";
+    if (availableCars < 50) return "text-yellow-600";
     return "text-green-600";
   };
 
-  const formatTotalCars = (total: number) => {
-    return total.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+  const formatNumber = (num: number | null) => {
+    if (num === null || num === undefined) return "0";
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
   };
 
   useEffect(() => {
@@ -301,8 +313,15 @@ const SearchBox = () => {
               </svg>
               Searching...
             </div>
-          ) : totalCars !== null ? (
-            `${formatTotalCars(totalCars)} Cars Found`
+          ) : availableCars !== null && totalCars !== null ? (
+            <div className="space-y-1">
+              <div className="text-xl font-bold">
+                {formatNumber(availableCars)} Available Cars
+              </div>
+              <div className="text-sm text-gray-500 font-normal">
+                {formatNumber(totalCars)} Total Cars • {formatNumber(totalCars - availableCars)} Sold
+              </div>
+            </div>
           ) : (
             "Search Failed"
           )}
