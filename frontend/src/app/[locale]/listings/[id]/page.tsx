@@ -22,7 +22,7 @@ import { CarCard, type CarData } from "@/components/ui/CarCard";
 import { getQualityScoreColor, getQualityScoreLabel } from '@/utils/ratingUtils'
 import { useFavorites } from '@/hooks/useFavorites';
 import { PageLoadingSkeleton } from '@/components/ui/LoadingSkeleton';
-import { useTranslations, useLocale } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import IntlProvider from '@/components/IntlProvider';
 
 type Car = {
@@ -132,7 +132,6 @@ interface ImageModalProps {
 
 function CarDetailContent() {
   const t = useTranslations('carDetailPage');
-  const locale = useLocale();
   const { id } = useParams();
   const [car, setCar] = useState<Car | null>(null);
   const [loading, setLoading] = useState(true);

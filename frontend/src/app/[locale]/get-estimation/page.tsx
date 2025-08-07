@@ -8,7 +8,7 @@ import { useBrandsModels } from '@/hooks/useBrandsModels';
 import { useRouter } from 'next/navigation';
 import { PendingActionsManager } from '@/utils/pendingActions';
 import Link from 'next/link';
-import { useTranslations, useLocale } from 'next-intl';
+import { useTranslations } from 'next-intl';
 import IntlProvider from '@/components/IntlProvider';
 
 type EstimationCarData = {
@@ -92,7 +92,6 @@ interface ParsedHistoryItem {
 
 function CleanEstimationContent() {
     const t = useTranslations('getEstimationPage');
-    const locale = useLocale();
     const [carData, setCarData] = useState<EstimationCarData>({
         brand: "",
         model: "",
