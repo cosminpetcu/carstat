@@ -1,0 +1,23 @@
+import { notFound } from 'next/navigation';
+import { getRequestConfig } from 'next-intl/server';
+
+export const locales = ['en', 'ro'] as const;
+export type Locale = typeof locales[number];
+
+export default getRequestConfig(async ({ locale }) => {
+    if (!locales.includes(locale as any)) notFound();
+
+    return {
+        locale: locale as string,
+        messages: (await import(`../messages/${locale}.json`)).default,
+        timeZone: 'Europe/Bucharest',
+        formats: {
+            number: {
+                currency: {
+                    style: 'currency',
+                    currency: 'EUR'
+                }
+            }
+        }
+    };
+});

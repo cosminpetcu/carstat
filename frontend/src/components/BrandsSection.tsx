@@ -2,8 +2,11 @@
 
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import { useTranslations, useLocale } from 'next-intl';
 
 const BrandsSection = () => {
+  const t = useTranslations('brandsSection');
+  const locale = useLocale();
   const router = useRouter();
 
   const brands = [
@@ -16,13 +19,13 @@ const BrandsSection = () => {
   ];
 
   const handleBrandClick = (brand: string) => {
-    router.push(`/listings?brand=${encodeURIComponent(brand)}`);
+    router.push(`/${locale}/listings?brand=${encodeURIComponent(brand)}`);
   };
 
   return (
     <section className="py-16 px-6 bg-white">
       <div className="max-w-7xl mx-auto">
-        <h2 className="text-3xl font-bold text-center mb-10">Explore Our Premium Brands</h2>
+        <h2 className="text-3xl font-bold text-center mb-10">{t('title')}</h2>
 
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6">
           {brands.map((brand) => (
@@ -34,7 +37,7 @@ const BrandsSection = () => {
               <div className="w-[80px] h-[80px] relative flex items-center justify-center mb-4">
                 <Image
                   src={brand.image}
-                  alt={brand.name}
+                  alt={t('brandImageAlt', { brand: brand.name })}
                   width={80}
                   height={80}
                   className="object-contain"

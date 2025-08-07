@@ -1,9 +1,21 @@
 import type { NextConfig } from "next";
+import createNextIntlPlugin from 'next-intl/plugin';
+
+const withNextIntl = createNextIntlPlugin();
 
 const nextConfig: NextConfig = {
   images: {
-    domains: ["frankfurt.apollo.olxcdn.com", "ireland.apollo.olxcdn.com"],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'frankfurt.apollo.olxcdn.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'ireland.apollo.olxcdn.com',
+      }
+    ]
   },
 };
 
-export default nextConfig;
+export default withNextIntl(nextConfig);

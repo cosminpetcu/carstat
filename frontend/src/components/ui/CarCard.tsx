@@ -5,6 +5,7 @@ import Image from "next/image";
 import { parseImages, formatNumber } from "@/utils/carUtils";
 import { RatingBadge } from "./RatingBadge";
 import { QualityScore } from "./QualityScore";
+import { useTranslations, useLocale } from 'next-intl';
 import {
     CalendarIcon,
     FuelIcon,
@@ -62,6 +63,8 @@ export const CarCard: React.FC<CarCardProps> = ({
     showEstimatedPrice = true,
     className = ""
 }) => {
+    const t = useTranslations('carCard');
+    const locale = useLocale();
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const images = parseImages(car.images);
     const currentImage = images[currentImageIndex] || "/default-car.webp";
@@ -100,91 +103,50 @@ export const CarCard: React.FC<CarCardProps> = ({
         </button>
     );
 
-    const ImageGallery = ({ height = "h-[220px]" }) => {
-        const [imageLoading, setImageLoading] = useState(true);
-        const [imageError, setImageError] = useState(false);
+    const ImageGallery = ({ height = "h-64" }) => (
+        <div className={`relative ${height} overflow-hidden bg-gray-100`}>
+            <Image
+                src={currentImage}
+                alt={car.title}
+                fill
+                className="object-cover transition-transform duration-300 group-hover:scale-105"
+            />
 
-        return (
-            <div className={`relative ${height} w-full overflow-hidden bg-gray-100`}>
-                {/* Loading placeholder */}
-                {imageLoading && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-gray-100 z-10">
-                        <div className="animate-spin h-8 w-8 border-4 border-blue-500 border-t-transparent rounded-full"></div>
-                    </div>
-                )}
+            {onFavoriteToggle && <FavoriteButton />}
 
-                {/* Error placeholder */}
-                {imageError && (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-100 text-gray-400 z-10">
-                        <svg className="w-12 h-12 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        <span className="text-sm">Image unavailable</span>
-                    </div>
-                )}
+            {showImageNavigation && images.length > 1 && (
+                <>
+                    <button
+                        onClick={handlePrevImage}
+                        disabled={currentImageIndex === 0}
+                        className="absolute left-2 top-1/2 transform -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 disabled:opacity-30 z-20"
+                    >
+                        <ChevronLeftIcon className="w-4 h-4" />
+                    </button>
+                    <button
+                        onClick={handleNextImage}
+                        disabled={currentImageIndex === images.length - 1}
+                        className="absolute right-2 top-1/2 transform -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 disabled:opacity-30 z-20"
+                    >
+                        <ChevronRightIcon className="w-4 h-4" />
+                    </button>
+                </>
+            )}
 
-                <Image
-                    src={currentImage}
-                    alt={car.title}
-                    fill
-                    className={`object-cover transition-all duration-500 group-hover:scale-105 ${imageLoading ? 'opacity-0' : 'opacity-100'
-                        }`}
-                    sizes={variant === "list" ? "(max-width: 768px) 100vw, 33vw" : "(max-width: 768px) 100vw, 50vw"}
-                    onLoad={() => setImageLoading(false)}
-                    onError={() => {
-                        setImageLoading(false);
-                        setImageError(true);
-                    }}
-                    loading="lazy"
-                    placeholder="blur"
-                    blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k="
+            {car.sold && (
+                <div className="absolute top-3 left-3 bg-red-600 text-white text-xs px-3 py-1 rounded-md font-medium z-20">
+                    {t('sold')}
+                </div>
+            )}
+
+            {car.deal_rating && !car.sold && variant !== "home" && (
+                <RatingBadge
+                    rating={car.deal_rating}
+                    className="absolute bottom-3 left-3 z-20"
                 />
-
-                {onFavoriteToggle && <FavoriteButton />}
-
-                {/* Image Counter */}
-                {images.length > 1 && (
-                    <div className="absolute top-3 left-3 bg-black/60 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-md z-20">
-                        {currentImageIndex + 1} / {images.length}
-                    </div>
-                )}
-
-                {/* Navigation Arrows */}
-                {showImageNavigation && images.length > 1 && (
-                    <>
-                        <button
-                            onClick={handlePrevImage}
-                            disabled={currentImageIndex === 0}
-                            className="absolute left-2 top-1/2 transform -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 disabled:opacity-30 z-20"
-                        >
-                            <ChevronLeftIcon className="w-4 h-4" />
-                        </button>
-                        <button
-                            onClick={handleNextImage}
-                            disabled={currentImageIndex === images.length - 1}
-                            className="absolute right-2 top-1/2 transform -translate-y-1/2 w-8 h-8 flex items-center justify-center bg-black/50 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300 disabled:opacity-30 z-20"
-                        >
-                            <ChevronRightIcon className="w-4 h-4" />
-                        </button>
-                    </>
-                )}
-
-                {/* Status Badges */}
-                {car.sold && (
-                    <div className="absolute top-3 left-3 bg-red-600 text-white text-xs px-3 py-1 rounded-md font-medium z-20">
-                        Sold
-                    </div>
-                )}
-
-                {car.deal_rating && !car.sold && variant !== "home" && (
-                    <RatingBadge
-                        rating={car.deal_rating}
-                        className="absolute bottom-3 left-3 z-20"
-                    />
-                )}
-            </div>
-        );
-    };
+            )}
+        </div>
+    );
 
     const CarDetails = ({ showFullDetails = true }) => (
         <div className={`grid ${showFullDetails ? 'grid-cols-2' : 'grid-cols-1'} gap-y-2 text-sm text-gray-600 mb-3`}>
@@ -198,7 +160,7 @@ export const CarCard: React.FC<CarCardProps> = ({
             </div>
             <div className="flex items-center">
                 <GaugeIcon className="w-4 h-4 mr-1.5" />
-                <span>{formatNumber(car.mileage)} km</span>
+                <span>{formatNumber(car.mileage)} {t('units.km')}</span>
             </div>
             <div className="flex items-center">
                 <TransmissionIcon className="w-4 h-4 mr-1.5" />
@@ -207,13 +169,13 @@ export const CarCard: React.FC<CarCardProps> = ({
             {showFullDetails && car.engine_capacity && (
                 <div className="flex items-center">
                     <EngineIcon className="w-4 h-4 mr-1.5" />
-                    <span>{formatNumber(car.engine_capacity)} cm³</span>
+                    <span>{formatNumber(car.engine_capacity)} {t('units.cm3')}</span>
                 </div>
             )}
             {showFullDetails && car.engine_power && (
                 <div className="flex items-center">
                     <SpeedometerIcon className="w-4 h-4 mr-1.5" />
-                    <span>{formatNumber(car.engine_power)} hp</span>
+                    <span>{formatNumber(car.engine_power)} {t('units.hp')}</span>
                 </div>
             )}
         </div>
@@ -226,7 +188,7 @@ export const CarCard: React.FC<CarCardProps> = ({
             </div>
             {showEstimatedPrice && car.estimated_price && (
                 <div className="text-sm text-gray-500">
-                    Est: €{formatNumber(car.estimated_price)}
+                    {t('estimated')} €{formatNumber(car.estimated_price)}
                 </div>
             )}
             {car.location && variant !== "home" && (
@@ -240,7 +202,7 @@ export const CarCard: React.FC<CarCardProps> = ({
     if (variant === "grid") {
         return (
             <div className={`group bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 ${className}`}>
-                <a href={`/listings/${car.id}`} className="block">
+                <a href={`/${locale}/listings/${car.id}`} className="block">
                     <ImageGallery />
                     <div className="p-5">
                         <h3 className="font-bold text-lg text-gray-800 mb-1 line-clamp-1">{car.title}</h3>
@@ -256,7 +218,7 @@ export const CarCard: React.FC<CarCardProps> = ({
                                 <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                                 </svg>
-                                <span className="text-xs">Suspicious Price</span>
+                                <span className="text-xs">{t('suspiciousPrice')}</span>
                             </div>
                         )}
                     </div>
@@ -268,7 +230,7 @@ export const CarCard: React.FC<CarCardProps> = ({
     if (variant === "list") {
         return (
             <div className={`group bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 ${className}`}>
-                <a href={`/listings/${car.id}`} className="flex flex-col md:flex-row">
+                <a href={`/${locale}/listings/${car.id}`} className="flex flex-col md:flex-row">
                     <div className="w-full md:w-1/3 md:min-h-[200px]">
                         <ImageGallery height="h-[220px] md:h-[200px]" />
                     </div>
@@ -293,7 +255,7 @@ export const CarCard: React.FC<CarCardProps> = ({
                                 <svg className="w-4 h-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                                 </svg>
-                                <span className="text-xs">Suspicious Price</span>
+                                <span className="text-xs">{t('suspiciousPrice')}</span>
                             </div>
                         )}
                     </div>
@@ -305,7 +267,7 @@ export const CarCard: React.FC<CarCardProps> = ({
     if (variant === "compact" || variant === "home") {
         return (
             <div className={`group bg-white rounded-xl shadow-md overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 ${className}`}>
-                <a href={`/listings/${car.id}`} className="block">
+                <a href={`/${locale}/listings/${car.id}`} className="block">
                     <ImageGallery height="h-48" />
                     <div className="p-4">
                         <h3 className="font-bold text-base text-gray-800 mb-2 line-clamp-1">{car.title}</h3>

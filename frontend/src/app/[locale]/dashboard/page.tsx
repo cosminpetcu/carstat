@@ -6,6 +6,8 @@ import Footer from "@/components/Footer";
 import { useRouter } from 'next/navigation';
 import { PendingActionsManager } from '@/utils/pendingActions';
 import Image from 'next/image';
+import { useTranslations, useLocale } from 'next-intl';
+import IntlProvider from '@/components/IntlProvider';
 import {
   Pie,
   Bar,
@@ -61,8 +63,10 @@ Chart.register(
   Title
 );
 
+function DashboardContent() {
+  const t = useTranslations('dashboard');
+  const locale = useLocale();
 
-export default function Dashboard() {
   const [topDeals, setTopDeals] = useState<Deal[]>([]);
   const [ratingStats, setRatingStats] = useState<RatingStat[]>([]);
   const [locationStats, setLocationStats] = useState<LocationStat[]>([]);
@@ -152,24 +156,23 @@ export default function Dashboard() {
   const getRatingDetails = (rating: string) => {
     switch (rating.toUpperCase()) {
       case "S":
-        return { label: "Exceptional Price", color: "#166534" };
+        return { label: t('ratings.exceptionalPrice'), color: "#166534" };
       case "A":
-        return { label: "Very Good Price", color: "#4d7c0f" };
+        return { label: t('ratings.veryGoodPrice'), color: "#4d7c0f" };
       case "B":
-        return { label: "Good Price", color: "#059669" };
+        return { label: t('ratings.goodPrice'), color: "#059669" };
       case "C":
-        return { label: "Fair Price", color: "#facc15" };
+        return { label: t('ratings.fairPrice'), color: "#facc15" };
       case "D":
-        return { label: "Expensive", color: "#f97316" };
+        return { label: t('ratings.expensive'), color: "#f97316" };
       case "E":
-        return { label: "Very Expensive", color: "#f43f5e" };
+        return { label: t('ratings.veryExpensive'), color: "#f43f5e" };
       case "F":
-        return { label: "Overpriced", color: "#b91c1c" };
+        return { label: t('ratings.overpriced'), color: "#b91c1c" };
       default:
-        return { label: "Unknown", color: "#d1d5db" };
+        return { label: t('ratings.unknown'), color: "#d1d5db" };
     }
   };
-
 
   const fetchModelDepreciationData = async (brand: string, model: string): Promise<ModelDepreciation | null> => {
     try {
@@ -205,12 +208,12 @@ export default function Dashboard() {
 
     if (!token || !userRaw) {
       PendingActionsManager.saveNavigationIntent(window.location.pathname);
-      router.push("/login");
+      router.push(`/${locale}/login`);
       return;
     }
 
     setIsAuthorized(true);
-  }, [router]);
+  }, [router, locale]);
 
   useEffect(() => {
     setLoading(true);
@@ -357,7 +360,7 @@ export default function Dashboard() {
         <div className="flex items-center justify-center min-h-[60vh]">
           <div className="text-center">
             <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading Analytics Data...</p>
+            <p className="mt-4 text-gray-600">{t('loadingData')}</p>
           </div>
         </div>
       </main>
@@ -370,36 +373,36 @@ export default function Dashboard() {
 
       {/* Market Summary Cards */}
       <section className="pt-8 px-6 max-w-7xl mx-auto">
-        <h1 className="text-3xl font-bold mb-6 text-gray-800">Market Dashboard</h1>
+        <h1 className="text-3xl font-bold mb-6 text-gray-800">{t('title')}</h1>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <div className="bg-blue-50 rounded-xl p-6 shadow-sm border border-blue-100">
-            <h3 className="text-sm text-blue-700 font-medium mb-1">Total Listings</h3>
+            <h3 className="text-sm text-blue-700 font-medium mb-1">{t('totalListings')}</h3>
             <p className="text-3xl font-bold text-blue-900">{formatNumber(marketSummary.totalListings)}</p>
             <p className="text-sm text-blue-600 mt-2">
-              {formatNumber(marketSummary.activeListings)} active cars
+              {formatNumber(marketSummary.activeListings)} {t('activeCars')}
             </p>
           </div>
 
           <div className="bg-green-50 rounded-xl p-6 shadow-sm border border-green-100">
-            <h3 className="text-sm text-green-700 font-medium mb-1">Sold Cars</h3>
+            <h3 className="text-sm text-green-700 font-medium mb-1">{t('soldCars')}</h3>
             <p className="text-3xl font-bold text-green-900">{formatNumber(marketSummary.totalSold)}</p>
             <p className="text-sm text-green-600 mt-2">
-              {((marketSummary.totalSold / marketSummary.totalListings) * 100).toFixed(1)}% of all listings
+              {((marketSummary.totalSold / marketSummary.totalListings) * 100).toFixed(1)}% {t('ofAllListings')}
             </p>
           </div>
 
           <div className="bg-amber-50 rounded-xl p-6 shadow-sm border border-amber-100">
-            <h3 className="text-sm text-amber-700 font-medium mb-1">Avg. Sell Time</h3>
-            <p className="text-3xl font-bold text-amber-900">{marketSummary.averageSellTime} days</p>
-            <p className="text-sm text-amber-600 mt-2">From listing to sale</p>
+            <h3 className="text-sm text-amber-700 font-medium mb-1">{t('avgSellTime')}</h3>
+            <p className="text-3xl font-bold text-amber-900">{marketSummary.averageSellTime} {t('days')}</p>
+            <p className="text-sm text-amber-600 mt-2">{t('fromListingToSale')}</p>
           </div>
 
           <div className="bg-purple-50 rounded-xl p-6 shadow-sm border border-purple-100">
-            <h3 className="text-sm text-purple-700 font-medium mb-1">Avg. Price Drops</h3>
+            <h3 className="text-sm text-purple-700 font-medium mb-1">{t('avgPriceDrops')}</h3>
             <p className="text-3xl font-bold text-purple-900">€{formatNumber(priceDropStats.averagePriceDrop)}</p>
             <p className="text-sm text-purple-600 mt-2">
-              {priceDropStats.averagePercentageDrop.toFixed(1)}% average reduction
+              {priceDropStats.averagePercentageDrop.toFixed(1)}% {t('averageReduction')}
             </p>
           </div>
         </div>
@@ -413,7 +416,7 @@ export default function Dashboard() {
               : "text-gray-500 hover:text-gray-700"
               }`}
           >
-            Overview
+            {t('tabs.overview')}
           </button>
           <button
             onClick={() => setActiveTab("brands")}
@@ -422,7 +425,7 @@ export default function Dashboard() {
               : "text-gray-500 hover:text-gray-700"
               }`}
           >
-            Brands & Models
+            {t('tabs.brandsModels')}
           </button>
           <button
             onClick={() => setActiveTab("pricing")}
@@ -431,7 +434,7 @@ export default function Dashboard() {
               : "text-gray-500 hover:text-gray-700"
               }`}
           >
-            Pricing Analysis
+            {t('tabs.pricingAnalysis')}
           </button>
           <button
             onClick={() => setActiveTab("price-drops")}
@@ -440,7 +443,7 @@ export default function Dashboard() {
               : "text-gray-500 hover:text-gray-700"
               }`}
           >
-            Price Drops
+            {t('tabs.priceDrops')}
           </button>
           <button
             onClick={() => setActiveTab("vehicle-quality")}
@@ -449,7 +452,7 @@ export default function Dashboard() {
               : "text-gray-500 hover:text-gray-700"
               }`}
           >
-            Vehicle Quality
+            {t('tabs.vehicleQuality')}
           </button>
           <button
             onClick={() => setActiveTab("geographic")}
@@ -458,7 +461,7 @@ export default function Dashboard() {
               : "text-gray-500 hover:text-gray-700"
               }`}
           >
-            Geographic Analysis
+            {t('tabs.geographicAnalysis')}
           </button>
           <button
             onClick={() => setActiveTab("mileage-impact")}
@@ -467,7 +470,7 @@ export default function Dashboard() {
               : "text-gray-500 hover:text-gray-700"
               }`}
           >
-            Mileage Impact
+            {t('tabs.mileageImpact')}
           </button>
           <button
             onClick={() => setActiveTab("suspicious")}
@@ -476,7 +479,7 @@ export default function Dashboard() {
               : "text-gray-500 hover:text-gray-700"
               }`}
           >
-            Suspicious & Incomplete Listings
+            {t('tabs.suspiciousListings')}
           </button>
         </div>
       </section>
@@ -486,7 +489,7 @@ export default function Dashboard() {
         <section className="py-6 px-6 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Top Exceptional Deals */}
           <div className="bg-white shadow rounded-xl p-6">
-            <h2 className="text-xl font-semibold mb-4">Top Exceptional Deals</h2>
+            <h2 className="text-xl font-semibold mb-4">{t('topExceptionalDeals')}</h2>
             {topDeals.length > 0 ? (
               <ul className="space-y-4">
                 {topDeals.map((car) => (
@@ -499,23 +502,23 @@ export default function Dashboard() {
                       className="w-24 h-16 object-cover rounded"
                     />
                     <div className="flex-1">
-                      <a href={`/listings/${car.id}`} className="text-sm font-semibold hover:underline">
+                      <a href={`/${locale}/listings/${car.id}`} className="text-sm font-semibold hover:underline">
                         {car.title}
                       </a>
                       <div className="flex justify-between items-center mt-1">
                         <div>
                           <p className="text-xs text-gray-500">
-                            Est. Price: €{formatNumber(car.estimated_price)}
+                            {t('estPrice')}: €{formatNumber(car.estimated_price)}
                           </p>
                           <p className="text-blue-600 font-bold text-sm">
                             €{formatNumber(car.price)}
                           </p>
                         </div>
                         <div className="flex items-center bg-green-100 px-2 py-1 rounded text-xs text-green-800">
-                          <span className="font-bold mr-1">Save</span>
+                          <span className="font-bold mr-1">{t('save')}</span>
                           {car.estimated_price && car.price ?
                             `€${formatNumber(car.estimated_price - car.price)}` :
-                            "Great Deal"}
+                            t('greatDeal')}
                         </div>
                       </div>
                       <div className="flex items-center mt-1 text-xs text-gray-600">
@@ -526,7 +529,7 @@ export default function Dashboard() {
                           <>
                             <span className="mr-2 ml-2">•</span>
                             <span className="bg-blue-100 text-blue-800 px-1 rounded">
-                              {car.deal_rating} Rating
+                              {car.deal_rating} {t('rating')}
                             </span>
                           </>
                         )}
@@ -536,15 +539,15 @@ export default function Dashboard() {
                 ))}
               </ul>
             ) : (
-              <p className="text-gray-500 text-center py-8">No exceptional deals available</p>
+              <p className="text-gray-500 text-center py-8">{t('noExceptionalDeals')}</p>
             )}
           </div>
 
           {/* Rating Distribution */}
           <div className="bg-white shadow rounded-xl p-6">
-            <h2 className="text-xl font-semibold mb-4">Rating Distribution</h2>
+            <h2 className="text-xl font-semibold mb-4">{t('ratingDistribution')}</h2>
             {ratingStats.length === 0 ? (
-              <p className="text-sm text-gray-500">No data available.</p>
+              <p className="text-sm text-gray-500">{t('noDataAvailable')}</p>
             ) : (
               <Pie
                 data={{
@@ -576,7 +579,7 @@ export default function Dashboard() {
                           const value = context.raw as number;
                           const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0);
                           const percentage = ((value / total) * 100).toFixed(1);
-                          return `${label}: ${value} cars (${percentage}%)`;
+                          return `${label}: ${value} ${t('cars')} (${percentage}%)`;
                         },
                       },
                     },
@@ -588,7 +591,7 @@ export default function Dashboard() {
 
           {/* Top Locations */}
           <div className="bg-white shadow rounded-xl p-6">
-            <h2 className="text-xl font-semibold mb-4">Top 10 Listing Locations</h2>
+            <h2 className="text-xl font-semibold mb-4">{t('topListingLocations')}</h2>
             <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-5 gap-4">
               {locationStats.map((loc, idx) => (
                 <div
@@ -596,7 +599,7 @@ export default function Dashboard() {
                   className="p-4 bg-gray-100 rounded-md text-center shadow-sm"
                 >
                   <h3 className="text-sm font-medium">{loc.location}</h3>
-                  <p className="text-lg text-blue-600 font-bold">{loc.count} cars</p>
+                  <p className="text-lg text-blue-600 font-bold">{loc.count} {t('cars')}</p>
                 </div>
               ))}
             </div>
@@ -604,7 +607,7 @@ export default function Dashboard() {
 
           {/* Top Selling Brands */}
           <div className="bg-white shadow rounded-xl p-6">
-            <h2 className="text-xl font-semibold mb-4">Top Selling Brands</h2>
+            <h2 className="text-xl font-semibold mb-4">{t('topSellingBrands')}</h2>
             <ul className="space-y-4">
               {brandStats.slice(0, 5).map((brand, index) => (
                 <li key={index} className="flex items-center justify-between border-b pb-2">
@@ -615,9 +618,9 @@ export default function Dashboard() {
                     <span className="font-medium">{brand.brand}</span>
                   </div>
                   <div className="text-right">
-                    <div className="text-sm font-semibold">{formatNumber(brand.count)} cars</div>
+                    <div className="text-sm font-semibold">{formatNumber(brand.count)} {t('cars')}</div>
                     <div className="text-xs text-gray-500">
-                      {brand.soldCount} sold • avg {brand.avgSellTime} days
+                      {brand.soldCount} {t('sold')} • {t('avg')} {brand.avgSellTime} {t('days')}
                     </div>
                   </div>
                 </li>
@@ -627,34 +630,34 @@ export default function Dashboard() {
 
           {/* Dealer vs Private comparison */}
           <div className="bg-white shadow rounded-xl p-6 lg:col-span-2">
-            <h2 className="text-xl font-semibold mb-4 text-center">Dealer vs. Private Seller Comparison</h2>
+            <h2 className="text-xl font-semibold mb-4 text-center">{t('dealerVsPrivateComparison')}</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto">
               {dealerVsPrivate.generalStats.map((stat, index) => (
                 <div key={index} className="bg-gray-50 p-4 rounded-lg">
                   <h3 className="text-lg font-semibold mb-2 text-center">{stat.sellerType}</h3>
                   <div className="space-y-2">
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Total Listings:</span>
+                      <span className="text-gray-600">{t('totalListings')}:</span>
                       <span className="font-medium">{formatNumber(stat.count)}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Average Price:</span>
+                      <span className="text-gray-600">{t('averagePrice')}:</span>
                       <span className="font-medium">€{formatNumber(stat.avgPrice)}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Sold Rate:</span>
+                      <span className="text-gray-600">{t('soldRate')}:</span>
                       <span className="font-medium">
                         {((stat.soldCount / stat.count) * 100).toFixed(1)}%
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Avg. Sell Time:</span>
-                      <span className="font-medium">{stat.avgSellTime} days</span>
+                      <span className="text-gray-600">{t('avgSellTime')}:</span>
+                      <span className="font-medium">{stat.avgSellTime} {t('days')}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">Quality Score:</span>
+                      <span className="text-gray-600">{t('qualityScore')}:</span>
                       <span className="font-medium">
-                        {dealerVsPrivate.qualityScores.find(q => q.sellerType === stat.sellerType)?.avgScore || "N/A"}
+                        {dealerVsPrivate.qualityScores.find(q => q.sellerType === stat.sellerType)?.avgScore || t('na')}
                       </span>
                     </div>
                   </div>
@@ -670,21 +673,21 @@ export default function Dashboard() {
         <section className="py-6 px-6 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Top Brands Bar Chart */}
           <div className="bg-white shadow rounded-xl p-6 lg:col-span-1 max-w-5xl mx-auto w-full ">
-            <h2 className="text-xl font-semibold mb-4 text-center">Top 10 Car Brands</h2>
+            <h2 className="text-xl font-semibold mb-4 text-center">{t('topCarBrands')}</h2>
             <div className="h-80">
               <Bar
                 data={{
                   labels: brandStats.slice(0, 10).map(brand => brand.brand),
                   datasets: [
                     {
-                      label: 'Total Listings',
+                      label: t('totalListings'),
                       data: brandStats.slice(0, 10).map(brand => brand.count),
                       backgroundColor: 'rgba(59, 130, 246, 0.7)',
                       borderColor: 'rgba(59, 130, 246, 1)',
                       borderWidth: 1
                     },
                     {
-                      label: 'Sold Cars',
+                      label: t('soldCars'),
                       data: brandStats.slice(0, 10).map(brand => brand.soldCount),
                       backgroundColor: 'rgba(16, 185, 129, 0.7)',
                       borderColor: 'rgba(16, 185, 129, 1)',
@@ -699,7 +702,7 @@ export default function Dashboard() {
                       beginAtZero: true,
                       title: {
                         display: true,
-                        text: 'Number of Cars'
+                        text: t('numberOfCars')
                       }
                     }
                   }
@@ -710,14 +713,14 @@ export default function Dashboard() {
 
           {/* Average Sell Time by Brand */}
           <div className="bg-white shadow rounded-xl p-6">
-            <h2 className="text-xl font-semibold mb-4">Average Sell Time by Brand</h2>
+            <h2 className="text-xl font-semibold mb-4">{t('avgSellTimeByBrand')}</h2>
             <div className="h-72">
               <Bar
                 data={{
                   labels: brandStats.slice(0, 8).map(brand => brand.brand),
                   datasets: [
                     {
-                      label: 'Days to Sell',
+                      label: t('daysToSell'),
                       data: brandStats.slice(0, 8).map(brand => brand.avgSellTime),
                       backgroundColor: 'rgba(245, 158, 11, 0.7)',
                       borderColor: 'rgba(245, 158, 11, 1)',
@@ -733,7 +736,7 @@ export default function Dashboard() {
                       beginAtZero: true,
                       title: {
                         display: true,
-                        text: 'Average Days to Sell'
+                        text: t('avgDaysToSell')
                       }
                     }
                   }
@@ -744,17 +747,17 @@ export default function Dashboard() {
 
           {/* Top Car Models */}
           <div className="bg-white shadow rounded-xl p-6 lg:col-span-2">
-            <h2 className="text-xl font-semibold mb-4">Top Car Models</h2>
+            <h2 className="text-xl font-semibold mb-4">{t('topCarModels')}</h2>
             <ul className="space-y-4">
               {modelStats.slice(0, 8).map((model, index) => (
                 <li key={index} className="flex items-center justify-between border-b pb-3">
                   <div>
                     <div className="font-medium">{model.brand} {model.model}</div>
-                    <div className="text-sm text-gray-500">{formatNumber(model.count)} cars • {model.soldCount} sold</div>
+                    <div className="text-sm text-gray-500">{formatNumber(model.count)} {t('cars')} • {model.soldCount} {t('sold')}</div>
                   </div>
                   <div className="text-right">
                     <div className="text-blue-600 font-semibold">€{formatNumber(model.avgPrice)}</div>
-                    <div className="text-xs text-gray-500">avg price</div>
+                    <div className="text-xs text-gray-500">{t('avgPrice')}</div>
                   </div>
                 </li>
               ))}
@@ -763,18 +766,18 @@ export default function Dashboard() {
 
           {/* Brand Reliability Score */}
           <div className="bg-white shadow rounded-xl p-6 lg:col-span-2">
-            <h2 className="text-xl font-semibold mb-4">Brand Reliability Score</h2>
+            <h2 className="text-xl font-semibold mb-4">{t('brandReliabilityScore')}</h2>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b">
-                    <th className="px-4 py-2 text-left">Brand</th>
-                    <th className="px-4 py-2 text-right">Reliability Score</th>
-                    <th className="px-4 py-2 text-right">Quality Score</th>
-                    <th className="px-4 py-2 text-right">No Accident</th>
-                    <th className="px-4 py-2 text-right">Service Book</th>
-                    <th className="px-4 py-2 text-right">First Owner</th>
-                    <th className="px-4 py-2 text-right">Cars</th>
+                    <th className="px-4 py-2 text-left">{t('brand')}</th>
+                    <th className="px-4 py-2 text-right">{t('reliabilityScore')}</th>
+                    <th className="px-4 py-2 text-right">{t('qualityScore')}</th>
+                    <th className="px-4 py-2 text-right">{t('noAccident')}</th>
+                    <th className="px-4 py-2 text-right">{t('serviceBook')}</th>
+                    <th className="px-4 py-2 text-right">{t('firstOwner')}</th>
+                    <th className="px-4 py-2 text-right">{t('cars')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -794,31 +797,31 @@ export default function Dashboard() {
                       <td className="px-4 py-3 text-right font-semibold">
                         {brand.reliabilityScore !== null
                           ? brand.reliabilityScore
-                          : "N/A"
+                          : t('na')
                         }
                       </td>
                       <td className="px-4 py-3 text-right">
                         {brand.avgQuality !== null
                           ? brand.avgQuality
-                          : "N/A"
+                          : t('na')
                         }
                       </td>
                       <td className="px-4 py-3 text-right">
                         {brand.noAccidentRate !== null
                           ? `${brand.noAccidentRate}%`
-                          : "N/A"
+                          : t('na')
                         }
                       </td>
                       <td className="px-4 py-3 text-right">
                         {brand.serviceBookRate !== null
                           ? `${brand.serviceBookRate}%`
-                          : "N/A"
+                          : t('na')
                         }
                       </td>
                       <td className="px-4 py-3 text-right">
                         {brand.firstOwnerRate !== null
                           ? `${brand.firstOwnerRate}%`
-                          : "N/A"
+                          : t('na')
                         }
                       </td>
                       <td className="px-4 py-3 text-right">
@@ -830,21 +833,20 @@ export default function Dashboard() {
               </table>
             </div>
             <p className="text-sm text-gray-500 mt-4">
-              Reliability score is calculated using a weighted formula that considers quality score,
-              accident history, service book presence, owner history, and deal quality.
+              {t('reliabilityScoreExplanation')}
             </p>
           </div>
 
           {/* Model Depreciation Chart */}
           <div className="bg-white shadow rounded-xl p-6">
-            <h2 className="text-xl font-semibold mb-4">Model Depreciation Rates</h2>
+            <h2 className="text-xl font-semibold mb-4">{t('modelDepreciationRates')}</h2>
             <div className="h-72">
               <Bar
                 data={{
                   labels: modelDepreciation.slice(0, 8).map(model => `${model.brand} ${model.model}`),
                   datasets: [
                     {
-                      label: 'Yearly Depreciation Rate (%)',
+                      label: t('yearlyDepreciationRate'),
                       data: modelDepreciation.slice(0, 8).map(model => model.yearlyDepreciationRate),
                       backgroundColor: 'rgba(239, 68, 68, 0.7)',
                       borderColor: 'rgba(239, 68, 68, 1)',
@@ -860,7 +862,7 @@ export default function Dashboard() {
                       beginAtZero: true,
                       title: {
                         display: true,
-                        text: 'Depreciation Rate (%)'
+                        text: t('depreciationRatePercent')
                       }
                     }
                   }
@@ -868,13 +870,13 @@ export default function Dashboard() {
               />
             </div>
             <p className="text-sm text-gray-500 mt-4">
-              Higher percentage means faster depreciation. This is the average yearly loss in value.
+              {t('depreciationExplanation')}
             </p>
           </div>
 
           {/* Model Depreciation Detail */}
           <div className="bg-white shadow rounded-xl p-6">
-            <h2 className="text-xl font-semibold mb-4">Price vs. Age for Top Models</h2>
+            <h2 className="text-xl font-semibold mb-4">{t('priceVsAgeTopModels')}</h2>
             <div className="flex flex-wrap items-center mb-4 gap-2">
               <div className="flex gap-2">
                 <select
@@ -890,7 +892,7 @@ export default function Dashboard() {
                   }}
                   className="px-2 py-1 text-sm rounded-md border border-gray-300"
                 >
-                  <option value="">Select brand...</option>
+                  <option value="">{t('selectBrand')}</option>
                   {brands.map((brand) => (
                     <option key={brand} value={brand}>{brand}</option>
                   ))}
@@ -912,7 +914,7 @@ export default function Dashboard() {
                   className="px-2 py-1 text-sm rounded-md border border-gray-300"
                   disabled={!selectedBrand || isLoadingModels}
                 >
-                  <option value="">Select model...</option>
+                  <option value="">{t('selectModel')}</option>
                   {(models || []).map((model) => (
                     <option key={model} value={model}>{model}</option>
                   ))}
@@ -960,7 +962,7 @@ export default function Dashboard() {
                       beginAtZero: false,
                       title: {
                         display: true,
-                        text: 'Price (€)'
+                        text: t('priceEuro')
                       }
                     }
                   }
@@ -971,7 +973,7 @@ export default function Dashboard() {
 
           {/* Generation Analysis */}
           <div className="bg-white shadow rounded-xl p-6 lg:col-span-2">
-            <h2 className="text-xl font-semibold mb-4">Generation Comparison</h2>
+            <h2 className="text-xl font-semibold mb-4">{t('generationComparison')}</h2>
             <div className="flex flex-wrap items-center mb-4 gap-2">
               <div className="flex gap-2">
                 <select
@@ -987,7 +989,7 @@ export default function Dashboard() {
                   }}
                   className="px-2 py-1 text-sm rounded-md border border-gray-300"
                 >
-                  <option value="">Select brand...</option>
+                  <option value="">{t('selectBrand')}</option>
                   {brands.map((brand) => (
                     <option key={brand} value={brand}>{brand}</option>
                   ))}
@@ -1009,7 +1011,7 @@ export default function Dashboard() {
                   className="px-2 py-1 text-sm rounded-md border border-gray-300"
                   disabled={!selectedGenBrand || isLoadingModels}
                 >
-                  <option value="">Select model...</option>
+                  <option value="">{t('selectModel')}</option>
                   {(models || []).map((model) => (
                     <option key={model} value={model}>{model}</option>
                   ))}
@@ -1039,13 +1041,13 @@ export default function Dashboard() {
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b">
-                      <th className="px-4 py-2 text-left">Generation</th>
-                      <th className="px-4 py-2 text-right">Avg. Price</th>
-                      <th className="px-4 py-2 text-right">Quality Score</th>
-                      <th className="px-4 py-2 text-right">Avg. Mileage</th>
-                      <th className="px-4 py-2 text-right">Sale Rate</th>
-                      <th className="px-4 py-2 text-right">Sell Time</th>
-                      <th className="px-4 py-2 text-right">Count</th>
+                      <th className="px-4 py-2 text-left">{t('generation')}</th>
+                      <th className="px-4 py-2 text-right">{t('avgPrice')}</th>
+                      <th className="px-4 py-2 text-right">{t('qualityScore')}</th>
+                      <th className="px-4 py-2 text-right">{t('avgMileage')}</th>
+                      <th className="px-4 py-2 text-right">{t('saleRate')}</th>
+                      <th className="px-4 py-2 text-right">{t('sellTime')}</th>
+                      <th className="px-4 py-2 text-right">{t('count')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1053,19 +1055,19 @@ export default function Dashboard() {
                       <tr key={index} className="border-b hover:bg-gray-50">
                         <td className="px-4 py-3 font-medium">{gen.generation}</td>
                         <td className="px-4 py-3 text-right">
-                          {gen.avgPrice !== null ? `€${formatNumber(gen.avgPrice)}` : "N/A"}
+                          {gen.avgPrice !== null ? `€${formatNumber(gen.avgPrice)}` : t('na')}
                         </td>
                         <td className="px-4 py-3 text-right">
-                          {gen.avgQuality !== null ? gen.avgQuality : "N/A"}
+                          {gen.avgQuality !== null ? gen.avgQuality : t('na')}
                         </td>
                         <td className="px-4 py-3 text-right">
-                          {gen.avgMileage !== null ? `${formatNumber(gen.avgMileage)} km` : "N/A"}
+                          {gen.avgMileage !== null ? `${formatNumber(gen.avgMileage)} km` : t('na')}
                         </td>
                         <td className="px-4 py-3 text-right">
-                          {gen.soldRate !== null ? `${gen.soldRate}%` : "N/A"}
+                          {gen.soldRate !== null ? `${gen.soldRate}%` : t('na')}
                         </td>
                         <td className="px-4 py-3 text-right">
-                          {gen.avgSellTime !== null ? `${gen.avgSellTime} days` : "N/A"}
+                          {gen.avgSellTime !== null ? `${gen.avgSellTime} ${t('days')}` : t('na')}
                         </td>
                         <td className="px-4 py-3 text-right">{gen.count}</td>
                       </tr>
@@ -1075,7 +1077,7 @@ export default function Dashboard() {
               </div>
             ) : (
               <p className="text-gray-500 text-center py-10">
-                Not enough data to compare generations.
+                {t('notEnoughDataGenerations')}
               </p>
             )}
           </div>
@@ -1087,21 +1089,21 @@ export default function Dashboard() {
         <section className="py-6 px-6 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Price Range Distribution */}
           <div className="bg-white shadow rounded-xl p-6 lg:col-span-1">
-            <h2 className="text-xl font-semibold mb-4">Price Range Distribution</h2>
+            <h2 className="text-xl font-semibold mb-4">{t('priceRangeDistribution')}</h2>
             <div className="h-80">
               <Bar
                 data={{
                   labels: priceStats.map(stat => stat.range),
                   datasets: [
                     {
-                      label: 'All Cars',
+                      label: t('allCars'),
                       data: priceStats.map(stat => stat.count),
                       backgroundColor: 'rgba(59, 130, 246, 0.7)',
                       borderColor: 'rgba(59, 130, 246, 1)',
                       borderWidth: 1
                     },
                     {
-                      label: 'Sold Cars',
+                      label: t('soldCars'),
                       data: priceStats.map(stat => stat.soldCount),
                       backgroundColor: 'rgba(16, 185, 129, 0.7)',
                       borderColor: 'rgba(16, 185, 129, 1)',
@@ -1116,7 +1118,7 @@ export default function Dashboard() {
                       beginAtZero: true,
                       title: {
                         display: true,
-                        text: 'Number of Cars'
+                        text: t('numberOfCars')
                       }
                     }
                   }
@@ -1127,7 +1129,7 @@ export default function Dashboard() {
 
           {/* Average Price by Year */}
           <div className="bg-white shadow rounded-xl p-6">
-            <h2 className="text-xl font-semibold mb-4">Average Price by Year</h2>
+            <h2 className="text-xl font-semibold mb-4">{t('avgPriceByYear')}</h2>
             <div className="h-72">
               <Line
                 data={{
@@ -1136,7 +1138,7 @@ export default function Dashboard() {
                     .map(item => item.year),
                   datasets: [
                     {
-                      label: 'Average Price (€)',
+                      label: t('avgPriceEuro'),
                       data: detailedPriceStats.yearPrices
                         .sort((a, b) => a.year - b.year)
                         .map(item => item.avgPrice),
@@ -1154,7 +1156,7 @@ export default function Dashboard() {
                       beginAtZero: false,
                       title: {
                         display: true,
-                        text: 'Price (€)'
+                        text: t('priceEuro')
                       }
                     }
                   }
@@ -1165,14 +1167,14 @@ export default function Dashboard() {
 
           {/* Average Price by Fuel Type */}
           <div className="bg-white shadow rounded-xl p-6">
-            <h2 className="text-xl font-semibold mb-4">Average Price by Fuel Type</h2>
+            <h2 className="text-xl font-semibold mb-4">{t('avgPriceByFuelType')}</h2>
             <div className="h-72">
               <Bar
                 data={{
                   labels: detailedPriceStats.fuelPrices.map(item => item.fuelType),
                   datasets: [
                     {
-                      label: 'Average Price (€)',
+                      label: t('avgPriceEuro'),
                       data: detailedPriceStats.fuelPrices.map(item => item.avgPrice),
                       backgroundColor: 'rgba(245, 158, 11, 0.7)',
                       borderColor: 'rgba(245, 158, 11, 1)',
@@ -1187,7 +1189,7 @@ export default function Dashboard() {
                       beginAtZero: true,
                       title: {
                         display: true,
-                        text: 'Price (€)'
+                        text: t('priceEuro')
                       }
                     }
                   }
@@ -1198,14 +1200,14 @@ export default function Dashboard() {
 
           {/* Sale Percentage by Price Range */}
           <div className="bg-white shadow rounded-xl p-6 lg:col-span-1">
-            <h2 className="text-xl font-semibold mb-4">Sale Success by Price Range</h2>
+            <h2 className="text-xl font-semibold mb-4">{t('saleSuccessByPriceRange')}</h2>
             <div className="h-72">
               <Line
                 data={{
                   labels: priceStats.map(stat => stat.range),
                   datasets: [
                     {
-                      label: 'Sold Percentage (%)',
+                      label: t('soldPercentage'),
                       data: priceStats.map(stat => stat.soldPercentage),
                       borderColor: 'rgba(124, 58, 237, 1)',
                       backgroundColor: 'rgba(124, 58, 237, 0.2)',
@@ -1222,7 +1224,7 @@ export default function Dashboard() {
                       max: 100,
                       title: {
                         display: true,
-                        text: 'Percentage (%)'
+                        text: t('percentage')
                       }
                     }
                   }
@@ -1238,25 +1240,25 @@ export default function Dashboard() {
         <section className="py-6 px-6 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Price Drop Statistics */}
           <div className="bg-white shadow rounded-xl p-6 lg:col-span-2">
-            <h2 className="text-xl font-semibold mb-4">Price Drop Overview</h2>
+            <h2 className="text-xl font-semibold mb-4">{t('priceDropOverview')}</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div className="bg-purple-50 rounded-xl p-5 border border-purple-100">
-                <h3 className="text-sm text-purple-700 font-medium mb-1">Average Price Drop</h3>
+                <h3 className="text-sm text-purple-700 font-medium mb-1">{t('avgPriceDrop')}</h3>
                 <p className="text-2xl font-bold text-purple-900">€{formatNumber(priceDropStats.averagePriceDrop)}</p>
-                <p className="text-sm text-purple-600 mt-2">Absolute value</p>
+                <p className="text-sm text-purple-600 mt-2">{t('absoluteValue')}</p>
               </div>
 
               <div className="bg-indigo-50 rounded-xl p-5 border border-indigo-100">
-                <h3 className="text-sm text-indigo-700 font-medium mb-1">Average Drop Percentage</h3>
+                <h3 className="text-sm text-indigo-700 font-medium mb-1">{t('avgDropPercentage')}</h3>
                 <p className="text-2xl font-bold text-indigo-900">{priceDropStats.averagePercentageDrop.toFixed(1)}%</p>
-                <p className="text-sm text-indigo-600 mt-2">Of original price</p>
+                <p className="text-sm text-indigo-600 mt-2">{t('ofOriginalPrice')}</p>
               </div>
 
               <div className="bg-blue-50 rounded-xl p-5 border border-blue-100">
-                <h3 className="text-sm text-blue-700 font-medium mb-1">Cars with Price Drops</h3>
+                <h3 className="text-sm text-blue-700 font-medium mb-1">{t('carsWithPriceDrops')}</h3>
                 <p className="text-2xl font-bold text-blue-900">{formatNumber(priceDropStats.carsWithPriceDrops)}</p>
                 <p className="text-sm text-blue-600 mt-2">
-                  {((priceDropStats.carsWithPriceDrops / marketSummary.totalListings) * 100).toFixed(1)}% of all cars
+                  {((priceDropStats.carsWithPriceDrops / marketSummary.totalListings) * 100).toFixed(1)}% {t('ofAllCars')}
                 </p>
               </div>
             </div>
@@ -1264,23 +1266,23 @@ export default function Dashboard() {
 
           {/* Biggest Price Drops */}
           <div className="bg-white shadow rounded-xl p-6 lg:col-span-2">
-            <h2 className="text-xl font-semibold mb-4">Biggest Price Drops</h2>
+            <h2 className="text-xl font-semibold mb-4">{t('biggestPriceDrops')}</h2>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b">
-                    <th className="px-4 py-2 text-left">Car</th>
-                    <th className="px-4 py-2 text-right">Original Price</th>
-                    <th className="px-4 py-2 text-right">Current Price</th>
-                    <th className="px-4 py-2 text-right">Drop Amount</th>
-                    <th className="px-4 py-2 text-right">Drop Percentage</th>
+                    <th className="px-4 py-2 text-left">{t('car')}</th>
+                    <th className="px-4 py-2 text-right">{t('originalPrice')}</th>
+                    <th className="px-4 py-2 text-right">{t('currentPrice')}</th>
+                    <th className="px-4 py-2 text-right">{t('dropAmount')}</th>
+                    <th className="px-4 py-2 text-right">{t('dropPercentage')}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {priceDropStats.biggestDrops.map((drop, index) => (
                     <tr key={index} className="border-b hover:bg-gray-50">
                       <td className="px-4 py-3">
-                        <a href={`/listings/${drop.car_id}`} className="font-medium text-blue-600 hover:underline">
+                        <a href={`/${locale}/listings/${drop.car_id}`} className="font-medium text-blue-600 hover:underline">
                           {drop.title || `${drop.brand} ${drop.model} (${drop.year})`}
                         </a>
                       </td>
@@ -1301,7 +1303,7 @@ export default function Dashboard() {
 
           {/* Price Drop Analysis */}
           <div className="bg-white shadow rounded-xl p-6">
-            <h2 className="text-xl font-semibold mb-4">Price Drops Over Time</h2>
+            <h2 className="text-xl font-semibold mb-4">{t('priceDropsOverTime')}</h2>
             <div className="h-72">
               <Bar
                 data={{
@@ -1311,7 +1313,7 @@ export default function Dashboard() {
                     .map(item => item.year.toString()),
                   datasets: [
                     {
-                      label: 'Average Price Drop (%)',
+                      label: t('avgPriceDropPercent'),
                       data: detailedPriceStats.yearPrices
                         .sort((a, b) => a.year - b.year)
                         .slice(-10)
@@ -1329,7 +1331,7 @@ export default function Dashboard() {
                       beginAtZero: true,
                       title: {
                         display: true,
-                        text: 'Average Drop %'
+                        text: t('avgDropPercent')
                       }
                     }
                   }
@@ -1340,7 +1342,7 @@ export default function Dashboard() {
 
           {/* Price Drop by Brand */}
           <div className="bg-white shadow rounded-xl p-6">
-            <h2 className="text-xl font-semibold mb-4">Price Drops by Brand</h2>
+            <h2 className="text-xl font-semibold mb-4">{t('priceDropsByBrand')}</h2>
             <div className="h-72">
               <Bar
                 data={{
@@ -1349,7 +1351,7 @@ export default function Dashboard() {
                     .map(item => item.brand),
                   datasets: [
                     {
-                      label: 'Average Price Drop (%)',
+                      label: t('avgPriceDropPercent'),
                       data: detailedPriceStats.brandPrices
                         .slice(0, 8)
                         .map((item, index) =>
@@ -1368,7 +1370,7 @@ export default function Dashboard() {
                       beginAtZero: true,
                       title: {
                         display: true,
-                        text: 'Average Drop %'
+                        text: t('avgDropPercent')
                       }
                     }
                   }
@@ -1379,20 +1381,19 @@ export default function Dashboard() {
         </section>
       )}
 
-
       {/* Vehicle Quality */}
       {activeTab === "vehicle-quality" && (
         <section className="py-6 px-6 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Quality Score Distribution */}
           <div className="bg-white shadow rounded-xl p-6 lg:col-span-1">
-            <h2 className="text-xl font-semibold mb-4">Quality Score Distribution</h2>
+            <h2 className="text-xl font-semibold mb-4">{t('qualityScoreDistribution')}</h2>
             <div className="h-72">
               <Bar
                 data={{
                   labels: qualityScoreDistribution.map(item => `${item.label} (${item.range})`),
                   datasets: [
                     {
-                      label: 'Number of Cars',
+                      label: t('numberOfCars'),
                       data: qualityScoreDistribution.map(item => item.count),
                       backgroundColor: qualityScoreDistribution.map(item => {
                         if (item.range.startsWith("81")) return 'rgba(16, 185, 129, 0.7)';
@@ -1419,7 +1420,7 @@ export default function Dashboard() {
                       beginAtZero: true,
                       title: {
                         display: true,
-                        text: 'Number of Cars'
+                        text: t('numberOfCars')
                       }
                     }
                   }
@@ -1430,14 +1431,14 @@ export default function Dashboard() {
 
           {/* Quality Score vs. Sell Time */}
           <div className="bg-white shadow rounded-xl p-6">
-            <h2 className="text-xl font-semibold mb-4">Quality Score vs. Sell Time</h2>
+            <h2 className="text-xl font-semibold mb-4">{t('qualityScoreVsSellTime')}</h2>
             <div className="h-72">
               <Bar
                 data={{
                   labels: qualityScoreVsSellTime.map(item => `${item.label} (${item.range})`),
                   datasets: [
                     {
-                      label: 'Average Days to Sell',
+                      label: t('avgDaysToSell'),
                       data: qualityScoreVsSellTime.map(item => item.avgSellTime),
                       backgroundColor: 'rgba(124, 58, 237, 0.7)',
                       borderColor: 'rgba(124, 58, 237, 1)',
@@ -1452,7 +1453,7 @@ export default function Dashboard() {
                       beginAtZero: true,
                       title: {
                         display: true,
-                        text: 'Days'
+                        text: t('days')
                       }
                     }
                   }
@@ -1460,20 +1461,20 @@ export default function Dashboard() {
               />
             </div>
             <p className="text-sm text-gray-500 mt-4">
-              Higher quality cars typically sell faster due to better condition and more appealing listings.
+              {t('qualityVsSellTimeExplanation')}
             </p>
           </div>
 
           {/* Quality Score vs. Price Reduction */}
           <div className="bg-white shadow rounded-xl p-6">
-            <h2 className="text-xl font-semibold mb-4">Quality Score vs. Price Reduction</h2>
+            <h2 className="text-xl font-semibold mb-4">{t('qualityScoreVsPriceReduction')}</h2>
             <div className="h-72">
               <Bar
                 data={{
                   labels: qualityScoreVsPriceReduction.map(item => `${item.label} (${item.range})`),
                   datasets: [
                     {
-                      label: 'Average Price Reduction (%)',
+                      label: t('avgPriceReductionPercent'),
                       data: qualityScoreVsPriceReduction.map(item => item.avgPercentage),
                       backgroundColor: 'rgba(239, 68, 68, 0.7)',
                       borderColor: 'rgba(239, 68, 68, 1)',
@@ -1488,7 +1489,7 @@ export default function Dashboard() {
                       beginAtZero: true,
                       title: {
                         display: true,
-                        text: 'Reduction Percentage (%)'
+                        text: t('reductionPercentage')
                       }
                     }
                   }
@@ -1496,7 +1497,7 @@ export default function Dashboard() {
               />
             </div>
             <p className="text-sm text-gray-500 mt-4">
-              Lower quality vehicles often see larger price reductions to attract buyers.
+              {t('qualityVsPriceReductionExplanation')}
             </p>
           </div>
         </section>
@@ -1507,7 +1508,7 @@ export default function Dashboard() {
         <section className="py-6 px-6 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Location Distribution */}
           <div className="bg-white shadow rounded-xl p-6 lg:col-span-2">
-            <h2 className="text-xl font-semibold mb-4">Car Listings by Location</h2>
+            <h2 className="text-xl font-semibold mb-4">{t('carListingsByLocation')}</h2>
             <div className="h-96">
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 h-full overflow-y-auto">
                 {locationHeatmap.slice(0, 20).map((location, index) => (
@@ -1519,7 +1520,7 @@ export default function Dashboard() {
                     <div className="text-2xl font-bold text-blue-600">{location.count}</div>
                     <div
                       className="mt-2 h-1 bg-blue-200 rounded-full overflow-hidden"
-                      title={`${location.count} cars`}
+                      title={`${location.count} ${t('cars')}`}
                     >
                       <div
                         className="h-full bg-blue-600"
@@ -1536,14 +1537,14 @@ export default function Dashboard() {
 
           {/* Origin Country - Price Analysis */}
           <div className="bg-white shadow rounded-xl p-6">
-            <h2 className="text-xl font-semibold mb-4">Price by Country of Origin</h2>
+            <h2 className="text-xl font-semibold mb-4">{t('priceByCountryOfOrigin')}</h2>
             <div className="h-72">
               <Bar
                 data={{
                   labels: originCountryAnalysis.priceByOrigin.map(item => item.country),
                   datasets: [
                     {
-                      label: 'Average Price (€)',
+                      label: t('avgPriceEuro'),
                       data: originCountryAnalysis.priceByOrigin.map(item => item.avgPrice),
                       backgroundColor: 'rgba(59, 130, 246, 0.7)',
                       borderColor: 'rgba(59, 130, 246, 1)',
@@ -1559,7 +1560,7 @@ export default function Dashboard() {
                       beginAtZero: true,
                       title: {
                         display: true,
-                        text: 'Price (€)'
+                        text: t('priceEuro')
                       }
                     }
                   }
@@ -1570,14 +1571,14 @@ export default function Dashboard() {
 
           {/* Origin Country - Sell Time Analysis */}
           <div className="bg-white shadow rounded-xl p-6">
-            <h2 className="text-xl font-semibold mb-4">Sell Time by Country of Origin</h2>
+            <h2 className="text-xl font-semibold mb-4">{t('sellTimeByCountryOfOrigin')}</h2>
             <div className="h-72">
               <Bar
                 data={{
                   labels: originCountryAnalysis.sellTimeByOrigin.map(item => item.country),
                   datasets: [
                     {
-                      label: 'Average Days to Sell',
+                      label: t('avgDaysToSell'),
                       data: originCountryAnalysis.sellTimeByOrigin.map(item => item.avgSellTime),
                       backgroundColor: 'rgba(245, 158, 11, 0.7)',
                       borderColor: 'rgba(245, 158, 11, 1)',
@@ -1593,7 +1594,7 @@ export default function Dashboard() {
                       beginAtZero: true,
                       title: {
                         display: true,
-                        text: 'Days'
+                        text: t('days')
                       }
                     }
                   }
@@ -1610,18 +1611,18 @@ export default function Dashboard() {
 
           {/* Detailed Mileage Statistics */}
           <div className="bg-white shadow rounded-xl p-6 lg:col-span-2">
-            <h2 className="text-xl font-semibold mb-4">Detailed Mileage Statistics</h2>
+            <h2 className="text-xl font-semibold mb-4">{t('detailedMileageStatistics')}</h2>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b">
-                    <th className="px-4 py-2 text-left">Mileage Range</th>
-                    <th className="px-4 py-2 text-right">Average Price</th>
-                    <th className="px-4 py-2 text-right">Min Price</th>
-                    <th className="px-4 py-2 text-right">Max Price</th>
-                    <th className="px-4 py-2 text-right">Sell Time</th>
-                    <th className="px-4 py-2 text-right">Sales Rate</th>
-                    <th className="px-4 py-2 text-right">Count</th>
+                    <th className="px-4 py-2 text-left">{t('mileageRange')}</th>
+                    <th className="px-4 py-2 text-right">{t('avgPrice')}</th>
+                    <th className="px-4 py-2 text-right">{t('minPrice')}</th>
+                    <th className="px-4 py-2 text-right">{t('maxPrice')}</th>
+                    <th className="px-4 py-2 text-right">{t('sellTime')}</th>
+                    <th className="px-4 py-2 text-right">{t('salesRate')}</th>
+                    <th className="px-4 py-2 text-right">{t('count')}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -1629,19 +1630,19 @@ export default function Dashboard() {
                     <tr key={index} className="border-b hover:bg-gray-50">
                       <td className="px-4 py-3 font-medium">{item.range}</td>
                       <td className="px-4 py-3 text-right">
-                        {item.avgPrice !== null ? `€${formatNumber(item.avgPrice)}` : "N/A"}
+                        {item.avgPrice !== null ? `€${formatNumber(item.avgPrice)}` : t('na')}
                       </td>
                       <td className="px-4 py-3 text-right">
-                        {item.minPrice !== null ? `€${formatNumber(item.minPrice)}` : "N/A"}
+                        {item.minPrice !== null ? `€${formatNumber(item.minPrice)}` : t('na')}
                       </td>
                       <td className="px-4 py-3 text-right">
-                        {item.maxPrice !== null ? `€${formatNumber(item.maxPrice)}` : "N/A"}
+                        {item.maxPrice !== null ? `€${formatNumber(item.maxPrice)}` : t('na')}
                       </td>
                       <td className="px-4 py-3 text-right">
-                        {item.avgSellTime !== null ? `${item.avgSellTime} days` : "N/A"}
+                        {item.avgSellTime !== null ? `${item.avgSellTime} ${t('days')}` : t('na')}
                       </td>
                       <td className="px-4 py-3 text-right">
-                        {item.salesRate !== null ? `${item.salesRate}%` : "N/A"}
+                        {item.salesRate !== null ? `${item.salesRate}%` : t('na')}
                       </td>
                       <td className="px-4 py-3 text-right">{item.count}</td>
                     </tr>
@@ -1653,14 +1654,14 @@ export default function Dashboard() {
 
           {/* Mileage vs Sell Time Chart */}
           <div className="bg-white shadow rounded-xl p-6">
-            <h2 className="text-xl font-semibold mb-4">Mileage Impact on Sell Time</h2>
+            <h2 className="text-xl font-semibold mb-4">{t('mileageImpactOnSellTime')}</h2>
             <div className="h-72">
               <Line
                 data={{
                   labels: mileageImpact.map(item => item.range),
                   datasets: [
                     {
-                      label: 'Average Days to Sell',
+                      label: t('avgDaysToSell'),
                       data: mileageImpact.map(item => item.avgSellTime),
                       borderColor: 'rgba(245, 158, 11, 1)',
                       backgroundColor: 'rgba(245, 158, 11, 0.2)',
@@ -1676,7 +1677,7 @@ export default function Dashboard() {
                       beginAtZero: true,
                       title: {
                         display: true,
-                        text: 'Days'
+                        text: t('days')
                       }
                     }
                   }
@@ -1684,20 +1685,20 @@ export default function Dashboard() {
               />
             </div>
             <p className="text-sm text-gray-500 mt-4">
-              Cars with higher mileage typically take longer to sell.
+              {t('mileageVsSellTimeExplanation')}
             </p>
           </div>
 
           {/* Mileage vs Sales Rate Chart */}
           <div className="bg-white shadow rounded-xl p-6">
-            <h2 className="text-xl font-semibold mb-4">Mileage Impact on Sales Rate</h2>
+            <h2 className="text-xl font-semibold mb-4">{t('mileageImpactOnSalesRate')}</h2>
             <div className="h-72">
               <Line
                 data={{
                   labels: mileageImpact.map(item => item.range),
                   datasets: [
                     {
-                      label: 'Sales Rate (%)',
+                      label: t('salesRatePercent'),
                       data: mileageImpact.map(item => item.salesRate),
                       borderColor: 'rgba(16, 185, 129, 1)',
                       backgroundColor: 'rgba(16, 185, 129, 0.2)',
@@ -1714,7 +1715,7 @@ export default function Dashboard() {
                       max: 100,
                       title: {
                         display: true,
-                        text: 'Percentage (%)'
+                        text: t('percentage')
                       }
                     }
                   }
@@ -1722,7 +1723,7 @@ export default function Dashboard() {
               />
             </div>
             <p className="text-sm text-gray-500 mt-4">
-              The percentage of cars that get sold decreases with higher mileage.
+              {t('mileageVsSalesRateExplanation')}
             </p>
           </div>
 
@@ -1733,42 +1734,42 @@ export default function Dashboard() {
       {activeTab === "suspicious" && (
         <section className="py-6 px-6 max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="bg-white shadow rounded-xl p-6 lg:col-span-2">
-            <h2 className="text-xl font-semibold mb-4">Suspicious & Incomplete Listings Overview</h2>
+            <h2 className="text-xl font-semibold mb-4">{t('suspiciousIncompleteOverview')}</h2>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
               <div className="bg-red-50 rounded-xl p-5 border border-red-100">
-                <h3 className="text-sm text-red-700 font-medium mb-1">Suspicious Listings</h3>
+                <h3 className="text-sm text-red-700 font-medium mb-1">{t('suspiciousListings')}</h3>
                 <p className="text-3xl font-bold text-red-900">{formatNumber(suspiciousListings?.totalSuspicious || 0)}</p>
                 <p className="text-sm text-red-600 mt-2">
-                  {suspiciousListings?.suspiciousPercentage || 0}% of all listings
+                  {suspiciousListings?.suspiciousPercentage || 0}% {t('ofAllListings')}
                 </p>
               </div>
 
               <div className="bg-amber-50 rounded-xl p-5 border border-amber-100">
-                <h3 className="text-sm text-amber-700 font-medium mb-1">Average Price Difference</h3>
+                <h3 className="text-sm text-amber-700 font-medium mb-1">{t('avgPriceDifference')}</h3>
                 <p className="text-3xl font-bold text-amber-900">
                   {suspiciousListings?.priceStatistics.suspicious.avgPrice && suspiciousListings?.priceStatistics.normal.avgPrice
                     ? `${((suspiciousListings?.priceStatistics.suspicious.avgPrice / suspiciousListings?.priceStatistics.normal.avgPrice) * 100).toFixed(1)}%`
-                    : "N/A"
+                    : t('na')
                   }
                 </p>
                 <p className="text-sm text-amber-600 mt-2">
-                  Of normal listings average price
+                  {t('ofNormalListingsAvgPrice')}
                 </p>
               </div>
 
               <div className="bg-indigo-50 rounded-xl p-5 border border-indigo-100">
-                <h3 className="text-sm text-indigo-700 font-medium mb-1">Incomplete Listings</h3>
+                <h3 className="text-sm text-indigo-700 font-medium mb-1">{t('incompleteListings')}</h3>
                 <p className="text-3xl font-bold text-indigo-900">{formatNumber(incompleteStats?.totalIncomplete || 0)}</p>
                 <p className="text-sm text-indigo-600 mt-2">
-                  Listings skipped due to missing data
+                  {t('listingsSkippedMissingData')}
                 </p>
               </div>
 
               <div className="bg-emerald-50 rounded-xl p-5 border border-emerald-100">
-                <h3 className="text-sm text-emerald-700 font-medium mb-1">Successful Listings</h3>
+                <h3 className="text-sm text-emerald-700 font-medium mb-1">{t('successfulListings')}</h3>
                 <p className="text-3xl font-bold text-emerald-900">{formatNumber(incompleteStats?.totalValid || 0)}</p>
                 <p className="text-sm text-emerald-600 mt-2">
-                  {incompleteStats?.successRate || 0}% success rate
+                  {incompleteStats?.successRate || 0}% {t('successRate')}
                 </p>
               </div>
             </div>
@@ -1776,14 +1777,14 @@ export default function Dashboard() {
 
           {/* Price Statistics */}
           <div className="bg-white shadow rounded-xl p-6">
-            <h2 className="text-xl font-semibold mb-4">Price Range Distribution</h2>
+            <h2 className="text-xl font-semibold mb-4">{t('priceRangeDistribution')}</h2>
             <div className="h-72">
               <Bar
                 data={{
                   labels: suspiciousListingsData.priceRangesSuspicious.map(item => item.range),
                   datasets: [
                     {
-                      label: 'Number of Suspicious Listings',
+                      label: t('numSuspiciousListings'),
                       data: suspiciousListingsData.priceRangesSuspicious.map(item => item.count),
                       backgroundColor: 'rgba(239, 68, 68, 0.7)',
                       borderColor: 'rgba(239, 68, 68, 1)',
@@ -1798,7 +1799,7 @@ export default function Dashboard() {
                       beginAtZero: true,
                       title: {
                         display: true,
-                        text: 'Count'
+                        text: t('count')
                       }
                     }
                   }
@@ -1809,21 +1810,21 @@ export default function Dashboard() {
 
           {/* Incomplete Data Statistics */}
           <div className="bg-white shadow rounded-xl p-6">
-            <h2 className="text-xl font-semibold mb-4">Incomplete Listings by Source</h2>
+            <h2 className="text-xl font-semibold mb-4">{t('incompleteListingsBySource')}</h2>
             <div className="h-72">
               <Bar
                 data={{
                   labels: incompleteStats?.sources.map(item => item.source) || [],
                   datasets: [
                     {
-                      label: 'Incomplete Listings',
+                      label: t('incompleteListings'),
                       data: incompleteStats?.sources.map(item => item.totalIncomplete) || [],
                       backgroundColor: 'rgba(99, 102, 241, 0.7)',
                       borderColor: 'rgba(99, 102, 241, 1)',
                       borderWidth: 1
                     },
                     {
-                      label: 'Valid Listings',
+                      label: t('validListings'),
                       data: incompleteStats?.sources.map(item => item.validCarsAdded) || [],
                       backgroundColor: 'rgba(16, 185, 129, 0.7)',
                       borderColor: 'rgba(16, 185, 129, 1)',
@@ -1840,7 +1841,7 @@ export default function Dashboard() {
                       stacked: false,
                       title: {
                         display: true,
-                        text: 'Number of Listings'
+                        text: t('numListings')
                       }
                     },
                     y: {
@@ -1851,20 +1852,20 @@ export default function Dashboard() {
               />
             </div>
             <div className="mt-4 text-sm text-gray-500">
-              <p>Success rate based on all scraper runs to date.</p>
+              <p>{t('successRateBasedOnAllRuns')}</p>
             </div>
           </div>
 
           {/* Incomplete Fields Breakdown */}
           <div className="bg-white shadow rounded-xl p-6">
-            <h2 className="text-xl font-semibold mb-4">Missing Fields Statistics</h2>
+            <h2 className="text-xl font-semibold mb-4">{t('missingFieldsStatistics')}</h2>
             <div className="h-72">
               <Bar
                 data={{
                   labels: incompleteStats?.fieldsBreakdown.map(item => item.field) || [],
                   datasets: [
                     {
-                      label: 'Number of Listings',
+                      label: t('numListings'),
                       data: incompleteStats?.fieldsBreakdown.map(item => item.count) || [],
                       backgroundColor: 'rgba(245, 158, 11, 0.7)',
                       borderColor: 'rgba(245, 158, 11, 1)',
@@ -1880,7 +1881,7 @@ export default function Dashboard() {
                       beginAtZero: true,
                       title: {
                         display: true,
-                        text: 'Count'
+                        text: t('count')
                       }
                     }
                   }
@@ -1888,20 +1889,20 @@ export default function Dashboard() {
               />
             </div>
             <div className="mt-4 text-sm text-gray-500">
-              <p>Shows the most common missing fields that caused listings to be rejected. This helps identify which data points are most frequently unavailable in source websites.</p>
+              <p>{t('missingFieldsExplanation')}</p>
             </div>
           </div>
 
           {/* Top Suspicious Brands */}
           <div className="bg-white shadow rounded-xl p-6">
-            <h2 className="text-xl font-semibold mb-4">Top Brands in Suspicious Listings</h2>
+            <h2 className="text-xl font-semibold mb-4">{t('topBrandsInSuspiciousListings')}</h2>
             <div className="h-72">
               <Bar
                 data={{
                   labels: suspiciousListingsData.topSuspiciousBrands.map(item => item.brand),
                   datasets: [
                     {
-                      label: 'Number of Suspicious Listings',
+                      label: t('numSuspiciousListings'),
                       data: suspiciousListingsData.topSuspiciousBrands.map(item => item.count),
                       backgroundColor: 'rgba(124, 58, 237, 0.7)',
                       borderColor: 'rgba(124, 58, 237, 1)',
@@ -1917,7 +1918,7 @@ export default function Dashboard() {
                       beginAtZero: true,
                       title: {
                         display: true,
-                        text: 'Number of Listings'
+                        text: t('numListings')
                       }
                     }
                   }
@@ -1930,5 +1931,13 @@ export default function Dashboard() {
 
       <Footer />
     </main>
+  );
+}
+
+export default function Dashboard() {
+  return (
+    <IntlProvider>
+      <DashboardContent />
+    </IntlProvider>
   );
 }

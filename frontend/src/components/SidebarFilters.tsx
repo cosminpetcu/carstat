@@ -12,6 +12,7 @@ import {
   GPSIcon
 } from "@/components/Icons";
 import { useBrandsModels } from '@/hooks/useBrandsModels';
+import { useTranslations, useLocale } from 'next-intl';
 
 const vehicleConditionMap = {
   "New": "New",
@@ -37,17 +38,6 @@ const driveTypes = ["Sedan", "SUV", "Wagon", "Hatchback", "MPV", "Coupe", "Conve
 const colorOptions = ["Black", "Grey", "White", "Blue", "Red", "Silver", "Brown", "Beige", "Green", "Yellow/Gold", "Orange", "Other"];
 const sellerTypes = ["Private", "Dealer"];
 
-const dealRatings = [
-  { value: "", label: "Any Deal" },
-  { value: "S", label: "S - Exceptional Price" },
-  { value: "A", label: "A - Very Good Price" },
-  { value: "B", label: "B - Good Price" },
-  { value: "C", label: "C - Fair Price" },
-  { value: "D", label: "D - Expensive" },
-  { value: "E", label: "E - Very Expensive" },
-  { value: "F", label: "F - Overpriced" }
-];
-
 const priceOptions = [1000, 2000, 3000, 5000, 7500, 10000, 15000, 20000, 25000, 30000, 40000, 50000, 70000, 100000, 150000];
 const yearsOptions = Array.from({ length: 2024 - 1990 + 1 }, (_, i) => 2024 - i);
 const mileageOptions = [1000, 5000, 10000, 25000, 50000, 75000, 100000, 150000, 200000, 300000];
@@ -62,8 +52,30 @@ export default function SidebarFilters({
   showSuccess: (msg: string) => void;
   showError: (msg: string) => void;
 }) {
+  const t = useTranslations('sidebarFilters');
+  const locale = useLocale();
   const searchParams = useSearchParams();
   const router = useRouter();
+
+  const dealRatings = [
+    { value: "", label: t('dealRatings.anyDeal') },
+    { value: "S", label: t('dealRatings.exceptional') },
+    { value: "A", label: t('dealRatings.veryGood') },
+    { value: "B", label: t('dealRatings.good') },
+    { value: "C", label: t('dealRatings.fair') },
+    { value: "D", label: t('dealRatings.expensive') },
+    { value: "E", label: t('dealRatings.veryExpensive') },
+    { value: "F", label: t('dealRatings.overpriced') }
+  ];
+
+  const qualityScoreRanges = [
+    { label: t('qualityRanges.anyQuality'), value: "any", min: "", max: "" },
+    { label: t('qualityRanges.excellent'), value: "excellent", min: "80", max: "100" },
+    { label: t('qualityRanges.good'), value: "good", min: "60", max: "79" },
+    { label: t('qualityRanges.average'), value: "average", min: "40", max: "59" },
+    { label: t('qualityRanges.belowAverage'), value: "below_average", min: "20", max: "39" },
+    { label: t('qualityRanges.poor'), value: "poor", min: "0", max: "19" }
+  ];
 
   const [filters, setFilters] = useState({
     brand: "",
@@ -100,15 +112,6 @@ export default function SidebarFilters({
     engine: true,
     pricing: true
   });
-
-  const qualityScoreRanges = [
-    { label: "Any Quality", value: "any", min: "", max: "" },
-    { label: "Excellent (80-100)", value: "excellent", min: "80", max: "100" },
-    { label: "Good (60-79)", value: "good", min: "60", max: "79" },
-    { label: "Average (40-59)", value: "average", min: "40", max: "59" },
-    { label: "Below Average (20-39)", value: "below_average", min: "20", max: "39" },
-    { label: "Poor (0-19)", value: "poor", min: "0", max: "19" }
-  ];
 
   const toggleSection = (section: keyof typeof isCollapsed) => {
     setIsCollapsed(prev => ({
@@ -166,10 +169,10 @@ export default function SidebarFilters({
       if (!response.ok) {
         throw new Error("Failed to save search");
       }
-      showSuccess("Search saved successfully!");
+      showSuccess(t('searchSavedSuccess'));
     } catch (error) {
       console.error("Error saving search:", error);
-      showError("Failed to save search.");
+      showError(t('searchSaveFailed'));
     }
   };
 
@@ -192,7 +195,7 @@ export default function SidebarFilters({
 
     params.set("page", "1");
 
-    router.push(`/listings?${params.toString()}`);
+    router.push(`/${locale}/listings?${params.toString()}`);
   };
 
   const updateMultipleFilters = (updates: Record<string, string>) => {
@@ -214,7 +217,7 @@ export default function SidebarFilters({
 
     params.set("page", "1");
 
-    router.push(`/listings?${params.toString()}`);
+    router.push(`/${locale}/listings?${params.toString()}`);
   };
 
   const clearAllFilters = () => {
@@ -246,9 +249,9 @@ export default function SidebarFilters({
 
     const currentSearchParam = searchParams.get("search");
     if (currentSearchParam) {
-      router.push(`/listings?search=${encodeURIComponent(currentSearchParam)}`);
+      router.push(`/${locale}/listings?search=${encodeURIComponent(currentSearchParam)}`);
     } else {
-      router.push('/listings');
+      router.push(`/${locale}/listings`);
     }
   };
 
@@ -287,7 +290,6 @@ export default function SidebarFilters({
     setCurrentSearch(searchParam || "");
   }, [searchParams]);
 
-
   useEffect(() => {
     if (filters.brand) {
       fetchModels(filters.brand);
@@ -301,13 +303,13 @@ export default function SidebarFilters({
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold flex items-center">
           <GPSIcon className="w-6 h-6 mr-2" />
-          Filters
+          {t('filters')}
         </h2>
         <button
           onClick={clearAllFilters}
           className="text-xs text-gray-400 hover:text-white underline"
         >
-          Clear all
+          {t('clearAll')}
         </button>
       </div>
 
@@ -325,7 +327,7 @@ export default function SidebarFilters({
               <svg className="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
               </svg>
-              <span className="text-sm text-blue-200">Search:</span>
+              <span className="text-sm text-blue-200">{t('search')}</span>
               <span className="text-sm font-medium text-white">{currentSearch}</span>
             </div>
             <button
@@ -334,10 +336,10 @@ export default function SidebarFilters({
                 const currentParams = new URLSearchParams(searchParams.toString());
                 currentParams.delete("search");
                 currentParams.set("page", "1");
-                window.location.href = `/listings?${currentParams.toString()}`;
+                window.location.href = `/${locale}/listings?${currentParams.toString()}`;
               }}
               className="ml-2 p-1 text-gray-300 hover:text-white rounded-md hover:bg-gray-700 transition-colors"
-              title="Clear search"
+              title={t('clearSearch')}
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -355,7 +357,7 @@ export default function SidebarFilters({
           >
             <span className="flex items-center">
               <CarIcon className="w-5 h-5 mr-2" />
-              Car Details
+              {t('carDetails')}
             </span>
             <span>{isCollapsed.basic ? '▼' : '▲'}</span>
           </button>
@@ -363,7 +365,7 @@ export default function SidebarFilters({
           {!isCollapsed.basic && (
             <div className="space-y-3 pl-2">
               <div className="mb-3">
-                <label className="block text-xs text-gray-400 mb-1">Brand</label>
+                <label className="block text-xs text-gray-400 mb-1">{t('brand')}</label>
                 <div className="relative">
                   <select
                     value={filters.brand}
@@ -380,9 +382,9 @@ export default function SidebarFilters({
                     className={`w-full rounded-lg p-2.5 pl-10 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none ${isLoadingBrands ? 'opacity-50' : ''}`}
                     disabled={isLoadingBrands}
                   >
-                    <option value="">All Brands</option>
+                    <option value="">{t('allBrands')}</option>
                     {isLoadingBrands ? (
-                      <option value="" disabled>Loading brands...</option>
+                      <option value="" disabled>{t('loadingBrands')}</option>
                     ) : (
                       brands.map((brand) => (
                         <option key={brand} value={brand}>{brand}</option>
@@ -401,7 +403,7 @@ export default function SidebarFilters({
               </div>
 
               <div className="mb-3">
-                <label className="block text-xs text-gray-400 mb-1">Model</label>
+                <label className="block text-xs text-gray-400 mb-1">{t('model')}</label>
                 <div className="relative">
                   <select
                     value={filters.model}
@@ -409,9 +411,9 @@ export default function SidebarFilters({
                     className={`w-full rounded-lg p-2.5 pl-10 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none ${isLoadingModels || !filters.brand ? 'opacity-50' : ''}`}
                     disabled={isLoadingModels || !filters.brand}
                   >
-                    <option value="">All Models</option>
+                    <option value="">{t('allModels')}</option>
                     {isLoadingModels ? (
-                      <option value="" disabled>Loading models...</option>
+                      <option value="" disabled>{t('loadingModels')}</option>
                     ) : (
                       models.map((model) => (
                         <option key={model} value={model}>{model}</option>
@@ -430,14 +432,14 @@ export default function SidebarFilters({
               </div>
 
               <div className="mb-3">
-                <label className="block text-xs text-gray-400 mb-1">Vehicle Condition</label>
+                <label className="block text-xs text-gray-400 mb-1">{t('vehicleCondition')}</label>
                 <div className="relative">
                   <select
                     value={filters.vehicle_condition}
                     onChange={(e) => updateFilter("vehicle_condition", e.target.value)}
                     className="w-full rounded-lg p-2.5 pl-10 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none"
                   >
-                    <option value="">All Conditions</option>
+                    <option value="">{t('allConditions')}</option>
                     {Object.entries(vehicleConditionMap).map(([display, value]) => (
                       <option key={value} value={value}>{display}</option>
                     ))}
@@ -449,16 +451,15 @@ export default function SidebarFilters({
                   </div>
                 </div>
               </div>
-
               <div className="mb-3">
-                <label className="block text-xs text-gray-400 mb-1">Fuel Type</label>
+                <label className="block text-xs text-gray-400 mb-1">{t('fuelType')}</label>
                 <div className="relative">
                   <select
                     value={filters.fuel_type}
                     onChange={(e) => updateFilter("fuel_type", e.target.value)}
                     className="w-full rounded-lg p-2.5 pl-10 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none"
                   >
-                    <option value="">All Fuel Types</option>
+                    <option value="">{t('allFuelTypes')}</option>
                     {Object.entries(fuelTypeMap).map(([display, value]) => (
                       <option key={value} value={value}>{display}</option>
                     ))}
@@ -470,14 +471,14 @@ export default function SidebarFilters({
               </div>
 
               <div className="mb-3">
-                <label className="block text-xs text-gray-400 mb-1">Transmission</label>
+                <label className="block text-xs text-gray-400 mb-1">{t('transmission')}</label>
                 <div className="relative">
                   <select
                     value={filters.transmission}
                     onChange={(e) => updateFilter("transmission", e.target.value)}
                     className="w-full rounded-lg p-2.5 pl-10 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none"
                   >
-                    <option value="">All Transmissions</option>
+                    <option value="">{t('allTransmissions')}</option>
                     {Object.entries(transmissionMap).map(([display, value]) => (
                       <option key={value} value={value}>{display}</option>
                     ))}
@@ -489,14 +490,14 @@ export default function SidebarFilters({
               </div>
 
               <div className="mb-3">
-                <label className="block text-xs text-gray-400 mb-1">Body Type</label>
+                <label className="block text-xs text-gray-400 mb-1">{t('bodyType')}</label>
                 <div className="relative">
                   <select
                     value={filters.drive_type}
                     onChange={(e) => updateFilter("drive_type", e.target.value)}
                     className="w-full rounded-lg p-2.5 pl-10 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none"
                   >
-                    <option value="">All Body Types</option>
+                    <option value="">{t('allBodyTypes')}</option>
                     {driveTypes.map((type) => (
                       <option key={type} value={type}>{type}</option>
                     ))}
@@ -508,16 +509,16 @@ export default function SidebarFilters({
               </div>
 
               <div className="mb-3">
-                <label className="block text-xs text-gray-400 mb-1">Doors</label>
+                <label className="block text-xs text-gray-400 mb-1">{t('doors')}</label>
                 <div className="relative">
                   <select
                     value={filters.doors}
                     onChange={(e) => updateFilter("doors", e.target.value)}
                     className="w-full rounded-lg p-2.5 pl-10 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none"
                   >
-                    <option value="">Any Number</option>
+                    <option value="">{t('anyNumber')}</option>
                     {doorsOptions.map((doors) => (
-                      <option key={doors} value={doors.toString()}>{doors} doors</option>
+                      <option key={doors} value={doors.toString()}>{doors} {t('doorsUnit')}</option>
                     ))}
                   </select>
                   <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
@@ -531,14 +532,14 @@ export default function SidebarFilters({
               </div>
 
               <div className="mb-3">
-                <label className="block text-xs text-gray-400 mb-1">Color</label>
+                <label className="block text-xs text-gray-400 mb-1">{t('color')}</label>
                 <div className="relative">
                   <select
                     value={filters.color}
                     onChange={(e) => updateFilter("color", e.target.value)}
                     className="w-full rounded-lg p-2.5 pl-10 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none"
                   >
-                    <option value="">Any Color</option>
+                    <option value="">{t('anyColor')}</option>
                     {colorOptions.map((color) => (
                       <option key={color} value={color}>{color}</option>
                     ))}
@@ -553,7 +554,7 @@ export default function SidebarFilters({
               </div>
 
               <div className="mb-3">
-                <label className="block text-xs text-gray-400 mb-1">Year Range</label>
+                <label className="block text-xs text-gray-400 mb-1">{t('yearRange')}</label>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="relative">
                     <select
@@ -561,7 +562,7 @@ export default function SidebarFilters({
                       onChange={(e) => updateFilter("year_min", e.target.value)}
                       className="w-full rounded-lg p-2.5 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none text-sm"
                     >
-                      <option value="">From</option>
+                      <option value="">{t('from')}</option>
                       {yearsOptions.map((year) => (
                         <option key={year} value={year.toString()}>{year}</option>
                       ))}
@@ -573,7 +574,7 @@ export default function SidebarFilters({
                       onChange={(e) => updateFilter("year_max", e.target.value)}
                       className="w-full rounded-lg p-2.5 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none text-sm"
                     >
-                      <option value="">To</option>
+                      <option value="">{t('to')}</option>
                       {yearsOptions.map((year) => (
                         <option key={year} value={year.toString()}>{year}</option>
                       ))}
@@ -583,7 +584,7 @@ export default function SidebarFilters({
               </div>
 
               <div className="mb-3">
-                <label className="block text-xs text-gray-400 mb-1">Mileage Range (km)</label>
+                <label className="block text-xs text-gray-400 mb-1">{t('mileageRange')}</label>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="relative">
                     <select
@@ -591,7 +592,7 @@ export default function SidebarFilters({
                       onChange={(e) => updateFilter("mileage_min", e.target.value)}
                       className="w-full rounded-lg p-2.5 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none text-sm"
                     >
-                      <option value="">From</option>
+                      <option value="">{t('from')}</option>
                       {mileageOptions.map((mileage) => (
                         <option key={mileage} value={mileage.toString()}>{mileage.toLocaleString()}</option>
                       ))}
@@ -603,7 +604,7 @@ export default function SidebarFilters({
                       onChange={(e) => updateFilter("mileage_max", e.target.value)}
                       className="w-full rounded-lg p-2.5 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none text-sm"
                     >
-                      <option value="">To</option>
+                      <option value="">{t('to')}</option>
                       {mileageOptions.map((mileage) => (
                         <option key={mileage} value={mileage.toString()}>{mileage.toLocaleString()}</option>
                       ))}
@@ -613,7 +614,7 @@ export default function SidebarFilters({
               </div>
 
               <div className="mb-3">
-                <label className="block text-xs text-gray-400 mb-1">Engine Power (hp)</label>
+                <label className="block text-xs text-gray-400 mb-1">{t('enginePower')}</label>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="relative">
                     <select
@@ -621,7 +622,7 @@ export default function SidebarFilters({
                       onChange={(e) => updateFilter("engine_power_min", e.target.value)}
                       className="w-full rounded-lg p-2.5 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none text-sm"
                     >
-                      <option value="">From</option>
+                      <option value="">{t('from')}</option>
                       {enginePowerOptions.map((power) => (
                         <option key={power} value={power.toString()}>{power}</option>
                       ))}
@@ -633,7 +634,7 @@ export default function SidebarFilters({
                       onChange={(e) => updateFilter("engine_power_max", e.target.value)}
                       className="w-full rounded-lg p-2.5 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none text-sm"
                     >
-                      <option value="">To</option>
+                      <option value="">{t('to')}</option>
                       {enginePowerOptions.map((power) => (
                         <option key={power} value={power.toString()}>{power}</option>
                       ))}
@@ -643,7 +644,7 @@ export default function SidebarFilters({
               </div>
 
               <div className="mb-3">
-                <label className="block text-xs text-gray-400 mb-1">Engine Capacity (cc)</label>
+                <label className="block text-xs text-gray-400 mb-1">{t('engineCapacity')}</label>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="relative">
                     <select
@@ -651,7 +652,7 @@ export default function SidebarFilters({
                       onChange={(e) => updateFilter("engine_capacity_min", e.target.value)}
                       className="w-full rounded-lg p-2.5 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none text-sm"
                     >
-                      <option value="">From</option>
+                      <option value="">{t('from')}</option>
                       {engineCapacityOptions.map((capacity) => (
                         <option key={capacity} value={capacity.toString()}>{capacity}</option>
                       ))}
@@ -663,7 +664,7 @@ export default function SidebarFilters({
                       onChange={(e) => updateFilter("engine_capacity_max", e.target.value)}
                       className="w-full rounded-lg p-2.5 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none text-sm"
                     >
-                      <option value="">To</option>
+                      <option value="">{t('to')}</option>
                       {engineCapacityOptions.map((capacity) => (
                         <option key={capacity} value={capacity.toString()}>{capacity}</option>
                       ))}
@@ -685,7 +686,7 @@ export default function SidebarFilters({
                 <circle cx="12" cy="12" r="10" />
                 <path d="M12 8v4l3 3" />
               </svg>
-              Availability & Deal
+              {t('availabilityDeal')}
             </span>
             <span>{isCollapsed.availability ? '▼' : '▲'}</span>
           </button>
@@ -693,14 +694,14 @@ export default function SidebarFilters({
           {!isCollapsed.availability && (
             <div className="space-y-3 pl-2">
               <div className="mb-3">
-                <label className="block text-xs text-gray-400 mb-1">Seller Type</label>
+                <label className="block text-xs text-gray-400 mb-1">{t('sellerType')}</label>
                 <div className="relative">
                   <select
                     value={filters.seller_type}
                     onChange={(e) => updateFilter("seller_type", e.target.value)}
                     className="w-full rounded-lg p-2.5 pl-10 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none"
                   >
-                    <option value="">All Seller Types</option>
+                    <option value="">{t('allSellerTypes')}</option>
                     {sellerTypes.map((type) => (
                       <option key={type} value={type}>{type}</option>
                     ))}
@@ -712,16 +713,16 @@ export default function SidebarFilters({
               </div>
 
               <div className="mb-3">
-                <label className="block text-xs text-gray-400 mb-1">Availability</label>
+                <label className="block text-xs text-gray-400 mb-1">{t('availability')}</label>
                 <div className="relative">
                   <select
                     value={filters.sold}
                     onChange={(e) => updateFilter("sold", e.target.value)}
                     className="w-full rounded-lg p-2.5 pl-10 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none"
                   >
-                    <option value="">All Cars</option>
-                    <option value="false">Available Only</option>
-                    <option value="true">Sold Only</option>
+                    <option value="">{t('allCars')}</option>
+                    <option value="false">{t('availableOnly')}</option>
+                    <option value="true">{t('soldOnly')}</option>
                   </select>
                   <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                     <svg className="w-5 h-5 text-gray-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -732,7 +733,7 @@ export default function SidebarFilters({
               </div>
 
               <div className="mb-3">
-                <label className="block text-xs text-gray-400 mb-1">Deal Rating</label>
+                <label className="block text-xs text-gray-400 mb-1">{t('dealRating')}</label>
                 <div className="relative">
                   <select
                     value={filters.deal_rating}
@@ -754,7 +755,7 @@ export default function SidebarFilters({
               </div>
 
               <div className="mb-3">
-                <label className="block text-xs text-gray-400 mb-1">Quality Score</label>
+                <label className="block text-xs text-gray-400 mb-1">{t('qualityScore')}</label>
                 <div className="relative">
                   <select
                     value={qualityScoreRanges.find(
@@ -795,7 +796,7 @@ export default function SidebarFilters({
               <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
               </svg>
-              Price Range
+              {t('priceRange')}
             </span>
             <span>{isCollapsed.pricing ? '▼' : '▲'}</span>
           </button>
@@ -803,7 +804,7 @@ export default function SidebarFilters({
           {!isCollapsed.pricing && (
             <div className="space-y-3 pl-2">
               <div className="mb-3">
-                <label className="block text-xs text-gray-400 mb-1">Price Range (€)</label>
+                <label className="block text-xs text-gray-400 mb-1">{t('priceRangeEuro')}</label>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="relative">
                     <select
@@ -811,7 +812,7 @@ export default function SidebarFilters({
                       onChange={(e) => updateFilter("min_price", e.target.value)}
                       className="w-full rounded-lg p-2.5 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none text-sm"
                     >
-                      <option value="">Min Price</option>
+                      <option value="">{t('minPrice')}</option>
                       {priceOptions.map((price) => (
                         <option key={price} value={price.toString()}>€{price.toLocaleString()}</option>
                       ))}
@@ -823,7 +824,7 @@ export default function SidebarFilters({
                       onChange={(e) => updateFilter("max_price", e.target.value)}
                       className="w-full rounded-lg p-2.5 bg-gray-800 border border-gray-700 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none text-sm"
                     >
-                      <option value="">Max Price</option>
+                      <option value="">{t('maxPrice')}</option>
                       {priceOptions.map((price) => (
                         <option key={price} value={price.toString()}>€{price.toLocaleString()}</option>
                       ))}
@@ -833,7 +834,7 @@ export default function SidebarFilters({
               </div>
 
               <div className="mb-3">
-                <label className="block text-xs text-gray-400 mb-1">Quick Ranges</label>
+                <label className="block text-xs text-gray-400 mb-1">{t('quickRanges')}</label>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
@@ -843,7 +844,7 @@ export default function SidebarFilters({
                     })}
                     className="px-3 py-1.5 rounded-md text-xs font-medium bg-gray-700 text-gray-300 hover:bg-gray-600"
                   >
-                    Under €5,000
+                    {t('under5k')}
                   </button>
                   <button
                     type="button"
@@ -853,7 +854,7 @@ export default function SidebarFilters({
                     })}
                     className="px-3 py-1.5 rounded-md text-xs font-medium bg-gray-700 text-gray-300 hover:bg-gray-600"
                   >
-                    €5,000 - €10,000
+                    {t('range5to10')}
                   </button>
                   <button
                     type="button"
@@ -863,7 +864,7 @@ export default function SidebarFilters({
                     })}
                     className="px-3 py-1.5 rounded-md text-xs font-medium bg-gray-700 text-gray-300 hover:bg-gray-600"
                   >
-                    €10,000 - €20,000
+                    {t('range10to20')}
                   </button>
                   <button
                     type="button"
@@ -873,7 +874,7 @@ export default function SidebarFilters({
                     })}
                     className="px-3 py-1.5 rounded-md text-xs font-medium bg-gray-700 text-gray-300 hover:bg-gray-600"
                   >
-                    Over €20,000
+                    {t('over20k')}
                   </button>
                 </div>
               </div>
@@ -892,7 +893,7 @@ export default function SidebarFilters({
               <polyline points="17 21 17 13 7 13 7 21" />
               <polyline points="7 3 7 8 15 8" />
             </svg>
-            Save This Search
+            {t('saveThisSearch')}
           </button>
         </div>
       </div>

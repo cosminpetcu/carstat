@@ -11,15 +11,19 @@ import { useRouter } from "next/navigation";
 import { PendingActionsManager } from '@/utils/pendingActions';
 import { CarCard, type CarData } from "@/components/ui/CarCard";
 import { CarCardSkeleton } from '@/components/ui/LoadingSkeleton';
+import { useTranslations, useLocale } from 'next-intl';
+import IntlProvider from '@/components/IntlProvider';
 
 function HomePage() {
   const router = useRouter();
+  const t = useTranslations('hero');
+  const locale = useLocale();
 
   const handleProtectedNavigation = (targetPath: string) => {
     const token = localStorage.getItem("token");
     if (!token) {
       PendingActionsManager.saveNavigationIntent(targetPath);
-      window.location.href = '/login';
+      window.location.href = `/${locale}/login`;
     } else {
       router.push(targetPath);
     }
@@ -48,11 +52,10 @@ function HomePage() {
           {/* Title and subtitle with more space */}
           <div className="text-center mb-12 md:mb-16 pt-10">
             <h1 className="text-white text-5xl md:text-6xl font-bold mb-6 leading-tight">
-              Find Your Perfect Car
+              {t('title')}
             </h1>
             <p className="text-blue-100 text-lg md:text-xl max-w-2xl mx-auto">
-              Browse thousands of vehicles from Romania with detailed specifications
-              and market analysis. Your next car is just a search away.
+              {t('subtitle')}
             </p>
           </div>
 
@@ -65,15 +68,15 @@ function HomePage() {
           <div className="grid grid-cols-3 gap-8 mt-4 text-white text-center">
             <div className="space-y-1">
               <div className="text-3xl font-bold">100,000+</div>
-              <div className="text-blue-200 text-sm">Total Cars</div>
+              <div className="text-blue-200 text-sm">{t('totalCars')}</div>
             </div>
             <div className="space-y-1">
-              <div className="text-3xl font-bold">Live</div>
-              <div className="text-blue-200 text-sm">Market Data</div>
+              <div className="text-3xl font-bold">{t('live')}</div>
+              <div className="text-blue-200 text-sm">{t('marketData')}</div>
             </div>
             <div className="space-y-1">
               <div className="text-3xl font-bold">Romania</div>
-              <div className="text-blue-200 text-sm">Nationwide</div>
+              <div className="text-blue-200 text-sm">{t('nationwide')}</div>
             </div>
           </div>
         </div>
@@ -97,10 +100,9 @@ function HomePage() {
       <section className="py-20 px-6 bg-gradient-to-b from-white to-gray-50">
         <div className="max-w-7xl mx-auto">
           <div className="text-center mb-12">
-            <h2 className="text-3xl font-bold mb-4">Explore Top Vehicles</h2>
+            <h2 className="text-3xl font-bold mb-4">{t('exploreTopVehicles')}</h2>
             <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-              Discover vehicles with exceptional value based on our market analysis.
-              All listings are scraped live from OLX and Autovit platforms.
+              {t('exploreDescription')}
             </p>
           </div>
 
@@ -111,14 +113,14 @@ function HomePage() {
                   <path fillRule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z" clipRule="evenodd" />
                 </svg>
               </div>
-              <span className="text-gray-700 font-medium">Showing Exceptional Deals Only</span>
+              <span className="text-gray-700 font-medium">{t('showingExceptionalDeals')}</span>
             </div>
             <Link
-              href="/listings"
+              href={`/${locale}/listings`}
               className="group bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-3 rounded-lg text-sm font-medium hover:from-blue-700 hover:to-blue-800 transition-all transform hover:scale-105 shadow-lg"
             >
               <span className="flex items-center gap-2">
-                View All Listings
+                {t('viewAllListings')}
                 <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
@@ -134,10 +136,9 @@ function HomePage() {
       <section className="py-20 bg-gradient-to-b from-gray-50 to-gray-100">
         <div className="max-w-7xl mx-auto px-6">
           <div className="text-center mb-16">
-            <h2 className="text-3xl font-bold mb-4">CarStat Features</h2>
+            <h2 className="text-3xl font-bold mb-4">{t('carstatFeatures')}</h2>
             <p className="text-gray-600 text-lg max-w-2xl mx-auto">
-              Our platform aggregates and analyzes car listings to provide you with
-              valuable insights for making informed decisions.
+              {t('featuresDescription')}
             </p>
           </div>
 
@@ -149,8 +150,8 @@ function HomePage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 5a1 1 0 011-1h14a1 1 0 011 1v2a1 1 0 01-1 1H5a1 1 0 01-1-1V5zM4 13a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6zM16 13a1 1 0 011-1h2a1 1 0 011 1v6a1 1 0 01-1 1h-2a1 1 0 01-1-1v-6z" />
                   </svg>
                 ),
-                title: "Market Analysis",
-                description: "Compare prices across thousands of similar vehicles to understand market trends.",
+                title: t('marketAnalysisTitle'),
+                description: t('marketAnalysisDesc'),
                 color: "from-blue-500 to-blue-600"
               },
               {
@@ -160,8 +161,8 @@ function HomePage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                   </svg>
                 ),
-                title: "Live Monitoring",
-                description: "Real-time tracking of price changes and new listings from OLX and Autovit.",
+                title: t('liveMonitoringTitle'),
+                description: t('liveMonitoringDesc'),
                 color: "from-green-500 to-green-600"
               },
               {
@@ -170,8 +171,8 @@ function HomePage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C20.832 18.477 19.247 18 17.5 18c-1.746 0-3.332.477-4.5 1.253" />
                   </svg>
                 ),
-                title: "Saved Searches",
-                description: "Save your favorite search criteria and get notified of new matching listings.",
+                title: t('savedSearchesTitle'),
+                description: t('savedSearchesDesc'),
                 color: "from-purple-500 to-purple-600"
               },
               {
@@ -180,8 +181,8 @@ function HomePage() {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
                   </svg>
                 ),
-                title: "Evaluate your car",
-                description: "Get your car evaluated based on the Romanian car market.",
+                title: t('evaluateCarTitle'),
+                description: t('evaluateCarDesc'),
                 color: "from-orange-500 to-orange-600"
               }
             ].map((feature, idx) => (
@@ -200,23 +201,22 @@ function HomePage() {
       {/* Call to action */}
       <section className="py-20 bg-gradient-to-r from-blue-600 to-blue-800 text-white">
         <div className="max-w-4xl mx-auto px-6 text-center">
-          <h2 className="text-3xl font-bold mb-4">Ready to Find Your Next Car?</h2>
+          <h2 className="text-3xl font-bold mb-4">{t('ctaTitle')}</h2>
           <p className="text-blue-100 text-lg mb-8 max-w-2xl mx-auto">
-            Start exploring thousands of cars from across Romania with detailed market analysis
-            and price comparisons. Make an informed decision with CarStat.
+            {t('ctaDescription')}
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
-              href="/listings"
+              href={`/${locale}/listings`}
               className="bg-white text-blue-600 px-8 py-4 rounded-lg font-medium hover:bg-blue-50 transition-colors transform hover:scale-105 shadow-lg"
             >
-              Browse All Cars
+              {t('browseAllCars')}
             </Link>
             <button
-              onClick={() => handleProtectedNavigation('/get-estimation')}
+              onClick={() => handleProtectedNavigation(`/${locale}/get-estimation`)}
               className="bg-blue-500 bg-opacity-50 backdrop-blur-sm border border-white/30 px-8 py-4 rounded-lg font-medium hover:bg-opacity-70 transition-all transform hover:scale-105 shadow-lg cursor-pointer"
             >
-              Get Price Estimation
+              {t('getPriceEstimation')}
             </button>
           </div>
         </div>
@@ -276,10 +276,10 @@ function HomeListings() {
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-gray-50">
+    <IntlProvider>
       <Suspense fallback={"Loading..."}>
         <HomePage />
       </Suspense>
-    </div>
+    </IntlProvider>
   );
 }

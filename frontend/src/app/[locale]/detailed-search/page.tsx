@@ -8,8 +8,12 @@ import { useBrandsModels } from '@/hooks/useBrandsModels';
 import { PendingActionsManager } from '@/utils/pendingActions';
 import { useToast } from '@/hooks/useToast';
 import { ToastContainer } from '@/components/ui/ToastContainer';
+import { useTranslations, useLocale } from 'next-intl';
+import IntlProvider from '@/components/IntlProvider';
 
-function DetailedSearch() {
+function DetailedSearchContent() {
+  const t = useTranslations('detailedSearch');
+  const locale = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [brand, setBrand] = useState("");
@@ -48,22 +52,26 @@ function DetailedSearch() {
   const { toasts, removeToast, showSuccess, showError } = useToast();
   const { brands, models, isLoadingBrands, isLoadingModels, fetchModels, clearModels } = useBrandsModels();
 
+  // Options arrays with translation keys
   const fuelTypes = ["Petrol", "Diesel", "Electric", "Hybrid", "LPG", "CNG", "Plug-in Hybrid"];
   const sellerTypes = ["Private", "Dealer"];
   const driveTypes = ["Sedan", "Hatchback", "SUV", "Wagon", "Coupe", "Convertible", "MPV", "Pickup"];
   const transmissionTypes = ["Automatic", "Manual"];
   const colors = ["Black", "White", "Grey", "Silver", "Blue", "Red", "Green", "Brown", "Beige", "Yellow/Gold", "Orange", "Other"];
   const emissionStandards = ["Euro 1", "Euro 2", "Euro 3", "Euro 4", "Euro 5", "Euro 6", "Non-euro"];
+
   const booleanOptions = [
-    { label: "Any", value: "" },
-    { label: "Yes", value: "true" },
-    { label: "No", value: "false" },
+    { label: t('options.any'), value: "" },
+    { label: t('options.yes'), value: "true" },
+    { label: t('options.no'), value: "false" },
   ];
+
   const isNewOptions = [
-    { label: "Any", value: "any" },
-    { label: "New", value: "true" },
-    { label: "Used", value: "false" },
+    { label: t('options.any'), value: "any" },
+    { label: t('options.new'), value: "true" },
+    { label: t('options.used'), value: "false" },
   ];
+
   const priceOptions = ["1000", "2000", "3000", "4000", "5000", "6000", "7000", "8000", "9000", "10000", "12500", "15000", "17500", "20000", "25000", "30000", "40000", "50000", "60000", "70000", "80000", "90000", "100000"];
   const yearOptions = Array.from({ length: 2024 - 1990 + 1 }, (_, i) => (1990 + i).toString());
   const mileageOptions = ["0", "10000", "50000", "100000", "150000", "200000", "300000"];
@@ -143,11 +151,10 @@ function DetailedSearch() {
     dealRating, buildSearchParams
   ]);
 
-
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     const params = buildSearchParams();
-    router.push(`/listings?${params.toString()}`);
+    router.push(`/${locale}/listings?${params.toString()}`);
   };
 
   const saveSearch = async () => {
@@ -159,7 +166,7 @@ function DetailedSearch() {
       const currentUrl = window.location.pathname + window.location.search;
 
       PendingActionsManager.saveSearchAction(query, currentUrl);
-      window.location.href = '/login';
+      window.location.href = `/${locale}/login`;
       return;
     }
 
@@ -173,7 +180,7 @@ function DetailedSearch() {
       const currentUrl = window.location.pathname + window.location.search;
 
       PendingActionsManager.saveSearchAction(query, currentUrl);
-      window.location.href = '/login';
+      window.location.href = `/${locale}/login`;
       return;
     }
 
@@ -196,15 +203,14 @@ function DetailedSearch() {
         throw new Error("Failed to save search");
       }
 
-      showSuccess("Search saved successfully!");
+      showSuccess(t('searchSavedSuccess'));
     } catch (error) {
       console.error("Error saving search:", error);
-      showError("Failed to save search.");
+      showError(t('searchSaveFailed'));
     }
   };
 
   const clearFilters = () => {
-
     setBrand("");
     setModel("");
     setFuelType("");
@@ -235,7 +241,7 @@ function DetailedSearch() {
     setQualityScoreMin("");
     setQualityScoreMax("");
     setDealRating("");
-    router.push("/detailed-search");
+    router.push(`/${locale}/detailed-search`);
   };
 
   useEffect(() => {
@@ -267,9 +273,9 @@ function DetailedSearch() {
       <Navbar />
       <div className="py-12 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto w-full flex-grow">
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Advanced Search</h1>
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">{t('title')}</h1>
           <p className="text-gray-600 max-w-2xl mx-auto">
-            Fine-tune your car search with our comprehensive filter options. Find exactly what you&apos;re looking for.
+            {t('subtitle')}
           </p>
         </div>
 
@@ -281,7 +287,7 @@ function DetailedSearch() {
               "text-blue-600 border-b-2 border-blue-600" :
               "text-gray-500 hover:text-gray-700 hover:border-gray-300"}`}
           >
-            Basic Filters
+            {t('tabs.basicFilters')}
           </button>
           <button
             onClick={() => setActiveTab("advanced")}
@@ -289,7 +295,7 @@ function DetailedSearch() {
               "text-blue-600 border-b-2 border-blue-600" :
               "text-gray-500 hover:text-gray-700 hover:border-gray-300"}`}
           >
-            Advanced Filters
+            {t('tabs.advancedFilters')}
           </button>
           <button
             onClick={() => setActiveTab("condition")}
@@ -297,7 +303,7 @@ function DetailedSearch() {
               "text-blue-600 border-b-2 border-blue-600" :
               "text-gray-500 hover:text-gray-700 hover:border-gray-300"}`}
           >
-            Vehicle Condition
+            {t('tabs.vehicleCondition')}
           </button>
         </div>
 
@@ -307,7 +313,7 @@ function DetailedSearch() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {/* Brand */}
                 <div className="col-span-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Brand</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.brand')}</label>
                   <div className="relative">
                     <select
                       value={brand}
@@ -318,9 +324,9 @@ function DetailedSearch() {
                       className={`block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500 ${isLoadingBrands ? 'opacity-50' : ''}`}
                       disabled={isLoadingBrands}
                     >
-                      <option value="">All Brands</option>
+                      <option value="">{t('fields.allBrands')}</option>
                       {isLoadingBrands ? (
-                        <option value="" disabled>Loading brands...</option>
+                        <option value="" disabled>{t('fields.loadingBrands')}</option>
                       ) : (
                         brands.map((b) => (
                           <option key={b} value={b}>{b}</option>
@@ -337,7 +343,7 @@ function DetailedSearch() {
 
                 {/* Model */}
                 <div className="col-span-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Model</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.model')}</label>
                   <div className="relative">
                     <select
                       value={model}
@@ -345,9 +351,9 @@ function DetailedSearch() {
                       className={`block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500 ${isLoadingModels || !brand ? 'opacity-50' : ''}`}
                       disabled={isLoadingModels || !brand}
                     >
-                      <option value="">All Models</option>
+                      <option value="">{t('fields.allModels')}</option>
                       {isLoadingModels ? (
-                        <option value="" disabled>Loading models...</option>
+                        <option value="" disabled>{t('fields.loadingModels')}</option>
                       ) : (
                         models.map((m) => (
                           <option key={m} value={m}>{m}</option>
@@ -364,22 +370,22 @@ function DetailedSearch() {
 
                 {/* Fuel Type */}
                 <div className="col-span-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Fuel Type</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.fuelType')}</label>
                   <select
                     value={fuelType}
                     onChange={(e) => setFuelType(e.target.value)}
                     className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                   >
-                    <option value="">All Fuel Types</option>
+                    <option value="">{t('fields.allFuelTypes')}</option>
                     {fuelTypes.map((fuel) => (
-                      <option key={fuel} value={fuel}>{fuel}</option>
+                      <option key={fuel} value={fuel}>{t(`fuelTypes.${fuel.toLowerCase().replace(/[^a-z]/g, '')}`)}</option>
                     ))}
                   </select>
                 </div>
 
                 {/* Vehicle Status */}
                 <div className="col-span-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Vehicle Status</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.vehicleStatus')}</label>
                   <select
                     value={isNew}
                     onChange={(e) => setIsNew(e.target.value)}
@@ -393,14 +399,14 @@ function DetailedSearch() {
 
                 {/* Year Range */}
                 <div className="col-span-1 md:col-span-2 lg:col-span-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Year Range</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.yearRange')}</label>
                   <div className="grid grid-cols-2 gap-2">
                     <select
                       value={yearMin}
                       onChange={(e) => setYearMin(e.target.value)}
                       className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                     >
-                      <option value="">From</option>
+                      <option value="">{t('fields.from')}</option>
                       {yearOptions.map((year) => (
                         <option key={`min-${year}`} value={year}>{year}</option>
                       ))}
@@ -410,7 +416,7 @@ function DetailedSearch() {
                       onChange={(e) => setYearMax(e.target.value)}
                       className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                     >
-                      <option value="">To</option>
+                      <option value="">{t('fields.to')}</option>
                       {yearOptions.map((year) => (
                         <option key={`max-${year}`} value={year}>{year}</option>
                       ))}
@@ -420,14 +426,14 @@ function DetailedSearch() {
 
                 {/* Price Range */}
                 <div className="col-span-1 md:col-span-2 lg:col-span-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Price Range (€)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.priceRange')}</label>
                   <div className="grid grid-cols-2 gap-2">
                     <select
                       value={priceMin}
                       onChange={(e) => setPriceMin(e.target.value)}
                       className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                     >
-                      <option value="">From</option>
+                      <option value="">{t('fields.from')}</option>
                       {priceOptions.map((price) => (
                         <option key={`min-${price}`} value={price}>{Number(price).toLocaleString()}</option>
                       ))}
@@ -437,7 +443,7 @@ function DetailedSearch() {
                       onChange={(e) => setPriceMax(e.target.value)}
                       className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                     >
-                      <option value="">To</option>
+                      <option value="">{t('fields.to')}</option>
                       {priceOptions.map((price) => (
                         <option key={`max-${price}`} value={price}>{Number(price).toLocaleString()}</option>
                       ))}
@@ -447,14 +453,14 @@ function DetailedSearch() {
 
                 {/* Mileage Range */}
                 <div className="col-span-1 md:col-span-2 lg:col-span-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Mileage Range (km)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.mileageRange')}</label>
                   <div className="grid grid-cols-2 gap-2">
                     <select
                       value={mileageMin}
                       onChange={(e) => setMileageMin(e.target.value)}
                       className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                     >
-                      <option value="">From</option>
+                      <option value="">{t('fields.from')}</option>
                       {mileageOptions.map((km) => (
                         <option key={`min-${km}`} value={km}>{Number(km).toLocaleString()}</option>
                       ))}
@@ -464,7 +470,7 @@ function DetailedSearch() {
                       onChange={(e) => setMileageMax(e.target.value)}
                       className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                     >
-                      <option value="">To</option>
+                      <option value="">{t('fields.to')}</option>
                       {mileageOptions.map((km) => (
                         <option key={`max-${km}`} value={km}>{Number(km).toLocaleString()}</option>
                       ))}
@@ -474,14 +480,14 @@ function DetailedSearch() {
 
                 {/* Engine Power Range */}
                 <div className="col-span-1 md:col-span-2 lg:col-span-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Engine Power (HP)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.enginePower')}</label>
                   <div className="grid grid-cols-2 gap-2">
                     <select
                       value={enginePowerMin}
                       onChange={(e) => setEnginePowerMin(e.target.value)}
                       className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                     >
-                      <option value="">From</option>
+                      <option value="">{t('fields.from')}</option>
                       {powerOptions.map((hp) => (
                         <option key={`min-${hp}`} value={hp}>{Number(hp).toLocaleString()}</option>
                       ))}
@@ -491,7 +497,7 @@ function DetailedSearch() {
                       onChange={(e) => setEnginePowerMax(e.target.value)}
                       className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                     >
-                      <option value="">To</option>
+                      <option value="">{t('fields.to')}</option>
                       {powerOptions.map((hp) => (
                         <option key={`max-${hp}`} value={hp}>{Number(hp).toLocaleString()}</option>
                       ))}
@@ -501,14 +507,14 @@ function DetailedSearch() {
 
                 {/* Engine Capacity Range */}
                 <div className="col-span-1 md:col-span-2 lg:col-span-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Engine Capacity (cc)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.engineCapacity')}</label>
                   <div className="grid grid-cols-2 gap-2">
                     <select
                       value={engineCapacityMin}
                       onChange={(e) => setEngineCapacityMin(e.target.value)}
                       className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                     >
-                      <option value="">From</option>
+                      <option value="">{t('fields.from')}</option>
                       {capacityOptions.map((cc) => (
                         <option key={`min-${cc}`} value={cc}>{Number(cc).toLocaleString()}</option>
                       ))}
@@ -518,7 +524,7 @@ function DetailedSearch() {
                       onChange={(e) => setEngineCapacityMax(e.target.value)}
                       className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                     >
-                      <option value="">To</option>
+                      <option value="">{t('fields.to')}</option>
                       {capacityOptions.map((cc) => (
                         <option key={`max-${cc}`} value={cc}>{Number(cc).toLocaleString()}</option>
                       ))}
@@ -528,45 +534,45 @@ function DetailedSearch() {
 
                 {/* Seller Type */}
                 <div className="col-span-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Seller Type</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.sellerType')}</label>
                   <select
                     value={sellerType}
                     onChange={(e) => setSellerType(e.target.value)}
                     className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                   >
-                    <option value="">All Sellers</option>
+                    <option value="">{t('fields.allSellers')}</option>
                     {sellerTypes.map((type) => (
-                      <option key={type} value={type}>{type}</option>
+                      <option key={type} value={type}>{t(`sellerTypes.${type.toLowerCase()}`)}</option>
                     ))}
                   </select>
                 </div>
 
                 {/* Deal Rating */}
                 <div className="col-span-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Deal Rating</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.dealRating')}</label>
                   <select
                     value={dealRating}
                     onChange={(e) => setDealRating(e.target.value)}
                     className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                   >
-                    <option value="">Any Deal</option>
-                    <option value="S">Exceptional (S)</option>
-                    <option value="A">Very Good (A)</option>
-                    <option value="B">Good (B)</option>
-                    <option value="C">Fair (C)</option>
+                    <option value="">{t('dealRatings.anyDeal')}</option>
+                    <option value="S">{t('dealRatings.exceptional')}</option>
+                    <option value="A">{t('dealRatings.veryGood')}</option>
+                    <option value="B">{t('dealRatings.good')}</option>
+                    <option value="C">{t('dealRatings.fair')}</option>
                   </select>
                 </div>
 
                 {/* Quality Score Range */}
                 <div className="col-span-1 lg:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Quality Score Range</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.qualityScoreRange')}</label>
                   <div className="grid grid-cols-2 gap-2">
                     <select
                       value={qualityScoreMin}
                       onChange={(e) => setQualityScoreMin(e.target.value)}
                       className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                     >
-                      <option value="">Minimum</option>
+                      <option value="">{t('fields.minimum')}</option>
                       {scoreOptions.map((score) => (
                         <option key={`min-${score}`} value={score}>{score}</option>
                       ))}
@@ -576,13 +582,13 @@ function DetailedSearch() {
                       onChange={(e) => setQualityScoreMax(e.target.value)}
                       className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                     >
-                      <option value="">Maximum</option>
+                      <option value="">{t('fields.maximum')}</option>
                       {scoreOptions.map((score) => (
                         <option key={`max-${score}`} value={score}>{score}</option>
                       ))}
                     </select>
                   </div>
-                  <p className="mt-1 text-xs text-gray-500">Quality score represents overall vehicle condition from 0-100</p>
+                  <p className="mt-1 text-xs text-gray-500">{t('fields.qualityScoreDescription')}</p>
                 </div>
               </div>
             )}
@@ -591,73 +597,73 @@ function DetailedSearch() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {/* Body Type */}
                 <div className="col-span-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Body Type</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.bodyType')}</label>
                   <select
                     value={driveType}
                     onChange={(e) => setDriveType(e.target.value)}
                     className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                   >
-                    <option value="">All Body Types</option>
+                    <option value="">{t('fields.allBodyTypes')}</option>
                     {driveTypes.map((type) => (
-                      <option key={type} value={type}>{type}</option>
+                      <option key={type} value={type}>{t(`bodyTypes.${type.toLowerCase()}`)}</option>
                     ))}
                   </select>
                 </div>
 
                 {/* Transmission */}
                 <div className="col-span-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Transmission</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.transmission')}</label>
                   <select
                     value={transmission}
                     onChange={(e) => setTransmission(e.target.value)}
                     className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                   >
-                    <option value="">All Transmissions</option>
+                    <option value="">{t('fields.allTransmissions')}</option>
                     {transmissionTypes.map((type) => (
-                      <option key={type} value={type}>{type}</option>
+                      <option key={type} value={type}>{t(`transmissionTypes.${type.toLowerCase()}`)}</option>
                     ))}
                   </select>
                 </div>
 
                 {/* Color */}
                 <div className="col-span-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Color</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.color')}</label>
                   <select
                     value={color}
                     onChange={(e) => setColor(e.target.value)}
                     className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                   >
-                    <option value="">All Colors</option>
+                    <option value="">{t('fields.allColors')}</option>
                     {colors.map((c) => (
-                      <option key={c} value={c}>{c}</option>
+                      <option key={c} value={c}>{t(`colors.${c.toLowerCase().replace(/[^a-z]/g, '')}`)}</option>
                     ))}
                   </select>
                 </div>
 
                 {/* Doors */}
                 <div className="col-span-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Number of Doors</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.numberOfDoors')}</label>
                   <select
                     value={doors}
                     onChange={(e) => setDoors(e.target.value)}
                     className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                   >
-                    <option value="">Any</option>
+                    <option value="">{t('options.any')}</option>
                     {doorOptions.map((d) => (
-                      <option key={d} value={d}>{d} doors</option>
+                      <option key={d} value={d}>{d} {t('fields.doors')}</option>
                     ))}
                   </select>
                 </div>
 
                 {/* Emission Standard */}
                 <div className="col-span-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Emission Standard</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.emissionStandard')}</label>
                   <select
                     value={emissionStandard}
                     onChange={(e) => setEmissionStandard(e.target.value)}
                     className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                   >
-                    <option value="">All Standards</option>
+                    <option value="">{t('fields.allStandards')}</option>
                     {emissionStandards.map((std) => (
                       <option key={std} value={std}>{std}</option>
                     ))}
@@ -666,15 +672,15 @@ function DetailedSearch() {
 
                 {/* Country of Origin */}
                 <div className="col-span-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Country of Origin</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.countryOfOrigin')}</label>
                   <select
                     value={originCountry}
                     onChange={(e) => setOriginCountry(e.target.value)}
                     className="block w-full rounded-md border border-gray-300 py-2 pl-3 pr-10 text-base focus:border-blue-500 focus:outline-none focus:ring-blue-500"
                   >
-                    <option value="">All Countries</option>
+                    <option value="">{t('fields.allCountries')}</option>
                     {originCountries.map((country) => (
-                      <option key={country} value={country}>{country}</option>
+                      <option key={country} value={country}>{t(`countries.${country.toLowerCase().replace(/[^a-z]/g, '')}`)}</option>
                     ))}
                   </select>
                 </div>
@@ -685,7 +691,7 @@ function DetailedSearch() {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {/* Right Hand Drive */}
                 <div className="col-span-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Right Hand Drive</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.rightHandDrive')}</label>
                   <select
                     value={rightHandDrive}
                     onChange={(e) => setRightHandDrive(e.target.value)}
@@ -699,7 +705,7 @@ function DetailedSearch() {
 
                 {/* Damaged */}
                 <div className="col-span-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Damaged</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.damaged')}</label>
                   <select
                     value={damaged}
                     onChange={(e) => setDamaged(e.target.value)}
@@ -713,7 +719,7 @@ function DetailedSearch() {
 
                 {/* First Owner */}
                 <div className="col-span-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">First Owner</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.firstOwner')}</label>
                   <select
                     value={firstOwner}
                     onChange={(e) => setFirstOwner(e.target.value)}
@@ -727,7 +733,7 @@ function DetailedSearch() {
 
                 {/* No Accident */}
                 <div className="col-span-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">No Accident History</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.noAccidentHistory')}</label>
                   <select
                     value={noAccident}
                     onChange={(e) => setNoAccident(e.target.value)}
@@ -741,7 +747,7 @@ function DetailedSearch() {
 
                 {/* Service Book */}
                 <div className="col-span-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Service Book</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.serviceBook')}</label>
                   <select
                     value={serviceBook}
                     onChange={(e) => setServiceBook(e.target.value)}
@@ -755,7 +761,7 @@ function DetailedSearch() {
 
                 {/* Registered */}
                 <div className="col-span-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Registered</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">{t('fields.registered')}</label>
                   <select
                     value={registered}
                     onChange={(e) => setRegistered(e.target.value)}
@@ -790,11 +796,11 @@ function DetailedSearch() {
                         d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                       />
                     </svg>
-                    <span className="font-medium">Searching...</span>
+                    <span className="font-medium">{t('searching')}</span>
                   </div>
                 ) : (
                   <span className={`font-bold text-xl ${carsCount === 0 ? 'text-red-500' : 'text-blue-600'}`}>
-                    {carsCount !== null ? `${carsCount.toLocaleString()} cars match your criteria` : 'Error counting cars'}
+                    {carsCount !== null ? t('carsMatchCriteria', { count: carsCount.toLocaleString() }) : t('errorCountingCars')}
                   </span>
                 )}
               </div>
@@ -810,7 +816,7 @@ function DetailedSearch() {
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
-                  Show Results
+                  {t('buttons.showResults')}
                 </span>
               </button>
 
@@ -823,7 +829,7 @@ function DetailedSearch() {
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
                   </svg>
-                  Save Search
+                  {t('buttons.saveSearch')}
                 </span>
               </button>
 
@@ -836,7 +842,7 @@ function DetailedSearch() {
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                   </svg>
-                  Clear All
+                  {t('buttons.clearAll')}
                 </span>
               </button>
             </div>
@@ -845,31 +851,31 @@ function DetailedSearch() {
 
         {/* Search Tips */}
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
-          <h3 className="text-lg font-medium text-blue-800 mb-2">Search Tips</h3>
+          <h3 className="text-lg font-medium text-blue-800 mb-2">{t('tips.title')}</h3>
           <ul className="text-blue-700 text-sm space-y-2">
             <li className="flex items-start gap-2">
               <svg className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <span>Leave fields empty for broader results. Each filter narrows down your search.</span>
+              <span>{t('tips.broadResults')}</span>
             </li>
             <li className="flex items-start gap-2">
               <svg className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <span>Quality Score is our proprietary rating of vehicle quality from 0-100.</span>
+              <span>{t('tips.qualityScore')}</span>
             </li>
             <li className="flex items-start gap-2">
               <svg className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <span>Deal Rating shows how a car&apos;s price compares to the market. S-rated cars offer the best value.</span>
+              <span>{t('tips.dealRating')}</span>
             </li>
             <li className="flex items-start gap-2">
               <svg className="w-5 h-5 text-blue-500 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <span>Save your searches to quickly access them later (requires login).</span>
+              <span>{t('tips.saveSearches')}</span>
             </li>
           </ul>
         </div>
@@ -882,10 +888,12 @@ function DetailedSearch() {
 
 export default function DetailedSearchPage() {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Suspense fallback={"Loading..."}>
-        <DetailedSearch />
-      </Suspense>
-    </div>
+    <IntlProvider>
+      <div className="min-h-screen bg-gray-50">
+        <Suspense>
+          <DetailedSearchContent />
+        </Suspense>
+      </div>
+    </IntlProvider>
   );
 }

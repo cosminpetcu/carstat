@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useState, useMemo } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import SidebarFilters from "@/components/SidebarFilters";
@@ -10,22 +10,27 @@ import { ToastContainer } from '@/components/ui/ToastContainer';
 import { CarCard, type CarData } from "@/components/ui/CarCard";
 import { useFavorites } from '@/hooks/useFavorites';
 import { CarCardSkeleton } from '@/components/ui/LoadingSkeleton';
+import { useTranslations, useLocale } from 'next-intl';
+import IntlProvider from '@/components/IntlProvider';
 
-const sortOptions = [
-  { value: "", label: "Default Order", sort_by: "", order: "asc" },
-  { value: "price_asc", label: "Price: Low to High", sort_by: "price", order: "asc" },
-  { value: "price_desc", label: "Price: High to Low", sort_by: "price", order: "desc" },
-  { value: "year_asc", label: "Year: Oldest First", sort_by: "year", order: "asc" },
-  { value: "year_desc", label: "Year: Newest First", sort_by: "year", order: "desc" },
-  { value: "mileage_asc", label: "Mileage: Low to High", sort_by: "mileage", order: "asc" },
-  { value: "mileage_desc", label: "Mileage: High to Low", sort_by: "mileage", order: "desc" },
-  { value: "engine_power_asc", label: "Power: Low to High", sort_by: "engine_power", order: "asc" },
-  { value: "engine_power_desc", label: "Power: High to Low", sort_by: "engine_power", order: "desc" },
-];
-
-function Listings() {
+function ListingsContent() {
+  const t = useTranslations('listings');
+  const locale = useLocale();
   const searchParams = useSearchParams();
   const router = useRouter();
+
+  // Folosește useMemo pentru sortOptions pentru a preveni recrearea constantă
+  const sortOptions = useMemo(() => [
+    { value: "", label: t('defaultOrder'), sort_by: "", order: "asc" },
+    { value: "price_asc", label: t('priceLowToHigh'), sort_by: "price", order: "asc" },
+    { value: "price_desc", label: t('priceHighToLow'), sort_by: "price", order: "desc" },
+    { value: "year_asc", label: t('yearOldestFirst'), sort_by: "year", order: "asc" },
+    { value: "year_desc", label: t('yearNewestFirst'), sort_by: "year", order: "desc" },
+    { value: "mileage_asc", label: t('mileageLowToHigh'), sort_by: "mileage", order: "asc" },
+    { value: "mileage_desc", label: t('mileageHighToLow'), sort_by: "mileage", order: "desc" },
+    { value: "engine_power_asc", label: t('powerLowToHigh'), sort_by: "engine_power", order: "asc" },
+    { value: "engine_power_desc", label: t('powerHighToLow'), sort_by: "engine_power", order: "desc" },
+  ], [t]);
 
   const [cars, setCars] = useState<CarData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,7 +56,7 @@ function Listings() {
     }
 
     params.set("page", "1");
-    router.push(`/listings?${params.toString()}`);
+    router.push(`/${locale}/listings?${params.toString()}`);
   };
 
   const { toggleFavorite, isUpdatingFavorite } = useFavorites(
@@ -61,10 +66,10 @@ function Listings() {
           c.id === carId ? { ...c, is_favorite: newState } : c
         )
       );
-      showSuccess(newState ? "Added to favorites!" : "Removed from favorites!");
+      showSuccess(newState ? t('addedToFavorites') : t('removedFromFavorites'));
     },
     (error) => {
-      showError(`Error: ${error}`);
+      showError(`${t('error')} ${error}`);
     }
   );
 
@@ -72,14 +77,14 @@ function Listings() {
     const params = new URLSearchParams(searchParams.toString());
     params.set("page", newPage.toString());
     params.set("limit", limit.toString());
-    router.push(`/listings?${params.toString()}`);
+    router.push(`/${locale}/listings?${params.toString()}`);
   };
 
   const updateLimit = (newLimit: number) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("limit", newLimit.toString());
     params.set("page", "1");
-    router.push(`/listings?${params.toString()}`);
+    router.push(`/${locale}/listings?${params.toString()}`);
   };
 
   const totalPages = Math.ceil(total / limit);
@@ -140,7 +145,7 @@ function Listings() {
 
     if (!params.has("sold")) {
       params.set("sold", "false");
-      router.replace(`/listings?${params.toString()}`, { scroll: false });
+      router.replace(`/${locale}/listings?${params.toString()}`, { scroll: false });
       return;
     }
 
@@ -155,48 +160,41 @@ function Listings() {
     })
       .then((res) => res.json())
       .then((data) => {
-        setCars(data.items);
-        setTotal(data.total);
-
-        const initIndex: { [carId: number]: number } = {};
-        data.items.forEach((car: CarData) => {
-          initIndex[car.id] = 0;
-        });
-
+        if (data.items) {
+          setCars(data.items);
+          setTotal(data.total);
+        } else {
+          console.error("Invalid response:", data);
+        }
         setLoading(false);
       })
-      .catch(() => {
+      .catch((err) => {
+        console.error("Error fetching cars:", err);
         setLoading(false);
       });
-  }, [searchParams, router]);
+  }, [searchParams, router, locale, sortOptions]);
 
   return (
     <main className="min-h-screen bg-gray-50">
       <Navbar />
 
-      <div className="bg-blue-600 text-white py-8">
-        <div className="max-w-7xl mx-auto px-6">
-          <h1 className="text-3xl font-bold mb-2">Find Your Perfect Car</h1>
-          <p className="text-blue-100">Browse our extensive collection of quality vehicles</p>
-        </div>
-      </div>
 
-      <section className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="flex flex-col lg:flex-row gap-8">
-          <div className="w-full lg:w-1/4 lg:top-8 lg:self-start">
+          <div className="w-full lg:w-1/4">
             <SidebarFilters
               showSuccess={showSuccess}
               showError={showError}
             />
           </div>
 
-          <div className="w-full lg:w-3/4">
-            <div className="bg-white p-4 rounded-xl shadow-sm mb-6">
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="flex-1">
+            <div className="mb-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white p-4 rounded-xl shadow-sm">
                 <div>
-                  <h2 className="text-2xl font-bold text-gray-800">Available Cars</h2>
-                  <p className="text-gray-500 text-sm">
-                    {loading ? "Searching for cars..." : `Showing ${cars.length} of ${total} cars`}
+                  <h1 className="text-2xl font-bold text-gray-800 mb-1">{t('carListings')}</h1>
+                  <p className="text-gray-600">
+                    {loading ? t('searchingForCars') : t('showingCars', { count: cars.length, total })}
                   </p>
                 </div>
 
@@ -205,7 +203,7 @@ function Listings() {
                   {/* Sort Dropdown */}
                   <div className="flex items-center gap-2">
                     <label htmlFor="sort" className="text-sm text-gray-600 whitespace-nowrap">
-                      Sort by:
+                      {t('sortBy')}
                     </label>
                     <select
                       id="sort"
@@ -224,7 +222,7 @@ function Listings() {
                   {/* Per Page */}
                   <div className="flex items-center gap-2">
                     <label htmlFor="limit" className="text-sm text-gray-600 whitespace-nowrap">
-                      Per page:
+                      {t('perPage')}
                     </label>
                     <select
                       id="limit"
@@ -244,13 +242,13 @@ function Listings() {
                       onClick={() => setViewMode("grid")}
                       className={`px-3 py-2 ${viewMode === "grid" ? "bg-blue-600 text-white" : "bg-white text-gray-600"}`}
                     >
-                      Grid
+                      {t('grid')}
                     </button>
                     <button
                       onClick={() => setViewMode("list")}
                       className={`px-3 py-2 ${viewMode === "list" ? "bg-blue-600 text-white" : "bg-white text-gray-600"}`}
                     >
-                      List
+                      {t('list')}
                     </button>
                   </div>
                 </div>
@@ -277,58 +275,59 @@ function Listings() {
                     />
                   ))
                   : (
-                    <div className="col-span-full text-center py-16">
-                      <div className="text-gray-400 text-5xl mb-4">🔍</div>
-                      <h3 className="text-xl font-medium mb-2">No cars found</h3>
-                      <p className="text-gray-500">Try adjusting your filters to find what you&apos;re looking for.</p>
+                    <div className="col-span-full text-center py-12">
+                      <div className="max-w-md mx-auto">
+                        <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 12h6m-6-4h6m2 5.291A7.962 7.962 0 0112 20.5a7.962 7.962 0 01-5.657-2.343m0 0L5 17m1.343 1.343l1.414-1.414L9 18.171" />
+                        </svg>
+                        <h3 className="mt-2 text-sm font-medium text-gray-900">{t('noResults')}</h3>
+                        <p className="mt-1 text-sm text-gray-500">{t('tryDifferentFilters')}</p>
+                      </div>
                     </div>
-                  )
-              }
+                  )}
             </div>
 
-            {!loading && totalPages > 0 && (
-              <div className="mt-10 flex justify-center">
-                <div className="inline-flex rounded-md shadow-sm bg-white">
+            {/* Pagination */}
+            {!loading && cars.length > 0 && totalPages > 1 && (
+              <div className="mt-8 flex justify-center">
+                <nav className="flex items-center space-x-2">
                   <button
-                    onClick={() => goToPage(Math.max(1, page - 1))}
-                    disabled={page === 1}
-                    className="px-3 py-2 rounded-l-md border border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={() => goToPage(page - 1)}
+                    disabled={page <= 1}
+                    className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Previous
+                    {t('previous')}
                   </button>
 
-                  {getDisplayedPages().map((p, idx) =>
-                    typeof p === "number" ? (
-                      <button
-                        key={idx}
-                        onClick={() => goToPage(p)}
-                        className={`px-4 py-2 border-t border-b border-r border-gray-300 ${p === page
-                          ? "bg-blue-600 text-white font-medium"
-                          : "text-gray-600 hover:bg-gray-50"
-                          }`}
-                      >
-                        {p}
-                      </button>
-                    ) : (
-                      <span key={idx} className="px-2 py-2 border-t border-b border-r border-gray-300 text-gray-500 select-none">
-                        ...
-                      </span>
-                    )
-                  )}
+                  {getDisplayedPages().map((pageNum, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => typeof pageNum === 'number' && goToPage(pageNum)}
+                      disabled={typeof pageNum !== 'number'}
+                      className={`px-3 py-2 text-sm font-medium rounded-md ${pageNum === page
+                        ? "bg-blue-600 text-white"
+                        : typeof pageNum === 'number'
+                          ? "text-gray-700 bg-white border border-gray-300 hover:bg-gray-50"
+                          : "text-gray-400 cursor-default"
+                        }`}
+                    >
+                      {pageNum}
+                    </button>
+                  ))}
 
                   <button
-                    onClick={() => goToPage(Math.min(totalPages, page + 1))}
-                    disabled={page === totalPages}
-                    className="px-3 py-2 rounded-r-md border-t border-b border-r border-gray-300 text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={() => goToPage(page + 1)}
+                    disabled={page >= totalPages}
+                    className="px-3 py-2 text-sm font-medium text-gray-500 bg-white border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Next
+                    {t('next')}
                   </button>
-                </div>
+                </nav>
               </div>
             )}
           </div>
         </div>
-      </section>
+      </div>
 
       <Footer />
       <ToastContainer toasts={toasts} onRemove={removeToast} />
@@ -336,12 +335,14 @@ function Listings() {
   );
 }
 
-export default function ListingsPage() {
+function Listings() {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Suspense fallback={"Loading..."}>
-        <Listings />
+    <IntlProvider>
+      <Suspense fallback={<div>Loading...</div>}>
+        <ListingsContent />
       </Suspense>
-    </div>
+    </IntlProvider>
   );
 }
+
+export default Listings;

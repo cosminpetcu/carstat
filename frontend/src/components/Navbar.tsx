@@ -3,9 +3,13 @@
 import Link from "next/link";
 import { useEffect, useState, useRef } from "react";
 import { usePathname, useSearchParams, useRouter } from "next/navigation";
+import { useTranslations, useLocale } from 'next-intl';
 import { PendingActionsManager } from '@/utils/pendingActions';
+import IntlProvider from '@/components/IntlProvider';
 
-export default function Navbar() {
+function NavbarContent() {
+  const t = useTranslations('nav');
+  const locale = useLocale();
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [user, setUser] = useState<{ id: number; email: string; full_name: string } | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -15,8 +19,8 @@ export default function Navbar() {
 
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const isHome = pathname === "/";
-  const isListings = pathname === "/listings";
+  const isHome = pathname === `/${locale}` || pathname === `/${locale}/`;
+  const isListings = pathname === `/${locale}/listings`;
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
 
@@ -27,7 +31,7 @@ export default function Navbar() {
     localStorage.removeItem("user");
     setIsLoggedIn(false);
     setDropdownOpen(false);
-    window.location.href = "/";
+    window.location.href = `/${locale}`;
   };
 
   const handleSearch = (e: React.FormEvent) => {
@@ -37,10 +41,10 @@ export default function Navbar() {
         const currentParams = new URLSearchParams(searchParams.toString());
         currentParams.set("search", searchQuery.trim());
         currentParams.set("page", "1");
-        window.history.pushState({}, "", `/listings?${currentParams.toString()}`);
+        window.history.pushState({}, "", `/${locale}/listings?${currentParams.toString()}`);
         window.location.reload();
       } else {
-        window.location.href = `/listings?search=${encodeURIComponent(searchQuery.trim())}`;
+        window.location.href = `/${locale}/listings?search=${encodeURIComponent(searchQuery.trim())}`;
       }
     }
   };
@@ -53,7 +57,7 @@ export default function Navbar() {
     const token = localStorage.getItem("token");
     if (!token) {
       PendingActionsManager.saveNavigationIntent(targetPath);
-      window.location.href = '/login';
+      window.location.href = `/${locale}/login`;
     } else {
       router.push(targetPath);
     }
@@ -113,43 +117,43 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 md:h-20">
           <div className="flex-shrink-0 flex items-center">
-            <Link href="/" className="flex items-center">
+            <Link href={`/${locale}`} className="flex items-center">
               <span className="text-xl font-bold">CARSTAT</span>
               <span className={`ml-1 font-light text-xs mt-1 ${isHome ? 'text-white' : 'text-blue-400'}`}>BETA</span>
             </Link>
           </div>
 
           <nav className="hidden md:flex items-center space-x-4">
-            <NavLink href="/" label="Home" active={pathname === "/"} />
-            <NavLink href="/listings" label="Listings" active={pathname === "/listings" || pathname.startsWith("/listings/")} />
+            <NavLink href={`/${locale}`} label={t('home')} active={pathname === `/${locale}` || pathname === `/${locale}/`} />
+            <NavLink href={`/${locale}/listings`} label={t('listings')} active={pathname === `/${locale}/listings` || pathname.startsWith(`/${locale}/listings/`)} />
             <button
-              onClick={() => handleProtectedNavigation('/favorites')}
-              className={`px-3 py-2 text-sm font-medium transition-colors duration-200 cursor-pointer ${pathname === "/favorites"
+              onClick={() => handleProtectedNavigation(`/${locale}/favorites`)}
+              className={`px-3 py-2 text-sm font-medium transition-colors duration-200 cursor-pointer ${pathname === `/${locale}/favorites`
                 ? "text-white bg-gray-700/50 rounded-md"
                 : "text-gray-300 hover:text-white"
                 }`}
             >
-              Favorites
+              {t('favorites')}
             </button>
             <button
-              onClick={() => handleProtectedNavigation('/dashboard')}
-              className={`px-3 py-2 text-sm font-medium transition-colors duration-200 cursor-pointer ${pathname === "/dashboard"
+              onClick={() => handleProtectedNavigation(`/${locale}/dashboard`)}
+              className={`px-3 py-2 text-sm font-medium transition-colors duration-200 cursor-pointer ${pathname === `/${locale}/dashboard`
                 ? "text-white bg-gray-700/50 rounded-md"
                 : "text-gray-300 hover:text-white"
                 }`}
             >
-              Dashboard
+              {t('dashboard')}
             </button>
             <button
-              onClick={() => handleProtectedNavigation('/get-estimation')}
-              className={`px-3 py-2 text-sm font-medium transition-colors duration-200 cursor-pointer ${pathname === "/get-estimation"
+              onClick={() => handleProtectedNavigation(`/${locale}/get-estimation`)}
+              className={`px-3 py-2 text-sm font-medium transition-colors duration-200 cursor-pointer ${pathname === `/${locale}/get-estimation`
                 ? "text-white bg-gray-700/50 rounded-md"
                 : "text-gray-300 hover:text-white"
                 }`}
             >
-              Get Estimation
+              {t('getEstimation')}
             </button>
-            <NavLink href="/detailed-search" label="Advanced Search" active={pathname === "/detailed-search"} />
+            <NavLink href={`/${locale}/detailed-search`} label={t('advancedSearch')} active={pathname === `/${locale}/detailed-search`} />
 
             {(!searchOpen) && (
               <button
@@ -166,12 +170,12 @@ export default function Navbar() {
 
           <div className="flex items-center gap-2">
             {!isLoggedIn ? (
-              <Link href="/login">
+              <Link href={`/${locale}/login`}>
                 <button className={`hidden md:flex items-center px-6 py-2.5 ${isHome
                   ? "text-white border border-white/80 hover:bg-white hover:text-gray-900"
                   : "text-blue-400 border border-blue-400 hover:bg-blue-500 hover:text-white"
                   } transition duration-200 text-sm font-medium rounded-md`}>
-                  Sign In
+                  {t('login')}
                 </button>
               </Link>
             ) : (
@@ -195,17 +199,17 @@ export default function Navbar() {
                       <p className="text-sm font-medium">{user?.full_name || "User"}</p>
                       <p className="text-xs text-gray-500 truncate">{user?.email || ""}</p>
                     </div>
-                    <Link href="/favorites" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                      Favorites
+                    <Link href={`/${locale}/favorites`} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                      {t('favorites')}
                     </Link>
-                    <Link href="/dashboard" className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
-                      Dashboard
+                    <Link href={`/${locale}/dashboard`} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                      {t('dashboard')}
                     </Link>
                     <button
                       onClick={handleLogout}
                       className="block w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-gray-100 border-t border-gray-100"
                     >
-                      Sign Out
+                      {t('logout')}
                     </button>
                   </div>
                 )}
@@ -235,36 +239,36 @@ export default function Navbar() {
       {mobileMenuOpen && (
         <div className="md:hidden bg-gray-900/95 backdrop-blur-sm">
           <div className="px-2 pt-2 pb-3 space-y-1 border-t border-gray-700">
-            <MobileNavLink href="/" label="Home" active={pathname === "/"} />
-            <MobileNavLink href="/listings" label="Listings" active={pathname === "/listings" || pathname.startsWith("/listings/")} />
+            <MobileNavLink href={`/${locale}`} label={t('home')} active={pathname === `/${locale}` || pathname === `/${locale}/`} />
+            <MobileNavLink href={`/${locale}/listings`} label={t('listings')} active={pathname === `/${locale}/listings` || pathname.startsWith(`/${locale}/listings/`)} />
             <button
-              onClick={() => handleProtectedNavigation('/favorites')}
-              className={`block px-3 py-2 text-base font-medium w-full text-left transition-colors ${pathname === "/favorites"
+              onClick={() => handleProtectedNavigation(`/${locale}/favorites`)}
+              className={`block px-3 py-2 text-base font-medium w-full text-left transition-colors ${pathname === `/${locale}/favorites`
                 ? "bg-gray-800 text-white rounded-md"
                 : "text-gray-300 hover:bg-gray-700 hover:text-white hover:rounded-md"
                 }`}
             >
-              Favorites
+              {t('favorites')}
             </button>
             <button
-              onClick={() => handleProtectedNavigation('/dashboard')}
-              className={`block px-3 py-2 text-base font-medium w-full text-left transition-colors ${pathname === "/dashboard"
+              onClick={() => handleProtectedNavigation(`/${locale}/dashboard`)}
+              className={`block px-3 py-2 text-base font-medium w-full text-left transition-colors ${pathname === `/${locale}/dashboard`
                 ? "bg-gray-800 text-white rounded-md"
                 : "text-gray-300 hover:bg-gray-700 hover:text-white hover:rounded-md"
                 }`}
             >
-              Dashboard
+              {t('dashboard')}
             </button>
             <button
-              onClick={() => handleProtectedNavigation('/get-estimation')}
-              className={`block px-3 py-2 text-base font-medium w-full text-left transition-colors ${pathname === "/get-estimation"
+              onClick={() => handleProtectedNavigation(`/${locale}/get-estimation`)}
+              className={`block px-3 py-2 text-base font-medium w-full text-left transition-colors ${pathname === `/${locale}/get-estimation`
                 ? "bg-gray-800 text-white rounded-md"
                 : "text-gray-300 hover:bg-gray-700 hover:text-white hover:rounded-md"
                 }`}
             >
-              Get Estimation
+              {t('getEstimation')}
             </button>
-            <MobileNavLink href="/detailed-search" label="Advanced Search" active={pathname === "/detailed-search"} />
+            <MobileNavLink href={`/${locale}/detailed-search`} label={t('advancedSearch')} active={pathname === `/${locale}/detailed-search`} />
 
             <div className="pt-2">
               <form onSubmit={handleSearch} className="flex">
@@ -299,32 +303,32 @@ export default function Navbar() {
                 </div>
                 <div className="space-y-1">
                   <Link
-                    href="/favorites"
+                    href={`/${locale}/favorites`}
                     className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700"
                   >
-                    Favorites
+                    {t('favorites')}
                   </Link>
                   <Link
-                    href="/dashboard"
+                    href={`/${locale}/dashboard`}
                     className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700"
                   >
-                    Dashboard
+                    {t('dashboard')}
                   </Link>
                   <button
                     onClick={handleLogout}
                     className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-400 hover:text-red-300 hover:bg-gray-700"
                   >
-                    Sign Out
+                    {t('logout')}
                   </button>
                 </div>
               </div>
             ) : (
               <div className="px-4 py-2">
                 <Link
-                  href="/login"
+                  href={`/${locale}/login`}
                   className="block w-full text-center px-6 py-2.5 text-white bg-blue-600 rounded-md hover:bg-blue-700 font-medium"
                 >
-                  Sign In
+                  {t('login')}
                 </Link>
               </div>
             )}
@@ -339,7 +343,7 @@ export default function Navbar() {
               <input
                 ref={searchInputRef}
                 type="text"
-                placeholder="Search for cars by brand, model, or keyword..."
+                placeholder={t('placeholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full bg-blue-900/20 border border-blue-500/30 text-white px-4 py-3 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -348,7 +352,7 @@ export default function Navbar() {
                 type="submit"
                 className="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors ml-2"
               >
-                Search
+                {t('search')}
               </button>
               <button
                 type="button"
@@ -393,3 +397,11 @@ const MobileNavLink = ({ href, label, active }: { href: string; label: string; a
     {label}
   </Link>
 );
+
+export default function Navbar() {
+  return (
+    <IntlProvider>
+      <NavbarContent />
+    </IntlProvider>
+  );
+}

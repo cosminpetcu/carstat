@@ -1,6 +1,14 @@
-import Link from "next/link";
+"use client";
 
-export default function Footer() {
+import Link from "next/link";
+import { useTranslations, useLocale } from 'next-intl';
+import LanguageSelector from './LanguageSelector';
+import IntlProvider from './IntlProvider';
+
+function FooterContent() {
+  const t = useTranslations('footer');
+  const tNav = useTranslations('nav');
+  const locale = useLocale();
 
   return (
     <footer className="bg-gradient-to-br from-gray-900 to-gray-800 text-white">
@@ -9,44 +17,75 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {/* Logo & Description */}
           <div className="col-span-1 md:col-span-2 lg:col-span-1">
-            <h2 className="text-2xl font-bold mb-4">CARSTAT</h2>
+            <h2 className="text-2xl font-bold mb-4">{t('company')}</h2>
             <p className="text-gray-300 mb-6 max-w-xs">
-              Your automotive market analytics platform helping buyers and sellers make informed decisions.
+              {t('description')}
             </p>
+
+            {/* Language Selector */}
+            <div className="mt-4">
+              <p className="text-sm text-gray-400 mb-2">{t('language')}</p>
+              <LanguageSelector />
+            </div>
           </div>
 
           {/* Quick Links */}
           <div>
-            <h3 className="text-lg font-bold mb-4 border-b border-gray-700 pb-2">Quick Links</h3>
+            <h3 className="text-lg font-bold mb-4 border-b border-gray-700 pb-2">
+              {t('quickLinks')}
+            </h3>
             <ul className="space-y-2">
               <li>
-                <Link href="/" className="text-gray-300 hover:text-white transition duration-200">
-                  Home
+                <Link
+                  href={`/${locale}`}
+                  className="text-gray-300 hover:text-white transition duration-200"
+                >
+                  {tNav('home')}
                 </Link>
               </li>
               <li>
-                <Link href="/listings" className="text-gray-300 hover:text-white transition duration-200">
-                  Browse Listings
+                <Link
+                  href={`/${locale}/listings`}
+                  className="text-gray-300 hover:text-white transition duration-200"
+                >
+                  {t('browseListings')}
                 </Link>
               </li>
               <li>
-                <Link href="/detailed-search" className="text-gray-300 hover:text-white transition duration-200">
-                  Advanced Search
+                <Link
+                  href={`/${locale}/detailed-search`}
+                  className="text-gray-300 hover:text-white transition duration-200"
+                >
+                  {t('advancedSearch')}
                 </Link>
               </li>
               <li>
-                <Link href="/favorites" className="text-gray-300 hover:text-white transition duration-200">
-                  Favorites
+                <Link
+                  href={`/${locale}/favorites`}
+                  className="text-gray-300 hover:text-white transition duration-200"
+                >
+                  {tNav('favorites')}
                 </Link>
               </li>
               <li>
-                <Link href="/dashboard" className="text-gray-300 hover:text-white transition duration-200">
-                  Dashboard
+                <Link
+                  href={`/${locale}/dashboard`}
+                  className="text-gray-300 hover:text-white transition duration-200"
+                >
+                  {tNav('dashboard')}
                 </Link>
               </li>
             </ul>
           </div>
 
+          {/* Extra space for future sections */}
+          <div className="hidden lg:block">
+            {/* Spațiu pentru viitoare secțiuni */}
+          </div>
+
+          <div className="hidden lg:block">
+            {/* Spațiu pentru viitoare secțiuni */}
+          </div>
         </div>
       </div>
 
@@ -54,10 +93,18 @@ export default function Footer() {
       <div className="bg-black/30 py-4">
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center">
           <div className="text-sm text-gray-400 mb-4 md:mb-0">
-            © {new Date().getFullYear()} CARSTAT. All rights reserved.
+            © {new Date().getFullYear()} {t('company')}. {t('copyright')}
           </div>
         </div>
       </div>
     </footer>
+  );
+}
+
+export default function Footer() {
+  return (
+    <IntlProvider>
+      <FooterContent />
+    </IntlProvider>
   );
 }

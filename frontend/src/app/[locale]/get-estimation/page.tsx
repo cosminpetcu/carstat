@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, Suspense } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import { CarCard, type CarData } from "@/components/ui/CarCard";
@@ -8,6 +8,8 @@ import { useBrandsModels } from '@/hooks/useBrandsModels';
 import { useRouter } from 'next/navigation';
 import { PendingActionsManager } from '@/utils/pendingActions';
 import Link from 'next/link';
+import { useTranslations, useLocale } from 'next-intl';
+import IntlProvider from '@/components/IntlProvider';
 
 type EstimationCarData = {
     brand: string;
@@ -88,8 +90,9 @@ interface ParsedHistoryItem {
     timestamp: string;
 }
 
-
-export default function CleanEstimationPage() {
+function CleanEstimationContent() {
+    const t = useTranslations('getEstimationPage');
+    const locale = useLocale();
     const [carData, setCarData] = useState<EstimationCarData>({
         brand: "",
         model: "",
@@ -429,7 +432,7 @@ export default function CleanEstimationPage() {
 
             if (!response.ok) {
                 const errorData = await response.json();
-                throw new Error(errorData.detail || "Failed to get estimation");
+                throw new Error(errorData.detail || t('failedToGetEstimation'));
             }
 
             const result = await response.json();
@@ -442,7 +445,7 @@ export default function CleanEstimationPage() {
             }
 
         } catch (err) {
-            setError(err instanceof Error ? err.message : "An error occurred");
+            setError(err instanceof Error ? err.message : t('anErrorOccurred'));
         } finally {
             setLoading(false);
         }
@@ -479,10 +482,10 @@ export default function CleanEstimationPage() {
                     {/* Header */}
                     <div className="text-center mb-8">
                         <h1 className="text-4xl font-bold text-gray-900 mb-4">
-                            Car Price Estimation
+                            {t('title')}
                         </h1>
                         <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-                            Get accurate market price estimation based on thousands of similar listings from across Romania.
+                            {t('subtitle')}
                         </p>
                     </div>
 
@@ -491,10 +494,10 @@ export default function CleanEstimationPage() {
                         <div className="bg-white rounded-xl p-2 shadow-lg">
                             <nav className="flex space-x-2">
                                 {[
-                                    { id: "estimate", label: "New Estimation" },
+                                    { id: "estimate", label: t('tabs.newEstimation') },
                                     {
                                         id: "history",
-                                        label: "History",
+                                        label: t('tabs.history'),
                                         badge: estimationHistory.length > 0 ? estimationHistory.length : undefined
                                     }
                                 ].map((tab) => (
@@ -527,14 +530,14 @@ export default function CleanEstimationPage() {
                             {/* Form Section */}
                             <div className="lg:col-span-2">
                                 <div className="bg-white rounded-2xl shadow-lg p-8">
-                                    <h2 className="text-2xl font-bold text-gray-900 mb-6">Car Details</h2>
+                                    <h2 className="text-2xl font-bold text-gray-900 mb-6">{t('form.title')}</h2>
 
                                     <form onSubmit={handleSubmit} className="space-y-6">
 
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                    Brand *
+                                                    {t('form.brand')} *
                                                 </label>
                                                 <select
                                                     value={carData.brand}
@@ -550,9 +553,9 @@ export default function CleanEstimationPage() {
                                                     disabled={isLoadingBrands}
                                                     required
                                                 >
-                                                    <option value="">Select Brand</option>
+                                                    <option value="">{t('form.selectBrand')}</option>
                                                     {isLoadingBrands ? (
-                                                        <option value="" disabled>Loading brands...</option>
+                                                        <option value="" disabled>{t('form.loadingBrands')}</option>
                                                     ) : (
                                                         brands.map((brand) => (
                                                             <option key={brand} value={brand}>{brand}</option>
@@ -563,7 +566,7 @@ export default function CleanEstimationPage() {
 
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                    Model *
+                                                    {t('form.model')} *
                                                 </label>
                                                 <select
                                                     value={carData.model}
@@ -572,9 +575,9 @@ export default function CleanEstimationPage() {
                                                     disabled={isLoadingModels || !carData.brand}
                                                     required
                                                 >
-                                                    <option value="">Select Model</option>
+                                                    <option value="">{t('form.selectModel')}</option>
                                                     {isLoadingModels ? (
-                                                        <option value="" disabled>Loading models...</option>
+                                                        <option value="" disabled>{t('form.loadingModels')}</option>
                                                     ) : (
                                                         models.map((model) => (
                                                             <option key={model} value={model}>{model}</option>
@@ -587,7 +590,7 @@ export default function CleanEstimationPage() {
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                    Year *
+                                                    {t('form.year')} *
                                                 </label>
                                                 <input
                                                     type="number"
@@ -603,14 +606,14 @@ export default function CleanEstimationPage() {
                                                 />
                                                 {modelSpecs && (
                                                     <p className="text-sm text-gray-500 mt-1">
-                                                        Available: {modelSpecs.year_range.min} - {modelSpecs.year_range.max}
+                                                        {t('form.availableYears', { min: modelSpecs.year_range.min, max: modelSpecs.year_range.max })}
                                                     </p>
                                                 )}
                                             </div>
 
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                    Mileage (km) *
+                                                    {t('form.mileage')} *
                                                 </label>
                                                 <input
                                                     type="number"
@@ -626,7 +629,7 @@ export default function CleanEstimationPage() {
                                                 />
                                                 {modelSpecs?.typical_mileage.avg && (
                                                     <p className="text-sm text-gray-500 mt-1">
-                                                        Average for this model: {modelSpecs.typical_mileage.avg.toLocaleString()} km
+                                                        {t('form.averageMileage', { avg: modelSpecs.typical_mileage.avg.toLocaleString() })}
                                                     </p>
                                                 )}
                                             </div>
@@ -635,7 +638,7 @@ export default function CleanEstimationPage() {
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                    Fuel Type *
+                                                    {t('form.fuelType')} *
                                                 </label>
                                                 <select
                                                     value={carData.fuel_type}
@@ -643,7 +646,7 @@ export default function CleanEstimationPage() {
                                                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                                     required
                                                 >
-                                                    <option value="">Select Fuel Type</option>
+                                                    <option value="">{t('form.selectFuelType')}</option>
                                                     {modelSpecs?.fuel_types.map((fuel) => (
                                                         <option key={fuel} value={fuel}>
                                                             {fuel}
@@ -654,7 +657,7 @@ export default function CleanEstimationPage() {
 
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                    Transmission *
+                                                    {t('form.transmission')} *
                                                 </label>
                                                 <select
                                                     value={carData.transmission}
@@ -662,7 +665,7 @@ export default function CleanEstimationPage() {
                                                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                                     required
                                                 >
-                                                    <option value="">Select Transmission</option>
+                                                    <option value="">{t('form.selectTransmission')}</option>
                                                     {modelSpecs?.transmissions.map((trans) => (
                                                         <option key={trans} value={trans}>
                                                             {trans}
@@ -675,7 +678,7 @@ export default function CleanEstimationPage() {
                                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                    Engine Capacity (cc) *
+                                                    {t('form.engineCapacity')} *
                                                 </label>
                                                 <select
                                                     value={carData.engine_capacity || ""}
@@ -686,7 +689,7 @@ export default function CleanEstimationPage() {
                                                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                                     required
                                                 >
-                                                    <option value="">Select Engine Capacity</option>
+                                                    <option value="">{t('form.selectEngineCapacity')}</option>
                                                     {modelSpecs?.engine_capacities.map((capacity) => (
                                                         <option key={capacity} value={capacity}>
                                                             {capacity} cc
@@ -697,14 +700,14 @@ export default function CleanEstimationPage() {
 
                                             <div>
                                                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                    Drive Type
+                                                    {t('form.driveType')}
                                                 </label>
                                                 <select
                                                     value={carData.drive_type || ""}
                                                     onChange={(e) => handleInputChange("drive_type", e.target.value || undefined)}
                                                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                                 >
-                                                    <option value="">Select Drive Type</option>
+                                                    <option value="">{t('form.selectDriveType')}</option>
                                                     {modelSpecs?.drive_types.map((drive) => (
                                                         <option key={drive} value={drive}>
                                                             {drive}
@@ -716,7 +719,7 @@ export default function CleanEstimationPage() {
 
                                         <div>
                                             <label className="block text-sm font-medium text-gray-700 mb-2">
-                                                Right Hand Drive
+                                                {t('form.rightHandDrive')}
                                             </label>
                                             <div className="flex space-x-4">
                                                 <label className="flex items-center">
@@ -728,7 +731,7 @@ export default function CleanEstimationPage() {
                                                         onChange={() => handleInputChange("right_hand_drive", false)}
                                                         className="mr-2"
                                                     />
-                                                    No (Left Hand Drive)
+                                                    {t('form.leftHandDrive')}
                                                 </label>
                                                 <label className="flex items-center">
                                                     <input
@@ -739,7 +742,7 @@ export default function CleanEstimationPage() {
                                                         onChange={() => handleInputChange("right_hand_drive", true)}
                                                         className="mr-2"
                                                     />
-                                                    Yes (Right Hand Drive)
+                                                    {t('form.rightHandDriveYes')}
                                                 </label>
                                             </div>
                                         </div>
@@ -752,10 +755,10 @@ export default function CleanEstimationPage() {
                                             {loading ? (
                                                 <div className="flex items-center justify-center">
                                                     <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-white mr-2"></div>
-                                                    Calculating...
+                                                    {t('form.calculating')}
                                                 </div>
                                             ) : (
-                                                "Get Price Estimation"
+                                                t('form.submitButton')
                                             )}
                                         </button>
                                     </form>
@@ -771,33 +774,32 @@ export default function CleanEstimationPage() {
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                             </svg>
                                         </div>
-                                        <h3 className="text-lg font-semibold text-blue-900 ml-3">How it works</h3>
+                                        <h3 className="text-lg font-semibold text-blue-900 ml-3">{t('info.howItWorksTitle')}</h3>
                                     </div>
                                     <ul className="space-y-3 text-blue-800">
                                         <li className="flex items-start">
                                             <span className="w-2 h-2 bg-blue-600 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                                            We analyze thousands of similar car listings
+                                            {t('info.howItWorks.step1')}
                                         </li>
                                         <li className="flex items-start">
                                             <span className="w-2 h-2 bg-blue-600 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                                            Compare your car&apos;s specs with market data
+                                            {t('info.howItWorks.step2')}
                                         </li>
                                         <li className="flex items-start">
                                             <span className="w-2 h-2 bg-blue-600 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                                            Provide accurate price estimation and insights
+                                            {t('info.howItWorks.step3')}
                                         </li>
                                         <li className="flex items-start">
                                             <span className="w-2 h-2 bg-blue-600 rounded-full mt-2 mr-3 flex-shrink-0"></span>
-                                            {isLoggedIn ? "Save estimation history to your account" : "Save estimation history locally"}
+                                            {isLoggedIn ? t('info.howItWorks.step4Logged') : t('info.howItWorks.step4Local')}
                                         </li>
                                     </ul>
                                 </div>
 
                                 <div className="bg-green-50 rounded-2xl p-6">
-                                    <h3 className="text-lg font-semibold text-green-900 mb-3">Accurate</h3>
+                                    <h3 className="text-lg font-semibold text-green-900 mb-3">{t('info.accurateTitle')}</h3>
                                     <p className="text-green-800 text-sm">
-                                        Our estimation algorithm uses real market data from OLX and Autovit,
-                                        updated daily to give you the most accurate pricing information.
+                                        {t('info.accurateDescription')}
                                     </p>
                                 </div>
                             </div>
@@ -809,13 +811,13 @@ export default function CleanEstimationPage() {
                         <div className="max-w-4xl mx-auto">
                             <div className="bg-white rounded-2xl shadow-lg p-8">
                                 <div className="flex justify-between items-center mb-6">
-                                    <h2 className="text-2xl font-bold text-gray-900">Estimation History</h2>
+                                    <h2 className="text-2xl font-bold text-gray-900">{t('history.title')}</h2>
                                     {estimationHistory.length > 0 && (
                                         <button
                                             onClick={clearUserHistory}
                                             className="text-red-600 hover:text-red-800 text-sm font-medium"
                                         >
-                                            Clear All
+                                            {t('history.clearAll')}
                                         </button>
                                     )}
                                 </div>
@@ -823,7 +825,7 @@ export default function CleanEstimationPage() {
                                 {historyLoading ? (
                                     <div className="text-center py-12">
                                         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-                                        <p className="text-gray-600">Loading estimation history...</p>
+                                        <p className="text-gray-600">{t('history.loading')}</p>
                                     </div>
                                 ) : estimationHistory.length === 0 ? (
                                     <div className="text-center py-12">
@@ -832,13 +834,13 @@ export default function CleanEstimationPage() {
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
                                             </svg>
                                         </div>
-                                        <h3 className="text-lg font-medium text-gray-900 mb-2">No estimation history yet</h3>
-                                        <p className="text-gray-600 mb-4">Create your first estimation to start building your history.</p>
+                                        <h3 className="text-lg font-medium text-gray-900 mb-2">{t('history.noHistoryTitle')}</h3>
+                                        <p className="text-gray-600 mb-4">{t('history.noHistoryDescription')}</p>
                                         <button
                                             onClick={() => setActiveTab("estimate")}
                                             className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                                         >
-                                            Create Estimation
+                                            {t('history.createEstimation')}
                                         </button>
                                     </div>
                                 ) : (
@@ -862,11 +864,11 @@ export default function CleanEstimationPage() {
                                                                 <span>{item.car_data.engine_capacity} cc</span>
                                                             </div>
                                                             <div className="mt-2 text-xs text-gray-500">
-                                                                {dateTime.date} at {dateTime.time}
+                                                                {dateTime.date} {t('history.at')} {dateTime.time}
                                                             </div>
                                                             {item.notes && (
                                                                 <div className="mt-2 text-sm text-gray-700 bg-gray-50 p-2 rounded">
-                                                                    <strong>Notes:</strong> {item.notes}
+                                                                    <strong>{t('history.notes')}:</strong> {item.notes}
                                                                 </div>
                                                             )}
                                                         </div>
@@ -875,7 +877,7 @@ export default function CleanEstimationPage() {
                                                                 €{item.estimation_result.estimated_price.toLocaleString()}
                                                             </div>
                                                             <div className="text-sm text-gray-600">
-                                                                {item.estimation_result.confidence_level} confidence
+                                                                {item.estimation_result.confidence_level} {t('history.confidence')}
                                                             </div>
                                                             <div className="text-sm text-gray-600">
                                                                 {item.estimation_result.market_position}
@@ -885,28 +887,28 @@ export default function CleanEstimationPage() {
                                                                     onClick={() => selectHistoryItem(item)}
                                                                     className="text-xs bg-blue-100 text-blue-600 px-3 py-1 rounded hover:bg-blue-200 transition-colors"
                                                                 >
-                                                                    View Details
+                                                                    {t('history.viewDetails')}
                                                                 </button>
                                                                 <button
                                                                     onClick={() => {
-                                                                        const notes = prompt("Add/edit notes for this estimation:", item.notes || "");
+                                                                        const notes = prompt(t('history.addEditNotesPrompt'), item.notes || "");
                                                                         if (notes !== null) {
                                                                             updateHistoryNotes(item.id, notes);
                                                                         }
                                                                     }}
                                                                     className="text-xs bg-gray-100 text-gray-600 px-3 py-1 rounded hover:bg-gray-200 transition-colors"
                                                                 >
-                                                                    {item.notes ? "Edit Notes" : "Add Notes"}
+                                                                    {item.notes ? t('history.editNotes') : t('history.addNotes')}
                                                                 </button>
                                                                 <button
                                                                     onClick={() => {
-                                                                        if (confirm("Are you sure you want to delete this estimation?")) {
+                                                                        if (confirm(t('history.deleteConfirm'))) {
                                                                             deleteHistoryItem(item.id);
                                                                         }
                                                                     }}
                                                                     className="text-xs bg-red-100 text-red-600 px-3 py-1 rounded hover:bg-red-200 transition-colors"
                                                                 >
-                                                                    Delete
+                                                                    {t('history.delete')}
                                                                 </button>
                                                             </div>
                                                         </div>
@@ -925,11 +927,16 @@ export default function CleanEstimationPage() {
                         <div className="mt-8 bg-white rounded-2xl shadow-lg p-8">
                             <div className="flex justify-between items-center mb-6">
                                 <h2 className="text-2xl font-bold text-gray-900">
-                                    Selected Estimation: {selectedHistoryItem.car_data.brand} {selectedHistoryItem.car_data.model} ({selectedHistoryItem.car_data.year})
+                                    {t('selectedHistory.title', {
+                                        brand: selectedHistoryItem.car_data.brand,
+                                        model: selectedHistoryItem.car_data.model,
+                                        year: selectedHistoryItem.car_data.year
+                                    })}
                                 </h2>
                                 <button
                                     onClick={() => setSelectedHistoryItem(null)}
                                     className="text-gray-500 hover:text-gray-700 transition-colors"
+                                    aria-label={t('selectedHistory.closeAriaLabel')}
                                 >
                                     <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -940,45 +947,45 @@ export default function CleanEstimationPage() {
                             {/* Car Details from History */}
                             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 bg-gray-50 p-6 rounded-xl">
                                 <div className="text-center">
-                                    <div className="text-sm text-gray-600">Brand & Model</div>
+                                    <div className="text-sm text-gray-600">{t('selectedHistory.specs.brandModel')}</div>
                                     <div className="font-semibold text-lg">{selectedHistoryItem.car_data.brand} {selectedHistoryItem.car_data.model}</div>
                                 </div>
                                 <div className="text-center">
-                                    <div className="text-sm text-gray-600">Year</div>
+                                    <div className="text-sm text-gray-600">{t('selectedHistory.specs.year')}</div>
                                     <div className="font-semibold text-lg">{selectedHistoryItem.car_data.year}</div>
                                 </div>
                                 <div className="text-center">
-                                    <div className="text-sm text-gray-600">Mileage</div>
+                                    <div className="text-sm text-gray-600">{t('selectedHistory.specs.mileage')}</div>
                                     <div className="font-semibold text-lg">{selectedHistoryItem.car_data.mileage.toLocaleString()} km</div>
                                 </div>
                                 <div className="text-center">
-                                    <div className="text-sm text-gray-600">Fuel Type</div>
+                                    <div className="text-sm text-gray-600">{t('selectedHistory.specs.fuelType')}</div>
                                     <div className="font-semibold text-lg">{selectedHistoryItem.car_data.fuel_type}</div>
                                 </div>
                                 <div className="text-center">
-                                    <div className="text-sm text-gray-600">Transmission</div>
+                                    <div className="text-sm text-gray-600">{t('selectedHistory.specs.transmission')}</div>
                                     <div className="font-semibold text-lg">{selectedHistoryItem.car_data.transmission}</div>
                                 </div>
                                 <div className="text-center">
-                                    <div className="text-sm text-gray-600">Engine Capacity</div>
+                                    <div className="text-sm text-gray-600">{t('selectedHistory.specs.engineCapacity')}</div>
                                     <div className="font-semibold text-lg">{selectedHistoryItem.car_data.engine_capacity} cc</div>
                                 </div>
                                 {selectedHistoryItem.car_data.drive_type && (
                                     <div className="text-center">
-                                        <div className="text-sm text-gray-600">Drive Type</div>
+                                        <div className="text-sm text-gray-600">{t('selectedHistory.specs.driveType')}</div>
                                         <div className="font-semibold text-lg">{selectedHistoryItem.car_data.drive_type}</div>
                                     </div>
                                 )}
                                 {selectedHistoryItem.car_data.generation && (
                                     <div className="text-center">
-                                        <div className="text-sm text-gray-600">Generation</div>
+                                        <div className="text-sm text-gray-600">{t('selectedHistory.specs.generation')}</div>
                                         <div className="font-semibold text-lg">{selectedHistoryItem.car_data.generation}</div>
                                     </div>
                                 )}
                                 {selectedHistoryItem.car_data.right_hand_drive !== undefined && (
                                     <div className="text-center">
-                                        <div className="text-sm text-gray-600">Right Hand Drive</div>
-                                        <div className="font-semibold text-lg">{selectedHistoryItem.car_data.right_hand_drive ? "Yes" : "No"}</div>
+                                        <div className="text-sm text-gray-600">{t('selectedHistory.specs.rightHandDrive')}</div>
+                                        <div className="font-semibold text-lg">{selectedHistoryItem.car_data.right_hand_drive ? t('yes') : t('no')}</div>
                                     </div>
                                 )}
                             </div>
@@ -988,23 +995,22 @@ export default function CleanEstimationPage() {
                                 carData.model !== selectedHistoryItem.car_data.model ||
                                 carData.year !== selectedHistoryItem.car_data.year) && (
                                     <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                                        <h4 className="font-semibold text-yellow-800 mb-2">Current Form vs Selected History</h4>
+                                        <h4 className="font-semibold text-yellow-800 mb-2">{t('selectedHistory.compareTitle')}</h4>
                                         <div className="text-sm text-yellow-700">
-                                            The car details above are from your saved estimation. Your current form has different parameters.
-                                            Use the button below to copy these parameters to your current form.
+                                            {t('selectedHistory.compareDescription')}
                                         </div>
                                     </div>
                                 )}
 
                             {/* Estimation Date */}
                             <div className="text-center mb-6 p-4 bg-blue-50 rounded-lg">
-                                <div className="text-sm text-blue-600">Estimation Date</div>
+                                <div className="text-sm text-blue-600">{t('selectedHistory.estimationDate')}</div>
                                 <div className="font-semibold text-blue-800">
-                                    {formatDate(selectedHistoryItem.created_at).date} at {formatDate(selectedHistoryItem.created_at).time}
+                                    {formatDate(selectedHistoryItem.created_at).date} {t('history.at')} {formatDate(selectedHistoryItem.created_at).time}
                                 </div>
                                 {selectedHistoryItem.notes && (
                                     <div className="mt-2 text-sm text-blue-700">
-                                        <strong>Notes:</strong> {selectedHistoryItem.notes}
+                                        <strong>{t('history.notes')}:</strong> {selectedHistoryItem.notes}
                                     </div>
                                 )}
                             </div>
@@ -1015,11 +1021,11 @@ export default function CleanEstimationPage() {
                                     onClick={() => loadHistoryParameters(selectedHistoryItem.car_data)}
                                     className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
                                 >
-                                    Use These Parameters for New Estimation
+                                    {t('selectedHistory.useParameters')}
                                 </button>
                                 <button
                                     onClick={() => {
-                                        const notes = prompt("Edit notes for this estimation:", selectedHistoryItem.notes || "");
+                                        const notes = prompt(t('history.editNotesPrompt'), selectedHistoryItem.notes || "");
                                         if (notes !== null) {
                                             updateHistoryNotes(selectedHistoryItem.id, notes);
                                             setSelectedHistoryItem({ ...selectedHistoryItem, notes });
@@ -1027,7 +1033,7 @@ export default function CleanEstimationPage() {
                                     }}
                                     className="bg-gray-600 text-white px-6 py-3 rounded-lg hover:bg-gray-700 transition-colors"
                                 >
-                                    Edit Notes
+                                    {t('history.editNotes')}
                                 </button>
                             </div>
                         </div>
@@ -1040,7 +1046,7 @@ export default function CleanEstimationPage() {
                                 <svg className="w-6 h-6 text-red-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
-                                <p className="text-red-800 font-medium">Error: {error}</p>
+                                <p className="text-red-800 font-medium">{t('error')}: {error}</p>
                             </div>
                         </div>
                     )}
@@ -1051,21 +1057,21 @@ export default function CleanEstimationPage() {
 
                             {/* Main Price Result */}
                             <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-2xl p-8 text-white text-center">
-                                <h2 className="text-3xl font-bold mb-4">Estimated Market Price</h2>
+                                <h2 className="text-3xl font-bold mb-4">{t('results.mainTitle')}</h2>
                                 <div className="text-6xl font-bold mb-4">
                                     €{estimationResult.estimated_price.toLocaleString()}
                                 </div>
                                 <div className="flex justify-center items-center space-x-6 text-blue-100">
                                     <div className="text-center">
-                                        <div className="text-sm">Confidence</div>
+                                        <div className="text-sm">{t('results.confidence')}</div>
                                         <div className="font-semibold">{estimationResult.confidence_level}</div>
                                     </div>
                                     <div className="text-center">
-                                        <div className="text-sm">Market Position</div>
+                                        <div className="text-sm">{t('results.marketPosition')}</div>
                                         <div className="font-semibold">{estimationResult.market_position}</div>
                                     </div>
                                     <div className="text-center">
-                                        <div className="text-sm">Similar Cars</div>
+                                        <div className="text-sm">{t('results.similarCars')}</div>
                                         <div className="font-semibold">{estimationResult.similar_cars_count}</div>
                                     </div>
                                 </div>
@@ -1076,24 +1082,24 @@ export default function CleanEstimationPage() {
 
                                 {/* Market Analysis */}
                                 <div className="bg-white rounded-2xl shadow-lg p-6">
-                                    <h3 className="text-xl font-bold text-gray-900 mb-4">Market Analysis</h3>
+                                    <h3 className="text-xl font-bold text-gray-900 mb-4">{t('results.marketAnalysis.title')}</h3>
                                     <div className="space-y-4">
                                         <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                                            <span className="text-gray-600">Price Range</span>
+                                            <span className="text-gray-600">{t('results.marketAnalysis.priceRange')}</span>
                                             <span className="font-semibold">
                                                 €{estimationResult.price_range.min.toLocaleString()} - €{estimationResult.price_range.max.toLocaleString()}
                                             </span>
                                         </div>
                                         <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                                            <span className="text-gray-600">Average Price</span>
+                                            <span className="text-gray-600">{t('results.marketAnalysis.averagePrice')}</span>
                                             <span className="font-semibold">€{estimationResult.price_range.avg.toLocaleString()}</span>
                                         </div>
                                         <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                                            <span className="text-gray-600">Your Rank</span>
+                                            <span className="text-gray-600">{t('results.marketAnalysis.yourRank')}</span>
                                             <span className="font-semibold">{estimationResult.market_comparison.your_estimated_rank}</span>
                                         </div>
                                         <div className="flex justify-between items-center py-2">
-                                            <span className="text-gray-600">vs. Most Expensive</span>
+                                            <span className="text-gray-600">{t('results.marketAnalysis.vsMostExpensive')}</span>
                                             <span className="font-semibold text-green-600">
                                                 -€{estimationResult.market_comparison.savings_vs_highest.toLocaleString()}
                                             </span>
@@ -1103,7 +1109,7 @@ export default function CleanEstimationPage() {
 
                                 {/* Price Distribution */}
                                 <div className="bg-white rounded-2xl shadow-lg p-6">
-                                    <h3 className="text-xl font-bold text-gray-900 mb-4">Price Distribution</h3>
+                                    <h3 className="text-xl font-bold text-gray-900 mb-4">{t('results.priceDistribution.title')}</h3>
                                     <div className="space-y-3">
                                         {estimationResult.price_distribution.map((range, index) => (
                                             <div key={index} className="flex items-center">
@@ -1123,19 +1129,19 @@ export default function CleanEstimationPage() {
 
                             {/* Market Insights */}
                             <div className="bg-white rounded-2xl shadow-lg p-8">
-                                <h3 className="text-xl font-bold text-gray-900 mb-6">Market Insights</h3>
+                                <h3 className="text-xl font-bold text-gray-900 mb-6">{t('results.insights.title')}</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                                     {/* Price Position */}
                                     <div className="p-6 rounded-xl border-l-4 bg-blue-50 border-blue-500">
                                         <div className="flex items-start">
                                             <div>
-                                                <h4 className="font-semibold text-gray-900 mb-2">Price Position</h4>
+                                                <h4 className="font-semibold text-gray-900 mb-2">{t('results.insights.pricePosition.title')}</h4>
                                                 <p className="text-gray-700 text-sm">
-                                                    Your car is positioned at the {estimationResult.market_comparison.your_estimated_rank} of the market.
-                                                    {estimationResult.market_position === "Below Average" && " This represents good value for buyers."}
-                                                    {estimationResult.market_position === "Above Average" && " This is in the premium segment."}
-                                                    {estimationResult.market_position === "Average" && " This is competitive with market standards."}
+                                                    {t('results.insights.pricePosition.description', { rank: estimationResult.market_comparison.your_estimated_rank })}
+                                                    {estimationResult.market_position === "Below Average" && ` ${t('results.insights.pricePosition.belowAverage')}`}
+                                                    {estimationResult.market_position === "Above Average" && ` ${t('results.insights.pricePosition.aboveAverage')}`}
+                                                    {estimationResult.market_position === "Average" && ` ${t('results.insights.pricePosition.average')}`}
                                                 </p>
                                             </div>
                                         </div>
@@ -1148,12 +1154,15 @@ export default function CleanEstimationPage() {
                                         }`}>
                                         <div className="flex items-start">
                                             <div>
-                                                <h4 className="font-semibold text-gray-900 mb-2">Estimation Accuracy</h4>
+                                                <h4 className="font-semibold text-gray-900 mb-2">{t('results.insights.estimationAccuracy.title')}</h4>
                                                 <p className="text-gray-700 text-sm">
-                                                    {estimationResult.confidence_level} confidence based on {estimationResult.similar_cars_count} similar cars.
-                                                    {estimationResult.confidence_level === "High" && " This estimate is highly reliable."}
-                                                    {estimationResult.confidence_level === "Medium" && " This estimate has moderate reliability."}
-                                                    {estimationResult.confidence_level === "Low" && " Consider getting additional appraisals."}
+                                                    {t('results.insights.estimationAccuracy.description', {
+                                                        confidence: estimationResult.confidence_level,
+                                                        count: estimationResult.similar_cars_count
+                                                    })}
+                                                    {estimationResult.confidence_level === "High" && ` ${t('results.insights.estimationAccuracy.high')}`}
+                                                    {estimationResult.confidence_level === "Medium" && ` ${t('results.insights.estimationAccuracy.medium')}`}
+                                                    {estimationResult.confidence_level === "Low" && ` ${t('results.insights.estimationAccuracy.low')}`}
                                                 </p>
                                             </div>
                                         </div>
@@ -1163,16 +1172,16 @@ export default function CleanEstimationPage() {
                                     <div className="p-6 rounded-xl border-l-4 bg-gray-50 border-gray-500">
                                         <div className="flex items-start">
                                             <div>
-                                                <h4 className="font-semibold text-gray-900 mb-2">Mileage Impact</h4>
+                                                <h4 className="font-semibold text-gray-900 mb-2">{t('results.insights.mileageImpact.title')}</h4>
                                                 <p className="text-gray-700 text-sm">
                                                     {(() => {
                                                         const avgMileageForYear = (new Date().getFullYear() - carData.year) * 15000;
                                                         if (carData.mileage < avgMileageForYear * 0.7) {
-                                                            return `Low mileage for age - this increases value. Average would be ${Math.round(avgMileageForYear / 1000)}k km.`;
+                                                            return t('results.insights.mileageImpact.low', { avg: Math.round(avgMileageForYear / 1000) });
                                                         } else if (carData.mileage > avgMileageForYear * 1.3) {
-                                                            return `Higher than average mileage for age. This may affect resale value.`;
+                                                            return t('results.insights.mileageImpact.high');
                                                         } else {
-                                                            return `Mileage is within normal range for a ${new Date().getFullYear() - carData.year} year old car.`;
+                                                            return t('results.insights.mileageImpact.normal', { age: new Date().getFullYear() - carData.year });
                                                         }
                                                     })()}
                                                 </p>
@@ -1184,10 +1193,12 @@ export default function CleanEstimationPage() {
                                     <div className="p-6 rounded-xl border-l-4 bg-purple-50 border-purple-500">
                                         <div className="flex items-start">
                                             <div>
-                                                <h4 className="font-semibold text-gray-900 mb-2">Selling Strategy</h4>
+                                                <h4 className="font-semibold text-gray-900 mb-2">{t('results.insights.sellingStrategy.title')}</h4>
                                                 <p className="text-gray-700 text-sm">
-                                                    Consider pricing between €{Math.round(estimationResult.estimated_price * 0.95).toLocaleString()} - €{Math.round(estimationResult.estimated_price * 1.05).toLocaleString()} for optimal market positioning.
-                                                    Start higher and adjust based on market response.
+                                                    {t('results.insights.sellingStrategy.description', {
+                                                        min: Math.round(estimationResult.estimated_price * 0.95).toLocaleString(),
+                                                        max: Math.round(estimationResult.estimated_price * 1.05).toLocaleString()
+                                                    })}
                                                 </p>
                                             </div>
                                         </div>
@@ -1197,7 +1208,7 @@ export default function CleanEstimationPage() {
 
                             {/* Similar Cars */}
                             <div className="bg-white rounded-2xl shadow-lg p-6">
-                                <h3 className="text-xl font-bold text-gray-900 mb-6">Similar Cars Found</h3>
+                                <h3 className="text-xl font-bold text-gray-900 mb-6">{t('results.similarCarsFound')}</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                                     {estimationResult.similar_cars_sample.map((car) => (
                                         <CarCard
@@ -1215,28 +1226,28 @@ export default function CleanEstimationPage() {
 
                             {/* Additional Market Information */}
                             <div className="bg-white rounded-2xl shadow-lg p-8">
-                                <h3 className="text-xl font-bold text-gray-900 mb-6">Additional Information</h3>
+                                <h3 className="text-xl font-bold text-gray-900 mb-6">{t('results.additionalInfo.title')}</h3>
                                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
                                     {/* Depreciation Analysis */}
                                     <div>
-                                        <h4 className="font-semibold text-gray-900 mb-4">Depreciation Analysis</h4>
+                                        <h4 className="font-semibold text-gray-900 mb-4">{t('results.additionalInfo.depreciation.title')}</h4>
                                         <div className="space-y-3">
                                             <div className="bg-gray-50 p-4 rounded-lg">
                                                 <div className="flex justify-between items-center">
-                                                    <span className="text-gray-600">Current Age</span>
-                                                    <span className="font-semibold">{new Date().getFullYear() - carData.year} years</span>
+                                                    <span className="text-gray-600">{t('results.additionalInfo.depreciation.currentAge')}</span>
+                                                    <span className="font-semibold">{new Date().getFullYear() - carData.year} {t('results.additionalInfo.depreciation.years')}</span>
                                                 </div>
                                             </div>
                                             <div className="bg-gray-50 p-4 rounded-lg">
                                                 <div className="flex justify-between items-center">
-                                                    <span className="text-gray-600">Typical Annual Depreciation</span>
+                                                    <span className="text-gray-600">{t('results.additionalInfo.depreciation.typicalAnnual')}</span>
                                                     <span className="font-semibold text-red-600">12-15%</span>
                                                 </div>
                                             </div>
                                             <div className="bg-gray-50 p-4 rounded-lg">
                                                 <div className="flex justify-between items-center">
-                                                    <span className="text-gray-600">Estimated Value Next Year</span>
+                                                    <span className="text-gray-600">{t('results.additionalInfo.depreciation.estimatedNextYear')}</span>
                                                     <span className="font-semibold">€{Math.round(estimationResult.estimated_price * 0.87).toLocaleString()}</span>
                                                 </div>
                                             </div>
@@ -1245,23 +1256,23 @@ export default function CleanEstimationPage() {
 
                                     {/* Key Factors */}
                                     <div>
-                                        <h4 className="font-semibold text-gray-900 mb-4">Key Value Factors</h4>
+                                        <h4 className="font-semibold text-gray-900 mb-4">{t('results.additionalInfo.keyFactors.title')}</h4>
                                         <div className="space-y-3">
                                             {[
                                                 {
-                                                    factor: "Mileage",
+                                                    factor: t('results.additionalInfo.keyFactors.mileage'),
                                                     status: carData.mileage < (new Date().getFullYear() - carData.year) * 12000 ? "positive" : "neutral",
-                                                    impact: carData.mileage < (new Date().getFullYear() - carData.year) * 12000 ? "Positive" : "Standard"
+                                                    impact: carData.mileage < (new Date().getFullYear() - carData.year) * 12000 ? t('results.additionalInfo.keyFactors.positive') : t('results.additionalInfo.keyFactors.standard')
                                                 },
                                                 {
-                                                    factor: "Fuel Type",
+                                                    factor: t('results.additionalInfo.keyFactors.fuelType'),
                                                     status: carData.fuel_type === "Electric" || carData.fuel_type === "Hybrid" ? "positive" : "neutral",
-                                                    impact: carData.fuel_type === "Electric" || carData.fuel_type === "Hybrid" ? "Premium" : "Standard"
+                                                    impact: carData.fuel_type === "Electric" || carData.fuel_type === "Hybrid" ? t('results.additionalInfo.keyFactors.premium') : t('results.additionalInfo.keyFactors.standard')
                                                 },
                                                 {
-                                                    factor: "Transmission",
+                                                    factor: t('results.additionalInfo.keyFactors.transmission'),
                                                     status: carData.transmission === "Automatic" ? "positive" : "neutral",
-                                                    impact: carData.transmission === "Automatic" ? "Premium" : "Standard"
+                                                    impact: carData.transmission === "Automatic" ? t('results.additionalInfo.keyFactors.premium') : t('results.additionalInfo.keyFactors.standard')
                                                 }
                                             ].map((item, index) => (
                                                 <div key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
@@ -1280,29 +1291,29 @@ export default function CleanEstimationPage() {
 
                             {/* Call to Action */}
                             <div className="bg-gradient-to-r from-green-500 to-green-700 rounded-2xl p-8 text-white text-center">
-                                <h3 className="text-2xl font-bold mb-4">Ready to Take Action?</h3>
+                                <h3 className="text-2xl font-bold mb-4">{t('results.cta.title')}</h3>
                                 <p className="text-green-100 mb-6 max-w-2xl mx-auto">
-                                    Now that you have your market valuation, explore your options and make informed decisions.
+                                    {t('results.cta.description')}
                                 </p>
                                 <div className="flex flex-col sm:flex-row gap-4 justify-center">
                                     <Link
                                         href="/listings"
                                         className="bg-white text-green-600 px-6 py-3 rounded-lg font-medium hover:bg-green-50 transition-colors"
                                     >
-                                        Browse Similar Cars
+                                        {t('results.cta.browseSimilar')}
                                     </Link>
                                     <Link
                                         href="/detailed-search"
                                         className="bg-green-600 bg-opacity-50 backdrop-blur-sm border border-white/30 px-6 py-3 rounded-lg font-medium hover:bg-opacity-70 transition-all"
                                     >
-                                        Advanced Search
+                                        {t('results.cta.advancedSearch')}
                                     </Link>
                                 </div>
                             </div>
 
                             {/* Next Steps */}
                             <div className="bg-white rounded-2xl shadow-lg p-8">
-                                <h3 className="text-xl font-bold text-gray-900 mb-6">Next Steps</h3>
+                                <h3 className="text-xl font-bold text-gray-900 mb-6">{t('results.nextSteps.title')}</h3>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                                     <div className="text-center p-6 bg-gradient-to-br from-blue-50 to-blue-100 rounded-xl">
                                         <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -1310,9 +1321,9 @@ export default function CleanEstimationPage() {
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                                             </svg>
                                         </div>
-                                        <h4 className="font-semibold text-gray-900 mb-2">Save This Estimation</h4>
+                                        <h4 className="font-semibold text-gray-900 mb-2">{t('results.nextSteps.save.title')}</h4>
                                         <p className="text-gray-600 text-sm">
-                                            Your estimation has been automatically saved to your history for future reference.
+                                            {t('results.nextSteps.save.description')}
                                         </p>
                                     </div>
 
@@ -1322,9 +1333,9 @@ export default function CleanEstimationPage() {
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                                             </svg>
                                         </div>
-                                        <h4 className="font-semibold text-gray-900 mb-2">Find Similar Cars</h4>
+                                        <h4 className="font-semibold text-gray-900 mb-2">{t('results.nextSteps.find.title')}</h4>
                                         <p className="text-gray-600 text-sm">
-                                            Browse our listings to find cars similar to yours or discover better deals in the market.
+                                            {t('results.nextSteps.find.description')}
                                         </p>
                                     </div>
 
@@ -1334,9 +1345,9 @@ export default function CleanEstimationPage() {
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
                                             </svg>
                                         </div>
-                                        <h4 className="font-semibold text-gray-900 mb-2">Track Market Trends</h4>
+                                        <h4 className="font-semibold text-gray-900 mb-2">{t('results.nextSteps.track.title')}</h4>
                                         <p className="text-gray-600 text-sm">
-                                            Return periodically to track how your car&apos;s value changes with market conditions.
+                                            {t('results.nextSteps.track.description')}
                                         </p>
                                     </div>
                                 </div>
@@ -1348,5 +1359,17 @@ export default function CleanEstimationPage() {
 
             <Footer />
         </div >
-    )
+    );
+}
+
+export default function CleanEstimationPage() {
+    return (
+        <IntlProvider>
+            <div className="min-h-screen bg-gray-50">
+                <Suspense fallback={<div>Loading...</div>}>
+                    <CleanEstimationContent />
+                </Suspense>
+            </div>
+        </IntlProvider>
+    );
 };
