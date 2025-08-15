@@ -180,18 +180,18 @@ function CarDetailContent() {
     document.body.style.overflow = 'auto';
   };
 
-  useEffect(() => {
-    if (showModelStats && car?.brand && car?.model) {
-      fetch(`http://localhost:8000/cars/model-stats?brand=${car.brand}&model=${car.model}`)
-        .then(res => res.json())
-        .then(data => {
-          setModelStats(data);
-        })
-        .catch(err => {
-          console.error("Failed to fetch model statistics:", err);
-        });
-    }
-  }, [showModelStats, car?.brand, car?.model]);
+  // useEffect(() => {
+  //   if (showModelStats && car?.brand && car?.model) {
+  //     fetch(`http://localhost:8000/cars/model-stats?brand=${car.brand}&model=${car.model}`)
+  //       .then(res => res.json())
+  //       .then(data => {
+  //         setModelStats(data);
+  //       })
+  //       .catch(err => {
+  //         console.error("Failed to fetch model statistics:", err);
+  //       });
+  //   }
+  // }, [showModelStats, car?.brand, car?.model]);
 
 
   useEffect(() => {
@@ -864,7 +864,7 @@ function CarDetailContent() {
             )}
 
             {/* Model Statistics Card */}
-            <div className="bg-white rounded-xl border shadow-sm mb-6">
+            {/* <div className="bg-white rounded-xl border shadow-sm mb-6">
               <button
                 onClick={() => setShowModelStats(!showModelStats)}
                 className="w-full flex items-center justify-between p-4 text-left border-b focus:outline-none"
@@ -900,7 +900,6 @@ function CarDetailContent() {
                     </div>
                   ) : (
                     <>
-                      {/* Price Distribution Chart */}
                       <div>
                         <h3 className="text-lg font-medium mb-4">{t('priceDistributionFor')} {car?.brand} {car?.model}</h3>
                         <div className="h-64 bg-white rounded-lg">
@@ -944,7 +943,6 @@ function CarDetailContent() {
                         </div>
                       </div>
 
-                      {/* Key Statistics */}
                       <div>
                         <h3 className="text-lg font-medium mb-4">{t('keyStatistics')}</h3>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -1013,7 +1011,6 @@ function CarDetailContent() {
                         </div>
                       </div>
 
-                      {/* Year Distribution Chart */}
                       <div>
                         <h3 className="text-lg font-medium mb-4">{t('yearDistribution')}</h3>
                         <div className="h-64 bg-white rounded-lg">
@@ -1062,7 +1059,7 @@ function CarDetailContent() {
                   )}
                 </div>
               )}
-            </div>
+            </div> */}
 
             {/* Location */}
             <div className="bg-white rounded-xl border shadow-sm mb-6">

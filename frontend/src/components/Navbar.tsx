@@ -135,7 +135,7 @@ function NavbarContent() {
             >
               {t('favorites')}
             </button>
-            <button
+            {/* <button
               onClick={() => handleProtectedNavigation(`/${locale}/dashboard`)}
               className={`px-3 py-2 text-sm font-medium transition-colors duration-200 cursor-pointer ${pathname === `/${locale}/dashboard`
                 ? "text-white bg-gray-700/50 rounded-md"
@@ -152,7 +152,7 @@ function NavbarContent() {
                 }`}
             >
               {t('getEstimation')}
-            </button>
+            </button> */}
             <NavLink href={`/${locale}/detailed-search`} label={t('advancedSearch')} active={pathname === `/${locale}/detailed-search`} />
 
             {(!searchOpen) && (
@@ -202,9 +202,9 @@ function NavbarContent() {
                     <Link href={`/${locale}/favorites`} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                       {t('favorites')}
                     </Link>
-                    <Link href={`/${locale}/dashboard`} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                    {/* <Link href={`/${locale}/dashboard`} className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
                       {t('dashboard')}
-                    </Link>
+                    </Link> */}
                     <button
                       onClick={handleLogout}
                       className="block w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-gray-100 border-t border-gray-100"
@@ -250,7 +250,7 @@ function NavbarContent() {
             >
               {t('favorites')}
             </button>
-            <button
+            {/* <button
               onClick={() => handleProtectedNavigation(`/${locale}/dashboard`)}
               className={`block px-3 py-2 text-base font-medium w-full text-left transition-colors ${pathname === `/${locale}/dashboard`
                 ? "bg-gray-800 text-white rounded-md"
@@ -267,7 +267,7 @@ function NavbarContent() {
                 }`}
             >
               {t('getEstimation')}
-            </button>
+            </button> */}
             <MobileNavLink href={`/${locale}/detailed-search`} label={t('advancedSearch')} active={pathname === `/${locale}/detailed-search`} />
 
             <div className="pt-2">
@@ -308,12 +308,12 @@ function NavbarContent() {
                   >
                     {t('favorites')}
                   </Link>
-                  <Link
+                  {/* <Link
                     href={`/${locale}/dashboard`}
                     className="block px-3 py-2 rounded-md text-base font-medium text-gray-300 hover:text-white hover:bg-gray-700"
                   >
                     {t('dashboard')}
-                  </Link>
+                  </Link> */}
                   <button
                     onClick={handleLogout}
                     className="block w-full text-left px-3 py-2 rounded-md text-base font-medium text-red-400 hover:text-red-300 hover:bg-gray-700"
