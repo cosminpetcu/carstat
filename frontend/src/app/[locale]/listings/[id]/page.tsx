@@ -14,9 +14,9 @@ import {
   ResponsiveContainer,
   CartesianGrid,
   ReferenceLine,
-  BarChart,
-  Bar,
-  Cell
+  // BarChart,
+  // Bar,
+  // Cell
 } from "recharts";
 import { CarCard, type CarData } from "@/components/ui/CarCard";
 import { getQualityScoreColor, getQualityScoreLabel } from '@/utils/ratingUtils'
@@ -89,32 +89,32 @@ interface PriceChangeItem {
   changePercent: number;
 }
 
-interface ModelStats {
-  totalCount: number;
-  averagePrice: number;
-  averageMileage: number;
-  averageYear: number;
-  soldCount: number;
-  avgSaleTime: number | null;
-  priceDistribution: {
-    range: string;
-    count: number;
-    minPrice: number;
-    maxPrice: number;
-  }[];
-  yearDistribution: {
-    year: number;
-    count: number;
-  }[];
-  fuelTypeDistribution: {
-    type: string;
-    count: number;
-  }[];
-  transmissionDistribution: {
-    type: string;
-    count: number;
-  }[];
-}
+// interface ModelStats {
+//   totalCount: number;
+//   averagePrice: number;
+//   averageMileage: number;
+//   averageYear: number;
+//   soldCount: number;
+//   avgSaleTime: number | null;
+//   priceDistribution: {
+//     range: string;
+//     count: number;
+//     minPrice: number;
+//     maxPrice: number;
+//   }[];
+//   yearDistribution: {
+//     year: number;
+//     count: number;
+//   }[];
+//   fuelTypeDistribution: {
+//     type: string;
+//     count: number;
+//   }[];
+//   transmissionDistribution: {
+//     type: string;
+//     count: number;
+//   }[];
+// }
 
 interface MainImageGalleryProps {
   images: string[];
@@ -144,8 +144,8 @@ function CarDetailContent() {
   const [showDescription, setShowDescription] = useState(false);
   const [showPriceHistory, setShowPriceHistory] = useState(true);
 
-  const [showModelStats, setShowModelStats] = useState(false);
-  const [modelStats, setModelStats] = useState<ModelStats | null>(null);
+  // const [showModelStats, setShowModelStats] = useState(false);
+  // const [modelStats, setModelStats] = useState<ModelStats | null>(null);
 
   const [similarCars, setSimilarCars] = useState<Car[]>([]);
   const [loadingSimilar, setLoadingSimilar] = useState(false);
